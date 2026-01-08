@@ -1,0 +1,23 @@
+{
+  "name": "@repo/backend",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "dev": "convex dev",
+    "build": "tsc --noEmit",
+    "deploy": "convex deploy",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "convex": "^1.17.4",
+    "@repo/typescript-config": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/node": "22.13.5",
+    "eslint": "^8.57.0",
+    "typescript": "5.9.3"
+  }
+}

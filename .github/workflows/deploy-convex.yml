@@ -1,0 +1,31 @@
+name: Deploy Convex
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/backend/**"
+      - "packages/typescript-config/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Deploy Convex
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          cd packages/backend
+          bunx convex deploy --cmd 'bun run build'
