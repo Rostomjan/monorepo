@@ -1,5 +1,5 @@
 import type { Preview } from "@storybook/react";
-import "../../apps/web/src/app/globals.css"; // Reuse the global CSS with Tailwind
+import "../../../apps/web/src/app/globals.css"; // Reuse the global CSS with Tailwind
 
 const preview: Preview = {
   parameters: {
