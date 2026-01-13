@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["CONVEX_URL", "CONVEX_DEPLOYMENT", "NEXT_PUBLIC_CONVEX_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
