@@ -1,0 +1,89 @@
+name: Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  check:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+      - run: bun install
+      - run: bun run lint
+      - run: bun run build
+
+  deploy-dev:
+    name: Deploy to Development
+    needs: check
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Deploy Convex (Dev)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
+        run: |
+          cd packages/backend
+          bunx convex deploy --cmd 'bun run build'
+
+  e2e:
+    name: Playwright Tests
+    needs: [check]
+    # Run if check passed. If on develop, wait for deploy-dev.
+    if: |
+      always() && 
+      (needs.check.result == 'success') &&
+      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        env:
+          # If develop, we could point to the Dev Vercel URL if we had it.
+          # For now, we'll use the localhost webserver but it will hit the Dev Convex backend if configured.
+          BASE_URL: http://localhost:3000
+        run: |
+          cd apps/e2e
+          bun run test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 30
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: e2e
+    # Run on push to main OR on push to develop after successful E2E (Promotion)
+    if: |
+      github.event_name == 'push' && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') &&
+      needs.e2e.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Deploy Convex (Prod)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD }}
+        run: |
+          cd packages/backend
+          bunx convex deploy --cmd 'bun run build'
