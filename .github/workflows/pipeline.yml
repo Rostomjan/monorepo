@@ -34,7 +34,7 @@ jobs:
       - run: bun install
       - name: Deploy Convex (Dev)
         env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV || secrets.CONVEX_DEPLOY_KEY }}
         run: |
           cd packages/backend
           bunx convex deploy --cmd 'bun run build'
@@ -85,7 +85,7 @@ jobs:
       - run: bun install
       - name: Deploy Convex (Prod)
         env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD || secrets.CONVEX_DEPLOY_KEY }}
         run: |
           cd packages/backend
           bunx convex deploy --cmd 'bun run build'
