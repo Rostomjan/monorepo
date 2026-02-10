@@ -11,7 +11,7 @@ jobs:
     name: Lint and Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - uses: actions/cache@v4
         with:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production – monorepo-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - name: Deploy Convex (Dev)
@@ -50,7 +50,7 @@ jobs:
       (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - name: Install Playwright Browsers
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production – monorepo-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - name: Deploy Convex (Prod)
