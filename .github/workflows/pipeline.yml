@@ -64,7 +64,7 @@ jobs:
         run: |
           cd apps/e2e
           bun run test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
