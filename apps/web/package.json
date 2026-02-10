@@ -9,12 +9,16 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.23",
+    "@ai-sdk/react": "^3.0.80",
+    "@repo/ui": "workspace:*",
+    "ai": "^6.0.78",
+    "better-auth": "latest",
+    "convex": "^1.17.4",
+    "lucide-react": "^0.563.0",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "@repo/ui": "workspace:*",
-    "convex": "^1.17.4",
-    "better-auth": "latest"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
