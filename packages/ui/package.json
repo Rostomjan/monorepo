@@ -21,7 +21,7 @@
     "@repo/typescript-config": "workspace:*",
     "@storybook/addon-essentials": "8.5.8",
     "@storybook/addon-interactions": "8.5.8",
-    "@storybook/addon-links": "8.5.8",
+    "@storybook/addon-links": "10.2.8",
     "@storybook/addon-onboarding": "8.5.8",
     "@storybook/react": "8.5.8",
     "@storybook/react-vite": "8.5.8",
