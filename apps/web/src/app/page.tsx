@@ -18,7 +18,7 @@ export default function Page() {
         </h1>
 
         <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
-          Experience the power of Google's most capable AI models directly in your browser.
+          Experience the power of Google&apos;s most capable AI models directly in your browser.
           Fast, intelligent, and designed for modern teams.
         </p>
       </div>
