@@ -35,7 +35,8 @@
     "lint": "turbo lint",
     "new": "bun scripts/scaffold.ts",
     "prepare": "husky",
-    "test": "turbo test",
+    "test": "turbo test --filter='!e2e'",
+    "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
     "update": "bunx npm-check-updates -u --workspaces --root && bun install",
     "update:check": "bunx npm-check-updates --workspaces --root"

@@ -8,7 +8,8 @@ bun run dev            # all apps (turbo persistent)
 bun run build          # all builds with cache
 bun run lint           # eslint per package
 bun run type-check     # tsc per package
-bun run test           # bun:test unit + playwright via apps/e2e
+bun run test           # unit tests only (e2e excluded, needs browsers)
+bun run test:e2e        # playwright via apps/e2e (installs nothing, needs browsers)
 bun run check          # lint + type-check + test + build
 bun run knip           # unused exports/deps
 bun run deps:lint      # syncpack version consistency
@@ -17,8 +18,8 @@ bun run deps:fix       # autofix version drift
 
 ## Testing
 
-- Unit: `bun test` colocated (`*.test.ts`). API and tokens have examples.
-- E2E: `cd apps/e2e && bun run test` (Playwright, spins up `apps/web`).
+- Unit: `bun test` colocated (`*.test.ts`). API and tokens have examples. `bun run test` excludes e2e.
+- E2E: `bun run test:e2e` or `cd apps/e2e && bun run test` (Playwright, spins up `apps/web`). Browsers: `bunx playwright install --with-deps` in `apps/e2e`.
 - CI runs lint, types, unit, build, syncpack, knip, docker builds, then Playwright.
 
 ## Deployment
