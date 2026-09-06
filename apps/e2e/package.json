@@ -1,16 +1,20 @@
 {
   "name": "e2e",
   "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
-  },
   "devDependencies": {
     "@playwright/test": "1.50.1",
+    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "22.13.5",
+    "eslint": "^8.57.0",
     "typescript": "5.9.3"
+  },
+  "private": true,
+  "scripts": {
+    "lint": "eslint .",
+    "test": "playwright test",
+    "test:report": "playwright show-report",
+    "test:ui": "playwright test --ui",
+    "type-check": "tsc --noEmit"
   }
 }

@@ -1,0 +1,37 @@
+name: Dependency updates
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - run: bun install
+      - name: Check for updates
+        run: bun run update:check
+      - name: Apply updates
+        run: bun run update
+      - name: Verify
+        run: bun run check
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: weekly dependency updates"
+          title: "chore: weekly dependency updates"
+          body: "Automated `bun run update` + `bun run check`. Review `bun.lock` diff before merging."
+          branch: chore/dependency-updates
+          delete-branch: true

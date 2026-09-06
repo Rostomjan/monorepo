@@ -1,0 +1,28 @@
+{
+  "name": "__NAME__",
+  "version": "0.0.0",
+  "private": true,
+  "main": "App.tsx",
+  "scripts": {
+    "dev": "expo start",
+    "build": "eas build --platform all --non-interactive",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "bun test",
+    "clean": "rm -rf node_modules .expo"
+  },
+  "dependencies": {
+    "@repo/tokens": "workspace:*",
+    "expo": "~52.0.0",
+    "expo-status-bar": "~2.0.0",
+    "react": "19.2.3",
+    "react-native": "0.76.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "19.0.10",
+    "eslint": "^8.57.0",
+    "typescript": "5.9.3"
+  }
+}

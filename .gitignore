@@ -1,7 +1,13 @@
-
+.env
 .env.local
+.env.*.local
 node_modules
 .turbo
 .next
+dist
+coverage
 apps/e2e/playwright-report
 apps/e2e/test-results
+apps/*/.expo
+*.tsbuildinfo
+.DS_Store

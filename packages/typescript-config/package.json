@@ -1,12 +1,12 @@
 {
   "name": "@repo/typescript-config",
   "version": "0.0.0",
-  "private": true,
-  "license": "MIT",
-  "main": "./base.json",
-  "types": "./base.json",
   "exports": {
     "./base.json": "./base.json",
     "./nextjs.json": "./nextjs.json"
-  }
+  },
+  "license": "MIT",
+  "main": "./base.json",
+  "private": true,
+  "types": "./base.json"
 }

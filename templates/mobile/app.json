@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "__NAME__",
+    "slug": "__NAME__",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "platforms": ["ios", "android", "web"]
+  }
+}

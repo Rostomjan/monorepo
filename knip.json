@@ -1,0 +1,78 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": ["**/_generated/**"],
+  "ignoreBinaries": ["eslint", "dist/index.js"],
+  "ignoreDependencies": [
+    "@rushstack/eslint-patch",
+    "eslint-config-next",
+    "eslint-config-prettier",
+    "eslint-config-turbo",
+    "eslint-import-resolver-typescript"
+  ],
+  "ignoreUnresolved": ["next/babel", "eslint", "next"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts", "turbo.json"],
+      "project": ["scripts/**/*.ts"],
+      "ignoreDependencies": [
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "eslint-config-next",
+        "eslint-config-turbo",
+        "eslint-plugin-only-warn",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-turbo",
+        "husky",
+        "lint-staged"
+      ]
+    },
+    "apps/web": {
+      "entry": ["src/app/**/page.{ts,tsx}", "src/app/layout.{ts,tsx}", "src/app/api/**/route.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
+    "apps/docs": {
+      "entry": ["app/**/page.{ts,tsx}", "app/layout.{ts,tsx}"],
+      "project": ["app/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
+    "apps/api": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@repo/eslint-config"]
+    },
+    "apps/e2e": {
+      "entry": ["playwright.config.ts", "tests/**/*.ts"],
+      "project": ["tests/**/*.ts", "playwright.config.ts"],
+      "ignoreDependencies": ["@repo/eslint-config"]
+    },
+    "packages/ui": {
+      "entry": ["src/index.tsx", "src/**/*.stories.tsx"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "@repo/tailwind-config", "@repo/tokens", "tailwindcss"]
+    },
+    "packages/tokens": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@repo/eslint-config"]
+    },
+    "packages/backend": {
+      "entry": ["convex/**/*.ts"],
+      "project": ["convex/**/*.ts"],
+      "ignoreDependencies": ["@repo/eslint-config"]
+    },
+    "packages/eslint-config": {
+      "entry": ["index.js", "library.js", "next.js", "react-internal.js"],
+      "project": ["*.js"]
+    },
+    "packages/typescript-config": {
+      "entry": ["base.json", "nextjs.json"],
+      "project": []
+    },
+    "packages/tailwind-config": {
+      "entry": ["tailwind.config.ts"],
+      "project": ["**/*.ts"]
+    }
+  }
+}

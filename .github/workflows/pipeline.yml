@@ -6,33 +6,74 @@ on:
   pull_request:
     branches: ["main", "develop"]
 
+# Cancel superseded runs on the same ref (PR pushes); never cancel main/develop deploys.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BUN_VERSION: "1.4.2"
+
 jobs:
   check:
-    name: Lint and Build
-    runs-on: ubuntu-latest
+    name: Lint, Types, Unit tests, Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
       - uses: actions/cache@v4
         with:
           path: node_modules/.cache/turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          key: ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-
             ${{ runner.os }}-turbo-
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run lint
+      - run: bun run type-check
+      - run: bun run test
       - run: bun run build
+      - run: bun run deps:lint
+      - run: bun run knip
+
+  docker:
+    name: Docker builds (api, web)
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f apps/api/Dockerfile -t api:ci .
+      - run: docker build -f apps/web/Dockerfile -t web:ci .
 
   deploy-dev:
     name: Deploy to Development
     needs: check
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: Production – monorepo-web
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
       - name: Deploy Convex (Dev)
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV || secrets.CONVEX_DEPLOY_KEY }}
@@ -41,33 +82,51 @@ jobs:
           bunx convex deploy --cmd 'bun run build'
 
   e2e:
-    name: Playwright Tests
+    name: Playwright (${{ matrix.browser }})
     needs: [check]
     # Run if check passed. If on develop, wait for deploy-dev.
     if: |
-      always() && 
+      always() &&
       (needs.check.result == 'success') &&
       (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - run: bun install --frozen-lockfile
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: bunx playwright install --with-deps ${{ matrix.browser }}
         working-directory: apps/e2e
-      - name: Run Playwright tests
+      - name: Run Playwright tests (${{ matrix.browser }})
         env:
           # If develop, we could point to the Dev Vercel URL if we had it.
           # For now, we'll use the localhost webserver but it will hit the Dev Convex backend if configured.
           BASE_URL: http://localhost:3000
-        run: |
-          cd apps/e2e
-          bun run test
+        run: bunx playwright test --project=${{ matrix.browser }}
+        working-directory: apps/e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: apps/e2e/playwright-report/
           retention-days: 30
 
@@ -76,15 +135,24 @@ jobs:
     needs: e2e
     # Run on push to main OR on push to develop after successful E2E (Promotion)
     if: |
-      github.event_name == 'push' && 
+      github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') &&
       needs.e2e.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: Production – monorepo-web
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
       - name: Deploy Convex (Prod)
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD || secrets.CONVEX_DEPLOY_KEY }}

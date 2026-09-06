@@ -8,24 +8,20 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
-  if ((from && typeof from === "object") || typeof from === "function") {
+  if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, {
-          get: () => from[key],
-          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
-        });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
   return to;
 };
-var __toCommonJS = (mod) =>
-  __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
   colors: () => colors,
-  spacing: () => spacing,
+  spacing: () => spacing
 });
 module.exports = __toCommonJS(index_exports);
 var colors = {
@@ -38,18 +34,17 @@ var colors = {
   light: "#f8f9fa",
   dark: "#343a40",
   black: "#000000",
-  white: "#ffffff",
+  white: "#ffffff"
 };
 var spacing = {
   xs: "0.25rem",
   sm: "0.5rem",
   md: "1rem",
   lg: "1.5rem",
-  xl: "2rem",
+  xl: "2rem"
 };
 // Annotate the CommonJS export names for ESM import in node:
-0 &&
-  (module.exports = {
-    colors,
-    spacing,
-  });
+0 && (module.exports = {
+  colors,
+  spacing
+});

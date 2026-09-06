@@ -1,0 +1,26 @@
+{
+  "name": "__NAME__",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir dist",
+    "start": "bun dist/index.js",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "bun test",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/bun": "^1.4.1",
+    "@types/node": "22.13.5",
+    "eslint": "^8.57.0",
+    "typescript": "5.9.3"
+  }
+}
