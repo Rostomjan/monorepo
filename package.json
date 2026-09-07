@@ -38,8 +38,8 @@
     "test": "turbo test --filter='!e2e'",
     "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
-    "update": "bunx npm-check-updates -u --workspaces --root && bun install",
-    "update:check": "bunx npm-check-updates --workspaces --root"
+    "update": "bunx npm-check-updates -u --workspaces --root --reject eslint && bun install",
+    "update:check": "bunx npm-check-updates --workspaces --root --reject eslint"
   },
   "syncpack": {
     "versionGroups": [
@@ -77,6 +77,21 @@
           "eslint-config-next"
         ],
         "pinVersion": "15.0.4"
+      },
+      {
+        "label": "eslint 8 era: eslint stays on v8 (v9+ needs flat config)",
+        "packages": [
+          "**"
+        ],
+        "dependencies": [
+          "eslint"
+        ],
+        "dependencyTypes": [
+          "dev",
+          "peer",
+          "prod"
+        ],
+        "pinVersion": "^8.57.0"
       }
     ]
   },
