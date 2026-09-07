@@ -1,7 +1,9 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { AuthControls } from "./components/AuthControls";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -53,6 +55,8 @@ function Nav() {
           >
             Docs
           </a>
+          <span className="ml-2 hidden h-4 w-px bg-zinc-200 dark:bg-zinc-800 sm:inline-block" />
+          <AuthControls />
         </nav>
       </div>
     </header>
@@ -63,11 +67,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-zinc-50 antialiased dark:bg-zinc-950">
-        <Nav />
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
-        <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-zinc-500 dark:text-zinc-500">
+        <ClerkProvider>
+          <Nav />
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
+          <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-zinc-500 dark:text-zinc-500">
           Built with Next.js 16, React 19, Tailwind v4 · Interview prep playground · No tests per spec
-        </footer>
+          </footer>
+        </ClerkProvider>
       </body>
     </html>
   );
