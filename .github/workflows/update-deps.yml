@@ -26,12 +26,20 @@ jobs:
       - name: Apply updates
         run: bun run update
       - name: Verify
+        id: verify
+        continue-on-error: true
         run: bun run check
       - name: Create PR
+        if: always()
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore: weekly dependency updates"
           title: "chore: weekly dependency updates"
-          body: "Automated `bun run update` + `bun run check`. Review `bun.lock` diff before merging."
+          body: |
+            Automated `bun run update` + `bun run check`.
+
+            - Verify: ${{ steps.verify.outcome }}
+            - Review `bun.lock` diff before merging.
+            - If verify failed, check logs for `tsup`/`eslint` incompatibilities (e.g. TS7 + tsup DTS).
           branch: chore/dependency-updates
           delete-branch: true

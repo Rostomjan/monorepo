@@ -1,4 +1,4 @@
-declare const colors: {
+export declare const colors: {
     primary: string;
     secondary: string;
     success: string;
@@ -10,12 +10,11 @@ declare const colors: {
     black: string;
     white: string;
 };
-declare const spacing: {
+export declare const spacing: {
     xs: string;
     sm: string;
     md: string;
     lg: string;
     xl: string;
 };
-
-export { colors, spacing };
+//# sourceMappingURL=index.d.ts.map

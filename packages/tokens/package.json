@@ -13,8 +13,8 @@
   "module": "./dist/index.mjs",
   "private": true,
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --watch --dts",
+    "build": "tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --outDir dist && cp dist/index.d.ts dist/index.d.mts",
+    "dev": "tsup src/index.ts --format cjs,esm --watch & tsc --emitDeclarationOnly --outDir dist --watch",
     "lint": "eslint .",
     "test": "bun test",
     "type-check": "tsc --noEmit"

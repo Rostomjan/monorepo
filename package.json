@@ -38,8 +38,8 @@
     "test": "turbo test --filter='!e2e'",
     "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
-    "update": "bunx npm-check-updates -u --workspaces --root --reject eslint && bun install",
-    "update:check": "bunx npm-check-updates --workspaces --root --reject eslint"
+    "update": "bunx npm-check-updates -u --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks && bun install",
+    "update:check": "bunx npm-check-updates --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks"
   },
   "syncpack": {
     "versionGroups": [
