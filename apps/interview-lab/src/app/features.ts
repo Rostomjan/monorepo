@@ -96,4 +96,12 @@ export const features: Feature[] = [
     question: "Activity vs conditional rendering vs hidden?",
     accent: "bg-rose-600",
   },
+  {
+    href: "/clerk",
+    title: "Clerk Enterprise Concepts",
+    tag: "Clerk",
+    desc: "SSO, SCIM, Audit, RBAC, orgs — what’s free vs paid, with live demos.",
+    question: "What can you demo on Clerk Free tier?",
+    accent: "bg-indigo-600",
+  },
 ];
