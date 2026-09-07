@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "app/**", "convex/**", "public/**", "package.json", "tsconfig.json", "next.config.*", "tailwind.config.*", "postcss.config.*"],
+      "inputs": ["src/**", "app/**", "convex/**", "public/**", "package.json", "tsconfig*.json", "next.config.*", "tailwind.config.*", "postcss.config.*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
