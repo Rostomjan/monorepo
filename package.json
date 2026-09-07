@@ -38,8 +38,8 @@
     "test": "turbo test --filter='!e2e'",
     "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
-    "update": "bunx npm-check-updates -u --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks && bun install",
-    "update:check": "bunx npm-check-updates --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks"
+    "update": "bunx npm-check-updates -u --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks,storybook,@storybook/* && bun install",
+    "update:check": "bunx npm-check-updates --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks,storybook,@storybook/*"
   },
   "syncpack": {
     "versionGroups": [
@@ -92,6 +92,20 @@
           "prod"
         ],
         "pinVersion": "^8.57.0"
+      },
+      {
+        "label": "storybook 8 era: v10 breaks Icons export (monorepo-ui)",
+        "packages": [
+          "**"
+        ],
+        "dependencies": [
+          "storybook",
+          "@storybook/*"
+        ],
+        "dependencyTypes": [
+          "dev"
+        ],
+        "pinVersion": "8.5.8"
       }
     ]
   },
