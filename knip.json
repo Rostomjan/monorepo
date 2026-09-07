@@ -15,6 +15,7 @@
       "entry": ["scripts/*.ts", "turbo.json"],
       "project": ["scripts/**/*.ts"],
       "ignoreDependencies": [
+        "@tailwindcss/postcss",
         "@typescript-eslint/eslint-plugin",
         "@typescript-eslint/parser",
         "eslint-config-next",
@@ -24,7 +25,8 @@
         "eslint-plugin-react-hooks",
         "eslint-plugin-turbo",
         "husky",
-        "lint-staged"
+        "lint-staged",
+        "tailwindcss"
       ]
     },
     "apps/web": {
