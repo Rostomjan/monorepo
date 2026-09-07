@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "chat",
   "version": "0.0.0",
   "dependencies": {
     "@ai-sdk/google": "^4.0.64",

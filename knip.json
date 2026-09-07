@@ -29,7 +29,7 @@
         "tailwindcss"
       ]
     },
-    "apps/web": {
+    "apps/chat": {
       "entry": ["src/app/**/page.{ts,tsx}", "src/app/layout.{ts,tsx}", "src/app/api/**/route.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]

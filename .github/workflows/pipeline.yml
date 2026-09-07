@@ -46,14 +46,14 @@ jobs:
       - run: bun run knip
 
   docker:
-    name: Docker builds (api, web)
+    name: Docker builds (api, chat)
     needs: check
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f apps/api/Dockerfile -t api:ci .
-      - run: docker build -f apps/web/Dockerfile -t web:ci .
+      - run: docker build -f apps/chat/Dockerfile -t chat:ci .
 
   deploy-dev:
     name: Deploy to Development
@@ -61,7 +61,7 @@ jobs:
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    environment: Production – monorepo-web
+    environment: Production – monorepo-chat
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -140,7 +140,7 @@ jobs:
       needs.e2e.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    environment: Production – monorepo-web
+    environment: Production – monorepo-chat
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

@@ -12,15 +12,6 @@ export default function Page() {
           <Sparkles className="w-3.5 h-3.5" />
           Next-Gen AI Platform
         </div>
-
-        <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white tracking-tight leading-tight">
-          Supercharge your workflow with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Gemini</span>
-        </h1>
-
-        <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
-          Experience the power of Google&apos;s most capable AI models directly in your browser.
-          Fast, intelligent, and designed for modern teams.
-        </p>
       </div>
 
       {/* Chat Section */}

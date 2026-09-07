@@ -8,7 +8,7 @@ Microfrontend foundation: independent `apps/*` sharing `packages/*`.
 bun install
 bun run dev        # everything
 bun run check      # lint + types + tests + build
-docker compose up --build  # web + api locally
+docker compose up --build  # chat + api locally
 ```
 
 ## Scaffold

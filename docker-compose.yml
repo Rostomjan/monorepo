@@ -13,10 +13,10 @@ services:
       timeout: 5s
       retries: 5
 
-  web:
+  chat:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/chat/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: http://localhost:3001
     ports:

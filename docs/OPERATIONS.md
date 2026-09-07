@@ -19,12 +19,12 @@ bun run deps:fix       # autofix version drift
 ## Testing
 
 - Unit: `bun test` colocated (`*.test.ts`). API and tokens have examples. `bun run test` excludes e2e.
-- E2E: `bun run test:e2e` or `cd apps/e2e && bun run test` (Playwright, spins up `apps/web`). Browsers: `bunx playwright install --with-deps` in `apps/e2e`.
+- E2E: `bun run test:e2e` or `cd apps/e2e && bun run test` (Playwright, spins up `apps/chat`). Browsers: `bunx playwright install --with-deps` in `apps/e2e`.
 - CI runs lint, types, unit, build, syncpack, knip, docker builds, then Playwright.
 
 ## Deployment
 
-- Web/docs: Vercel Git integration, one project per app, Root Directory `apps/<name>`. Docker image available via `apps/web/Dockerfile`.
+- Chat/docs: Vercel Git integration, one project per app, Root Directory `apps/<name>`. Docker image available via `apps/chat/Dockerfile`.
 - API: any Docker host (`apps/api/Dockerfile`), `PORT` env, `/healthz` probe. Local: `docker compose up --build`.
 - Convex: auto-deploys from `packages/backend` on `develop` (dev) and `main` (prod) via deploy keys.
 

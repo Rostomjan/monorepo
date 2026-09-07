@@ -3,20 +3,20 @@ WORKDIR /app
 RUN corepack enable && corepack prepare bun@1.4.2 --activate 2>/dev/null || npm i -g bun@1.4.2
 
 COPY package.json bun.lock turbo.json ./
-COPY apps/web/package.json ./apps/web/
+COPY apps/chat/package.json ./apps/chat/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/tokens/package.json ./packages/tokens/
 COPY packages/tailwind-config/package.json ./packages/tailwind-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 
-RUN bun install --filter web --frozen-lockfile 2>/dev/null || bun install --filter web
+RUN bun install --filter chat --frozen-lockfile 2>/dev/null || bun install --filter chat
 
-COPY apps/web ./apps/web
+COPY apps/chat ./apps/chat
 COPY packages ./packages
 COPY turbo.json ./
 
-WORKDIR /app/apps/web
+WORKDIR /app/apps/chat
 ARG NEXT_PUBLIC_CONVEX_URL
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
