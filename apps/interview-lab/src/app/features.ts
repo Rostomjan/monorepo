@@ -97,6 +97,14 @@ export const features: Feature[] = [
     accent: "bg-rose-600",
   },
   {
+    href: "/use-transition",
+    title: "useTransition — Advanced",
+    tag: "Concurrent",
+    desc: "Urgent vs transition, heavy filters/tabs, async server actions + optimistic.",
+    question: "When to mark an update as transition?",
+    accent: "bg-amber-600",
+  },
+  {
     href: "/clerk",
     title: "Clerk Enterprise Concepts",
     tag: "Clerk",
