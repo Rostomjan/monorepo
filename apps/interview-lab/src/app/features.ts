@@ -105,6 +105,14 @@ export const features: Feature[] = [
     accent: "bg-amber-600",
   },
   {
+    href: "/use",
+    title: "React use() — Advanced",
+    tag: "React 19",
+    desc: "use(promise) + use(context) conditionally, parallel Suspense, no waterfall.",
+    question: "How does use differ from hooks?",
+    accent: "bg-fuchsia-600",
+  },
+  {
     href: "/clerk",
     title: "Clerk Enterprise Concepts",
     tag: "Clerk",
