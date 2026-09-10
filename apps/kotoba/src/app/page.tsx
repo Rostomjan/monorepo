@@ -1,22 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { db } from "../lib/db";
+import { exportBackup, importBackup } from "../lib/backup";
 
 export default function Home() {
   const [stats, setStats] = useState({ total: 0, due: 0, fav: 0, known: 0 });
+  const [msg, setMsg] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  async function refresh() {
+    const all = await db.entries.toArray();
+    const now = Date.now();
+    setStats({
+      total: all.length,
+      due: all.filter((e) => e.dueAt <= now && !e.suspended && !e.blacklisted).length,
+      fav: all.filter((e) => e.isFavorite).length,
+      known: all.filter((e) => e.mastery === "known").length,
+    });
+  }
   useEffect(() => {
-    (async () => {
-      const all = await db.entries.toArray();
-      const now = Date.now();
-      setStats({
-        total: all.length,
-        due: all.filter((e) => e.dueAt <= now && !e.suspended && !e.blacklisted).length,
-        fav: all.filter((e) => e.isFavorite).length,
-        known: all.filter((e) => e.mastery === "known").length,
-      });
-    })();
+    refresh();
   }, []);
   return (
     <main className="flex flex-col gap-6">
@@ -51,9 +55,42 @@ export default function Home() {
         </Link>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Dictionary: JMDict-Extended eng-common snapshot (EDRDG, CC-BY-SA). Offline-first: study works in airplane
+        Dictionary: JMDict eng-common snapshot (EDRDG, CC-BY-SA). Offline-first: study works in airplane
         mode.
       </p>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <button
+          onClick={() => exportBackup()}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+        >
+          Export backup
+        </button>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+        >
+          Import backup
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            try {
+              const r = await importBackup(f);
+              setMsg(`Imported ${r.added}, skipped ${r.skipped} duplicates.`);
+              refresh();
+            } catch (err) {
+              setMsg(err instanceof Error ? err.message : "import failed");
+            }
+            e.target.value = "";
+          }}
+        />
+        {msg && <span className="text-zinc-600 dark:text-zinc-300">{msg}</span>}
+      </div>
     </main>
   );
 }

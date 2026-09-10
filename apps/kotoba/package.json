@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "dict:update": "bun ../../scripts/build-dict.ts",
+    "dict:update:full": "bun ../../scripts/build-dict.ts --extended",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
