@@ -1,0 +1,1 @@
+{"name": "kotoba-dict-compact", "source": "hand-seed for v1 (JMDict-Extended eng-common shape)", "version": "0.1.0", "date": "2026-09-10", "license": "EDRDG JMdict + CC-BY-SA; full update via scripts/build-dict.ts", "count": 60, "update": "bun run dict:update (fetches scriptin/jmdict-simplified eng-common + dutchtux3000/JMDict_Extended JLPT/furigana/frequency/pitch)"}

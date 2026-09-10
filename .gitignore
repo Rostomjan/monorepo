@@ -12,3 +12,6 @@ apps/*/.expo
 *.tsbuildinfo
 .DS_Store
 .vercel
+
+# Sentry Config File
+.env.sentry-build-plugin

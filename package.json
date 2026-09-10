@@ -115,5 +115,8 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@sentry/nextjs": "^10"
+  }
 }
