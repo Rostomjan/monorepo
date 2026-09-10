@@ -41,14 +41,14 @@ export default function ReviewPage() {
     return (
       <main className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Review</h1>
-        <p className="text-zinc-500">Queue empty. Paste more Japanese or check back tomorrow.</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Queue empty. Paste more Japanese or check back tomorrow.</p>
         <button
           onClick={() => {
             const f = !favOnly;
             setFavOnly(f);
             load(f);
           }}
-          className="w-fit rounded-lg border px-4 py-2"
+          className="w-fit rounded-lg border border-zinc-200 bg-white px-4 py-2 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
         >
           {favOnly ? "Show due" : "Review ★ only"}
         </button>
@@ -66,39 +66,39 @@ export default function ReviewPage() {
           Review {idx + 1}/{queue.length}
         </h1>
         <div className="flex gap-2 text-sm">
-          <button onClick={() => setDir(dir === "jp-en" ? "en-jp" : "jp-en")} className="rounded border px-2 py-1">
+          <button onClick={() => setDir(dir === "jp-en" ? "en-jp" : "jp-en")} className="rounded border border-zinc-200 bg-white px-2 py-1 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
             {dir}
           </button>
-          <button onClick={toggleFav} className="rounded border px-2 py-1">
+          <button onClick={toggleFav} className="rounded border border-zinc-200 bg-white px-2 py-1 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
             {cur.isFavorite ? "★" : "☆"}
           </button>
         </div>
       </div>
       <button
         onClick={() => setFlipped(!flipped)}
-        className="min-h-56 rounded-2xl border p-8 text-center text-4xl font-bold dark:border-zinc-700"
+        className="min-h-56 rounded-2xl border border-zinc-200 bg-white p-8 text-center text-4xl font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800/70"
       >
         {flipped ? back : front}
-        {!flipped && <div className="mt-4 text-sm font-normal text-zinc-500">tap to flip (reading: {cur.reading})</div>}
-        {flipped && cur.pitch && <div className="mt-4 text-sm font-normal text-zinc-500">pitch: {cur.pitch}</div>}
+        {!flipped && <div className="mt-4 text-sm font-normal text-zinc-500 dark:text-zinc-400">tap to flip (reading: {cur.reading})</div>}
+        {flipped && cur.pitch && <div className="mt-4 text-sm font-normal text-zinc-500 dark:text-zinc-400">pitch: {cur.pitch}</div>}
       </button>
       {flipped && (
-        <div className="rounded-xl bg-zinc-100 p-3 text-sm dark:bg-zinc-900">
-          例 {ex.jp} — {ex.en} <span className="text-zinc-500">(offline template)</span>
+        <div className="rounded-xl bg-zinc-100 p-3 text-sm text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+          例 {ex.jp} — {ex.en} <span className="text-zinc-500 dark:text-zinc-400">(offline template)</span>
         </div>
       )}
       <div className="flex gap-2">
-        <button onClick={() => grade("again")} className="flex-1 rounded-lg bg-red-500 px-4 py-3 text-white">
+        <button onClick={() => grade("again")} className="flex-1 rounded-lg bg-red-500 px-4 py-3 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500">
           Again
         </button>
-        <button onClick={() => grade("hard")} className="flex-1 rounded-lg bg-amber-500 px-4 py-3 text-white">
+        <button onClick={() => grade("hard")} className="flex-1 rounded-lg bg-amber-500 px-4 py-3 text-white hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500">
           Hard
         </button>
-        <button onClick={() => grade("known")} className="flex-1 rounded-lg bg-green-600 px-4 py-3 text-white">
+        <button onClick={() => grade("known")} className="flex-1 rounded-lg bg-green-600 px-4 py-3 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500">
           Known
         </button>
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
         {cur.jlpt} · {cur.mastery} · {cur.kind} · keyboard: space flip, 1/2/3 grade (F favorite)
       </p>
     </main>

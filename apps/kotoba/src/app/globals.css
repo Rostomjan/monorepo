@@ -3,3 +3,39 @@
 @theme {
   --color-primary: #007bff;
 }
+
+/* System dark mode (offline-first, no JS toggle / no FOUC). */
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #007bff;
+  color: #fff;
+}
+
+/* Form controls: readable placeholder + visible keyboard focus in both themes. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-zinc-400);
+}
+
+input,
+select,
+textarea,
+button {
+  color-scheme: light dark;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}

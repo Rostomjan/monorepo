@@ -97,24 +97,24 @@ export default function AddPage() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={6}
-        className="w-full rounded-xl border p-3 font-mono dark:border-zinc-700 dark:bg-zinc-900"
+        className="w-full rounded-xl border border-zinc-200 bg-white p-3 font-mono text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         placeholder={"たべる\n猫\n日本語を勉強します"}
       />
       <div className="flex gap-2">
-        <button onClick={handleParse} className="rounded-lg bg-blue-600 px-4 py-2 text-white">
+        <button onClick={handleParse} className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
           Parse → Preview
         </button>
         {preview.length > 0 && (
-          <button onClick={handleSave} className="rounded-lg border px-4 py-2 dark:border-zinc-700">
+          <button onClick={handleSave} className="rounded-lg border border-zinc-200 bg-white px-4 py-2 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
             Save {preview.filter((r) => r.status !== "dup").length}
           </button>
         )}
       </div>
-      {saved && <p className="text-sm text-green-600">{saved}</p>}
+      {saved && <p className="text-sm text-green-600 dark:text-green-400">{saved}</p>}
       {preview.length > 0 && (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-zinc-500">
+            <tr className="text-left text-zinc-500 dark:text-zinc-400">
               <th>JP</th>
               <th>Reading</th>
               <th>Meaning (auto)</th>
@@ -124,15 +124,15 @@ export default function AddPage() {
           </thead>
           <tbody>
             {preview.map((r, i) => (
-              <tr key={i} className="border-t dark:border-zinc-800">
-                <td className="py-1 font-bold">{r.surface}</td>
+              <tr key={i} className="border-t border-zinc-200 dark:border-zinc-800">
+                <td className="py-1 font-bold text-zinc-900 dark:text-zinc-100">{r.surface}</td>
                 <td>
                   <input
                     value={r.reading}
                     onChange={(e) =>
                       setRows((rs) => rs.map((x, j) => (j === i ? { ...x, reading: e.target.value } : x)))
                     }
-                    className="w-28 rounded border px-1 dark:border-zinc-700 dark:bg-zinc-900"
+                    className="w-28 rounded border border-zinc-200 bg-white px-1 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                   />
                 </td>
                 <td>
@@ -141,11 +141,11 @@ export default function AddPage() {
                     onChange={(e) =>
                       setRows((rs) => rs.map((x, j) => (j === i ? { ...x, meaning: e.target.value } : x)))
                     }
-                    className="w-full rounded border px-1 dark:border-zinc-700 dark:bg-zinc-900"
+                    className="w-full rounded border border-zinc-200 bg-white px-1 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                   />
                 </td>
-                <td>{r.jlpt}</td>
-                <td>{r.status}</td>
+                <td className="text-zinc-600 dark:text-zinc-300">{r.jlpt}</td>
+                <td className="text-zinc-600 dark:text-zinc-300">{r.status}</td>
               </tr>
             ))}
           </tbody>

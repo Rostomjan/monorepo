@@ -16,8 +16,8 @@ export const viewport: Viewport = { themeColor: "#007bff" };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={jp.variable}>
-      <body className="min-h-screen bg-zinc-50 antialiased dark:bg-zinc-950">
-        <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur dark:bg-zinc-950/80">
+      <body className="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+        <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
             <Link href="/" className="font-bold">
               言葉 kotoba
