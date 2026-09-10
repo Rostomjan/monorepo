@@ -24,8 +24,13 @@ export function ActionDemo() {
   const [error, setError] = useState<string | null>(null);
 
   // useOptimistic for instant UI— useTransition controls pending + concurrent rendering
+  // Idempotent: only adjust likes if liked flag actually flips, prevents double +1 after setItems commits inside same transition
   const [optimisticItems, addOptimistic] = useOptimistic(items, (state: Item[], { id, liked }: { id: string; liked: boolean }) =>
-    state.map((it) => (it.id === id ? { ...it, liked, likes: it.likes + (liked ? 1 : -1) } : it))
+    state.map((it) => {
+      if (it.id !== id) return it;
+      if (it.liked === liked) return it;
+      return { ...it, liked, likes: it.likes + (liked ? 1 : -1) };
+    })
   );
 
   function onToggle(item: Item) {
@@ -38,8 +43,14 @@ export function ActionDemo() {
       addOptimistic({ id: item.id, liked: nextLiked });
       const res = await toggleLikeOnServer(item.id, nextLiked);
       if (res.ok) {
-        // 2) Commit to real state — also inside transition so list re-render is concurrent
-        setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, liked: nextLiked, likes: it.likes + (nextLiked ? 1 : -1) } : it)));
+        // 2) Commit to real state — also inside transition so list re-render is concurrent; idempotent guard prevents double if optimistic still pending
+        setItems((prev) =>
+          prev.map((it) => {
+            if (it.id !== item.id) return it;
+            if (it.liked === nextLiked) return it;
+            return { ...it, liked: nextLiked, likes: it.likes + (nextLiked ? 1 : -1) };
+          })
+        );
       } else {
         // 3) Rollback handled automatically: optimistic reverts when transition ends without setItems
         //    But we also show error; the optimistic value will revert on next render because `items` didn't change.
@@ -54,14 +65,26 @@ export function ActionDemo() {
   const [bulkPending, setBulkPending] = useState(false);
   function onBulkLikeAll() {
     setError(null);
+    // Snapshot from base `items` — using optimisticItems as source would be stale and cause missed/double updates
+    const toLike = items.filter((it) => !it.liked);
+    if (toLike.length === 0) return;
     startTransition(async () => {
       setBulkPending(true);
-      for (const it of optimisticItems) {
-        if (!it.liked) {
-          addOptimistic({ id: it.id, liked: true });
-          await toggleLikeOnServer(it.id, true);
-          setItems((prev) => prev.map((p) => (p.id === it.id && !p.liked ? { ...p, liked: true, likes: p.likes + 1 } : p)));
+      const succeeded: string[] = [];
+      for (const it of toLike) {
+        addOptimistic({ id: it.id, liked: true });
+        const res = await toggleLikeOnServer(it.id, true);
+        if (res.ok) {
+          succeeded.push(it.id);
+        } else {
+          setError(res.error);
+          // failed item stays optimistic until transition ends, then auto-reverts (no setItems)
         }
+      }
+      if (succeeded.length > 0) {
+        setItems((prev) =>
+          prev.map((p) => (succeeded.includes(p.id) && !p.liked ? { ...p, liked: true, likes: p.likes + 1 } : p))
+        );
       }
       setBulkPending(false);
     });
