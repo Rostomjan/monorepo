@@ -2,6 +2,7 @@ import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
 import { InviteForm, SuspendButtons } from "./Client";
+import Link from "next/link";
 
 export const metadata = { title: "User Lifecycle Management" };
 
@@ -18,7 +19,7 @@ export default async function Page() {
           <DemoCard title="✅ Live — Your user (Free)">
             {!user ? (
               <p className="text-sm text-amber-600">
-                Signed out → <a href="/sign-in" className="underline">sign in</a>.
+                Signed out → <Link href="/sign-in" className="underline">sign in</Link>.
               </p>
             ) : (
               <div className="space-y-2 text-sm">
@@ -94,7 +95,7 @@ await client.users.getUser(userId) // user.emailAddresses[0].verification.status
 `}
           />
           <Callout title="Interviewer expects">
-            “Lifecycle is <b>free</b> — I’d show Dashboard’s <b>Users → Ban/Delete</b> plus backend <code>clerkClient.users.*</code> in Server Actions. SCIM auto-create is the <b>paid</b> alternative (see <a href="/clerk/scim" className="underline">/clerk/scim</a>). Mention webhooks for syncing to your <code>users</code> table and that <code>banUser</code> invalidates session immediately.”
+            “Lifecycle is <b>free</b> — I’d show Dashboard’s <b>Users → Ban/Delete</b> plus backend <code>clerkClient.users.*</code> in Server Actions. SCIM auto-create is the <b>paid</b> alternative (see <Link href="/clerk/scim" className="underline">/clerk/scim</Link>). Mention webhooks for syncing to your <code>users</code> table and that <code>banUser</code> invalidates session immediately.”
           </Callout>
         </>
       }

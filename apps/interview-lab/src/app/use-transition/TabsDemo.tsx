@@ -23,7 +23,7 @@ function HeavyChart({ tab }: { tab: Tab }) {
 
   return (
     <div className="space-y-2">
-      <div className="text-xs font-mono text-zinc-500">Heavy chart for tab="{tab}" — computed {rows.length} points</div>
+      <div className="text-xs font-mono text-zinc-500">Heavy chart for tab=&quot;{tab}&quot; — computed {rows.length} points</div>
       <div className="grid grid-cols-12 gap-1">
         {rows.map((r) => (
           <div key={r.id} className="h-6 rounded bg-indigo-500/80 dark:bg-indigo-600" style={{ opacity: 0.3 + (r.v % 70) / 100 }} title={`${r.v}`} />

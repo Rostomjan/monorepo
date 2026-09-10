@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Show } from "@clerk/nextjs";
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import Link from "next/link";
 
 export const metadata = { title: "Fine-Grained Authorization" };
 
@@ -22,7 +23,7 @@ export default async function Page() {
           <DemoCard title="✅ Live — Your permissions (Free)">
             {!userId ? (
               <p className="text-sm text-amber-600">
-                Signed out → <a href="/sign-in" className="underline">sign in</a> + join org with permissions.
+                Signed out → <Link href="/sign-in" className="underline">sign in</Link> + join org with permissions.
               </p>
             ) : (
               <div className="space-y-2 text-sm">

@@ -1,5 +1,6 @@
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import Link from "next/link";
 
 export const metadata = { title: "SSO (SAML / OIDC)" };
 
@@ -13,7 +14,7 @@ export default function Page() {
           <DemoCard title="✅ Free — Social OIDC (works now)">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Dashboard → <b>SSO connections → Add connection</b> → enable <b>Google</b> / <b>GitHub</b>. Those are OIDC under
-              the hood and work on Free (10k MAU). Test: sign-out → <a href="/sign-in" className="underline">/sign-in</a> → you’ll see Google/GitHub buttons if enabled.
+              the hood and work on Free (10k MAU). Test: sign-out → <Link href="/sign-in" className="underline">/sign-in</Link> → you’ll see Google/GitHub buttons if enabled.
             </p>
             <div className="mt-3 flex gap-2 text-xs">
               <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">Google OIDC ✓ Free</span>

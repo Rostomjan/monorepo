@@ -2,6 +2,7 @@ import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
 import { auth } from "@clerk/nextjs/server";
 import { UserProfile } from "@clerk/nextjs";
+import Link from "next/link";
 
 export const metadata = { title: "Admin Portals" };
 
@@ -17,7 +18,7 @@ export default async function Page() {
           <DemoCard title="✅ Live — User portal (Free, signed-in only)">
             {!userId ? (
               <p className="text-sm text-amber-600">
-                Signed out → <a href="/sign-in" className="underline">sign in</a> to see your portal.
+                Signed out → <Link href="/sign-in" className="underline">sign in</Link> to see your portal.
               </p>
             ) : (
               <div className="rounded-xl border bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
@@ -31,7 +32,7 @@ export default async function Page() {
 
           <DemoCard title="✅ Org admin portal (Free)">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Go to <a href="/clerk/organizations" className="underline">/clerk/organizations</a> → scroll to <b>OrganizationProfile</b> → manages domain, members, roles, SSO, SCIM (upgrade banner shows for paid).
+              Go to <Link href="/clerk/organizations" className="underline">/clerk/organizations</Link> → scroll to <b>OrganizationProfile</b> → manages domain, members, roles, SSO, SCIM (upgrade banner shows for paid).
             </p>
             <div className="mt-2 text-xs text-zinc-500">
               Invite, remove, change role, verify domain — all via <code>OrganizationProfile</code>. Wraps <code>clerkClient.organizations.*</code> calls.

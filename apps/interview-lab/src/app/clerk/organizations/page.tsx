@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { OrganizationSwitcher, CreateOrganization, OrganizationProfile } from "@clerk/nextjs";
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import Link from "next/link";
 
 export const metadata = { title: "Organization Management" };
 
@@ -18,7 +19,7 @@ export default async function Page() {
           <DemoCard title="✅ Live — Your org (Free)">
             {!user ? (
               <p className="text-sm text-amber-600">
-                Signed out → <a href="/sign-in" className="underline">sign in</a> first.
+                Signed out → <Link href="/sign-in" className="underline">sign in</Link> first.
               </p>
             ) : (
               <div className="space-y-3">

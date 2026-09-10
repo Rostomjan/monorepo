@@ -2,6 +2,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Show } from "@clerk/nextjs";
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import Link from "next/link";
 
 export const metadata = { title: "RBAC" };
 
@@ -28,8 +29,8 @@ export default async function Page() {
           <DemoCard title="✅ Live — Your current role (Free)">
             {!r.signedIn ? (
               <p className="text-sm text-amber-600">
-                Signed out → <a href="/sign-in" className="underline">sign in</a> then create/join an org at{" "}
-                <a href="/clerk/organizations" className="underline">/clerk/organizations</a> to test.
+                Signed out → <Link href="/sign-in" className="underline">sign in</Link> then create/join an org at{" "}
+                <Link href="/clerk/organizations" className="underline">/clerk/organizations</Link> to test.
               </p>
             ) : (
               <div className="space-y-2 text-sm">
@@ -133,7 +134,7 @@ has({ role: "org:billing" }) // custom org role
       }
       interview={
         <Callout title="Free-tier proof">
-          This page’s live badges use <code>auth().has</code> — no upgrade needed. Create org at <a href="/clerk/organizations" className="underline">/clerk/organizations</a> → invite yourself as admin/member → reload.
+          This page’s live badges use <code>auth().has</code> — no upgrade needed. Create org at <Link href="/clerk/organizations" className="underline">/clerk/organizations</Link> → invite yourself as admin/member → reload.
         </Callout>
       }
     />

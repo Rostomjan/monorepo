@@ -10,6 +10,11 @@ export default withSentryConfig(nextConfig, {
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
+  // Free tier note: sourcemap upload is free and unlimited-ish.
+  // If SENTRY_AUTH_TOKEN is missing (local / CI without secrets),
+  // the plugin warns and skips upload — build still succeeds.
+  // Set SENTRY_AUTH_TOKEN in Vercel + GitHub Actions to get unminified stack traces.
+
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 

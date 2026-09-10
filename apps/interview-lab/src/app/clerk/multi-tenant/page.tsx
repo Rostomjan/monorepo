@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Show } from "@clerk/nextjs";
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import Link from "next/link";
 
 export const metadata = { title: "Multi-tenant Applications" };
 
@@ -17,7 +18,7 @@ export default async function Page() {
           <DemoCard title="✅ Live — Your tenant (org) context">
             {!userId ? (
               <p className="text-sm text-amber-600">
-                Signed out → sign in + create org at <a href="/clerk/organizations" className="underline">/clerk/organizations</a>.
+                Signed out → sign in + create org at <Link href="/clerk/organizations" className="underline">/clerk/organizations</Link>.
               </p>
             ) : (
               <div className="space-y-2 text-sm">
