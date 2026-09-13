@@ -30,7 +30,7 @@
     "build": "turbo build",
     "check": "turbo run lint type-check build && turbo run test --filter='!e2e'",
     "clean": "turbo run clean 2>/dev/null; rm -rf node_modules apps/*/node_modules packages/*/node_modules .turbo apps/*/.next apps/*/.expo",
-    "deps:fix": "bunx syncpack fix-mismatches && bunx syncpack format",
+    "deps:fix": "bunx syncpack fix && bunx syncpack format",
     "deps:lint": "bunx syncpack lint",
     "dev": "turbo dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

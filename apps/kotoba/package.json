@@ -1,16 +1,6 @@
 {
   "name": "kotoba",
   "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "dict:update": "bun ../../scripts/build-dict.ts",
-    "dict:update:full": "bun ../../scripts/build-dict.ts --extended",
-    "type-check": "tsc --noEmit"
-  },
   "dependencies": {
     "@repo/tokens": "workspace:*",
     "@repo/ui": "workspace:*",
@@ -35,5 +25,15 @@
     "eslint-config-next": "15.0.4",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2"
+  },
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "dict:update": "bun ../../scripts/build-dict.ts",
+    "dict:update:full": "bun ../../scripts/build-dict.ts --extended",
+    "lint": "eslint .",
+    "start": "next start",
+    "type-check": "tsc --noEmit"
   }
 }
