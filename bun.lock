@@ -107,8 +107,6 @@
       "version": "0.0.0",
       "dependencies": {
         "@clerk/nextjs": "^7.9.1",
-        "@repo/tokens": "workspace:*",
-        "@repo/ui": "workspace:*",
         "next": "16.3.4",
         "react": "19.2.8",
         "react-dom": "19.2.8",
@@ -131,8 +129,6 @@
       "name": "kotoba",
       "version": "0.0.0",
       "dependencies": {
-        "@repo/tokens": "workspace:*",
-        "@repo/ui": "workspace:*",
         "@sentry/nextjs": "^10",
         "dexie": "^4.0.11",
         "next": "16.3.4",

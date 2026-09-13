@@ -5,7 +5,7 @@ import { normalizeSurface } from "./normalize";
 const index = new Map<string, DictRecord>();
 for (const r of dict as DictRecord[]) index.set(normalizeSurface(r.k), r);
 
-export function lookupDict(surface: string): DictRecord | undefined {
+function lookupDict(surface: string): DictRecord | undefined {
   return index.get(normalizeSurface(surface));
 }
 

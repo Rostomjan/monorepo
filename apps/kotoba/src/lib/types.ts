@@ -1,5 +1,5 @@
-export type EntryKind = "word" | "phrase";
-export type Mastery = "unknown" | "learning" | "known";
+type EntryKind = "word" | "phrase";
+type Mastery = "unknown" | "learning" | "known";
 export type Jlpt = "N5" | "N4" | "N3" | "N2" | "N1" | "unknown";
 
 export interface Entry {

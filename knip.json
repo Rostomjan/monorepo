@@ -44,6 +44,16 @@
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["@repo/eslint-config"]
     },
+    "apps/kotoba": {
+      "entry": ["src/app/**/page.{ts,tsx}", "src/app/layout.{ts,tsx}", "src/app/api/**/route.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
+    "apps/interview-lab": {
+      "entry": ["src/app/**/page.{ts,tsx}", "src/app/layout.{ts,tsx}", "src/app/api/**/route.{ts,tsx}", "src/proxy.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
     "apps/e2e": {
       "entry": ["playwright.config.ts", "tests/**/*.ts"],
       "project": ["tests/**/*.ts", "playwright.config.ts"],
