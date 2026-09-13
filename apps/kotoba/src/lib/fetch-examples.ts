@@ -2,6 +2,7 @@
 
 import { db } from "./db";
 import { countUnknown, templateExamples } from "./examples";
+import { shouldAttemptOnlineUpgrade } from "./network";
 import type { Entry } from "./types";
 
 export interface RankedExample {
@@ -43,6 +44,7 @@ export async function upgradeExamples(
   knownSurfaces: Set<string>,
 ): Promise<RankedExample[] | null> {
   if (!entry.id) return null;
+  if (!shouldAttemptOnlineUpgrade()) return null;
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 12_000);
