@@ -2,6 +2,7 @@
 
 import { db } from "./db";
 import { countUnknown, templateExamples } from "./examples";
+import { DEFAULT_EXAMPLE_LEVEL, type ExampleLevel } from "./example-level";
 import { shouldAttemptOnlineUpgrade } from "./network";
 import type { Entry } from "./types";
 
@@ -18,6 +19,7 @@ const TTL_MS = 30 * 86_400_000;
 export async function getExamples(
   entry: Entry,
   knownSurfaces: Set<string>,
+  level: ExampleLevel = DEFAULT_EXAMPLE_LEVEL,
 ): Promise<{ examples: RankedExample[]; upgraded: boolean }> {
   const templates: RankedExample[] = templateExamples(entry).map((t) => ({
     ...t,
@@ -27,7 +29,10 @@ export async function getExamples(
   if (!entry.id) return { examples: templates, upgraded: false };
 
   const cached = await db.examples.where("entryId").equals(entry.id).sortBy("unknownCount");
-  const fresh = cached.filter((c) => Date.now() - c.cachedAt < TTL_MS && c.source === "llm");
+  // Legacy rows predate level tagging — treat them as N5.
+  const fresh = cached.filter(
+    (c) => Date.now() - c.cachedAt < TTL_MS && c.source === "llm" && (c.level ?? DEFAULT_EXAMPLE_LEVEL) === level,
+  );
   if (fresh.length > 0) {
     const merged = [
       ...fresh.map((c) => ({ jp: c.jp, en: c.en, unknownCount: c.unknownCount, source: "llm" as const })),
@@ -42,6 +47,7 @@ export async function getExamples(
 export async function upgradeExamples(
   entry: Entry,
   knownSurfaces: Set<string>,
+  level: ExampleLevel = DEFAULT_EXAMPLE_LEVEL,
 ): Promise<RankedExample[] | null> {
   if (!entry.id) return null;
   if (!shouldAttemptOnlineUpgrade()) return null;
@@ -51,7 +57,7 @@ export async function upgradeExamples(
     const res = await fetch("/api/examples", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ surface: entry.surface, meaning: entry.meaning }),
+      body: JSON.stringify({ surface: entry.surface, meaning: entry.meaning, level }),
       signal: ctrl.signal,
     });
     clearTimeout(t);
@@ -65,9 +71,21 @@ export async function upgradeExamples(
       unknownCount: countUnknown(c.jp, knownSurfaces, entry.surface),
       source: "llm" as const,
     }));
-    await db.examples.where("entryId").equals(entry.id).delete();
+    const staleIds = (await db.examples.where("entryId").equals(entry.id).toArray())
+      .filter((c) => (c.level ?? DEFAULT_EXAMPLE_LEVEL) === level)
+      .map((c) => c.id)
+      .filter((id): id is number => typeof id === "number");
+    if (staleIds.length > 0) await db.examples.bulkDelete(staleIds);
     await db.examples.bulkAdd(
-      ranked.map((r) => ({ entryId: entry.id!, jp: r.jp, en: r.en, unknownCount: r.unknownCount, source: "llm" as const, cachedAt: now })),
+      ranked.map((r) => ({
+        entryId: entry.id!,
+        jp: r.jp,
+        en: r.en,
+        unknownCount: r.unknownCount,
+        source: "llm" as const,
+        cachedAt: now,
+        level,
+      })),
     );
     return ranked;
   } catch {

@@ -4,6 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { db, getDueEntries } from "../../lib/db";
 import { nextReview } from "../../lib/srs";
 import { getExamples, upgradeExamples, type RankedExample } from "../../lib/fetch-examples";
+import {
+  EXAMPLE_LEVELS,
+  getExampleLevelPreference,
+  resolveExampleLevel,
+  setExampleLevelPreference,
+  type ExampleLevelPreference,
+} from "../../lib/example-level";
 import type { Entry, Grade } from "../../lib/types";
 
 interface LastGrade {
@@ -23,6 +30,8 @@ export default function ReviewPage() {
   const [session, setSession] = useState({ again: 0, hard: 0, known: 0 });
   const [examples, setExamples] = useState<RankedExample[]>([]);
   const [exSource, setExSource] = useState<"template" | "llm">("template");
+  const [exLevel, setExLevel] = useState("N5");
+  const [levelPref, setLevelPref] = useState<ExampleLevelPreference>(() => getExampleLevelPreference());
 
   async function load(f = favOnly) {
     const [due, all] = await Promise.all([getDueEntries(50, f), db.entries.toArray()]);
@@ -38,23 +47,27 @@ export default function ReviewPage() {
   }, []);
 
   const cur = queue[idx];
+  // Example sentence level: explicit preference wins, else the card's own JLPT (N5 fallback).
+  const level = cur ? resolveExampleLevel(cur.jlpt, levelPref) : "N5";
 
   // Offline-first examples: instant templates/cache, LLM upgrade in background.
   useEffect(() => {
     if (!cur) return;
     let live = true;
     (async () => {
-      const { examples: base, upgraded } = await getExamples(cur, knownSet);
+      const { examples: base, upgraded } = await getExamples(cur, knownSet, level);
       if (!live) return;
       setExamples(base);
       setExSource(upgraded ? "llm" : "template");
+      setExLevel(level);
       if (!upgraded) {
-        const fresh = await upgradeExamples(cur, knownSet);
+        const fresh = await upgradeExamples(cur, knownSet, level);
         if (live && fresh) {
           setExamples((prev) =>
             [...fresh, ...prev].sort((a, b) => a.unknownCount - b.unknownCount || a.jp.length - b.jp.length).slice(0, 4),
           );
           setExSource("llm");
+          setExLevel(level);
         }
       }
     })();
@@ -62,7 +75,7 @@ export default function ReviewPage() {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cur?.id, idx]);
+  }, [cur?.id, idx, level]);
   const grade = useCallback(
     async (g: Grade) => {
       const entry = queue[idx];
@@ -174,6 +187,23 @@ export default function ReviewPage() {
           Review {idx + 1}/{queue.length}
         </h1>
         <div className="flex gap-2 text-sm">
+          <select
+            value={levelPref}
+            title="Example sentence level (auto follows the card)"
+            onChange={(e) => {
+              const v = e.target.value as ExampleLevelPreference;
+              setLevelPref(v);
+              setExampleLevelPreference(v);
+            }}
+            className="rounded border border-zinc-200 bg-white px-2 py-1 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          >
+            <option value="auto">auto{cur ? ` · ${cur.jlpt === "unknown" ? "N5" : cur.jlpt}` : ""}</option>
+            {EXAMPLE_LEVELS.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
           <button onClick={() => setDir(dir === "jp-en" ? "en-jp" : "jp-en")} className="rounded border border-zinc-200 bg-white px-2 py-1 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
             {dir}
           </button>
@@ -197,7 +227,7 @@ export default function ReviewPage() {
       </button>
       {flipped && ex && (
         <div className="rounded-xl bg-zinc-100 p-3 text-sm text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-          例 {ex.jp} — {ex.en} <span className="text-zinc-500 dark:text-zinc-400">({exSource === "llm" ? "cached LLM" : "offline template"})</span>
+          例 {ex.jp} — {ex.en} <span className="text-zinc-500 dark:text-zinc-400">({exSource === "llm" ? `cached LLM · ${exLevel}` : "offline template"})</span>
         </div>
       )}
       <div className="flex gap-2">

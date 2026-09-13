@@ -13,6 +13,11 @@ class KotobaDb extends Dexie {
       entries: "++id, key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended",
       examples: "++id, entryId",
     });
+    // v2: examples carry the JLPT level they were generated at.
+    this.version(2).stores({
+      entries: "++id, key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended",
+      examples: "++id, entryId, level",
+    });
   }
 }
 

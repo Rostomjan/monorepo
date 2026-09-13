@@ -36,6 +36,8 @@ export interface Example {
   unknownCount: number;
   source: "template" | "bundled" | "llm";
   cachedAt: number;
+  /** JLPT level the LLM sentence was generated at. Absent = legacy N5 rows. */
+  level?: Jlpt;
 }
 
 export type Grade = "again" | "hard" | "known";
