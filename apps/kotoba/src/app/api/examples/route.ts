@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseExampleLevel } from "../../../lib/example-level";
 
-const MODEL = process.env.GOOGLE_MODEL ?? "gemini-2.5-flash-lite";
+const MODEL = process.env.GOOGLE_MODEL ?? "gemini-flash-lite-latest";
 const UPSTREAM_TIMEOUT_MS = 10_000;
 const MAX_PROVIDER_SNIPPET = 500;
 
