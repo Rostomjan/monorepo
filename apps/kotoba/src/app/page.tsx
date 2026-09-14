@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dict from "../data/dict-compact.json";
 import { db } from "../lib/db";
 import { exportBackup, importBackup } from "../lib/backup";
+import { PROGRESS_LEVELS, buildProgressIndex } from "../lib/jlpt-progress";
+import type { DictRecord, Entry } from "../lib/types";
 
 export default function Home() {
   const [stats, setStats] = useState({ total: 0, due: 0, fav: 0, known: 0 });
+  const [allEntries, setAllEntries] = useState<Entry[]>([]);
   const [msg, setMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   async function refresh() {
     const all = await db.entries.toArray();
+    setAllEntries(all);
     const now = Date.now();
     setStats({
       total: all.length,
@@ -22,6 +27,7 @@ export default function Home() {
   useEffect(() => {
     refresh();
   }, []);
+  const progress = useMemo(() => buildProgressIndex(dict as DictRecord[], allEntries), [allEntries]);
   return (
     <main className="flex flex-col gap-6">
       <div>
@@ -53,9 +59,31 @@ export default function Home() {
         <Link className="rounded-lg border border-zinc-200 bg-white px-4 py-2 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800" href="/library">
           Library
         </Link>
+        <Link className="rounded-lg border border-zinc-200 bg-white px-4 py-2 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800" href="/progress">
+          JLPT progress
+        </Link>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="text-sm font-bold">N4–N1 progress</div>
+        {PROGRESS_LEVELS.map((level) => {
+          const lp = progress[level];
+          const pct = lp.total ? Math.round((lp.known / lp.total) * 100) : 0;
+          return (
+            <Link key={level} href="/progress" className="flex items-center gap-3 text-sm">
+              <span className="w-6 font-bold">{level}</span>
+              <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div className="bg-green-500" style={{ width: `${lp.total ? (lp.known / lp.total) * 100 : 0}%` }} />
+                <div className="bg-amber-400" style={{ width: `${lp.total ? (lp.learning / lp.total) * 100 : 0}%` }} />
+              </div>
+              <span className="w-20 text-right text-zinc-600 dark:text-zinc-300">
+                {lp.known}/{lp.total} · {pct}%
+              </span>
+            </Link>
+          );
+        })}
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        Dictionary: JMDict eng-common snapshot (EDRDG, CC-BY-SA). Offline-first: study works in airplane
+        Dictionary: JMDict eng-common + JLPT/frequency/pitch snapshot (EDRDG, CC-BY-SA). Offline-first: study works in airplane
         mode.
       </p>
       <div className="flex flex-wrap items-center gap-2 text-sm">

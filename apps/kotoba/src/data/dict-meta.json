@@ -1,8 +1,8 @@
 {
   "name": "kotoba-dict-compact",
-  "source": "scriptin/jmdict-simplified 3.6.2+20260907165411 eng-common",
+  "source": "scriptin/jmdict-simplified 3.6.2+20260907165411 eng-common + Bluskyo/JMDict_Extended join (jlpt/furigana/frequency/pitch)",
   "version": "0.2.0",
-  "date": "2026-09-10",
+  "date": "2026-09-14",
   "license": "EDRDG JMdict (CC-BY-SA); see https://www.edrdg.org/",
   "count": 45162,
   "update": "bun run dict:update [--extended]"

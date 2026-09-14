@@ -68,7 +68,11 @@ async function fetchTgzJson(url: string): Promise<{ words: JmdictWord[]; version
   await Bun.$`rm -f ${tmp}`.quiet().catch(() => {});
   if (proc.exitCode !== 0) throw new Error(`tar extract failed: ${proc.stderr.toString().slice(0, 500)}`);
   const text = proc.stdout.toString();
-  const parsed = JSON.parse(text);
+  // Extended tarball's JSON starts with a BOM; be liberal in what we accept.
+  const clean = text.replace(/^\uFEFF/, "").trimStart();
+  const start = clean.search(/[{[]/);
+  if (start < 0) throw new Error(`no JSON payload in archive (first 120 chars: ${clean.slice(0, 120)})`);
+  const parsed = JSON.parse(clean.slice(start));
   const words: JmdictWord[] = parsed.words ?? parsed.dictionary ?? parsed;
   if (!Array.isArray(words)) throw new Error(`unexpected JSON shape (keys: ${Object.keys(parsed).slice(0, 8)})`);
   return { words, version: parsed.version ?? "" };
