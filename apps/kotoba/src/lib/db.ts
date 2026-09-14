@@ -22,6 +22,9 @@ class KotobaDb extends Dexie {
     // v3: key is unique (was plain index). Upgrade folds pre-existing
     // duplicates — without this the unique index creation would fail on
     // databases that already contain dupes.
+    // NOTE: must not use orderBy("createdAt") here — v1/v2 schemas have no
+    // createdAt index, so that throws SchemaError ("KeyPath createdAt on
+    // object store entries is not indexed") and aborts the upgrade.
     this.version(3)
       .stores({
         entries: "++id, &key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended",
@@ -31,7 +34,9 @@ class KotobaDb extends Dexie {
         const table = tx.table<Entry, number>("entries");
         const survivors = new Map<string, Entry>();
         const dupeIds: number[] = [];
-        await table.orderBy("createdAt").each((e) => {
+        const all = await table.toArray();
+        all.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+        for (const e of all) {
           const prev = survivors.get(e.key);
           if (!prev) {
             survivors.set(e.key, e);
@@ -39,10 +44,18 @@ class KotobaDb extends Dexie {
             survivors.set(e.key, { ...mergeEntries(prev, e), id: prev.id });
             if (e.id !== undefined) dupeIds.push(e.id);
           }
-        });
+        }
         await table.bulkPut([...survivors.values()]);
         await table.bulkDelete(dupeIds);
       });
+    // v4: index createdAt — library page and merges order by it, and without
+    // the index IndexedDB throws SchemaError "KeyPath createdAt on object
+    // store entries is not indexed".
+    this.version(4).stores({
+      entries:
+        "++id, &key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended, createdAt",
+      examples: "++id, entryId, level",
+    });
   }
 }
 

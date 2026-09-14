@@ -18,7 +18,15 @@ export default function LibraryPage() {
   const [msg, setMsg] = useState("");
 
   async function load() {
-    setEntries(await db.entries.orderBy("createdAt").reverse().toArray());
+    try {
+      setEntries(await db.entries.orderBy("createdAt").reverse().toArray());
+    } catch {
+      // Pre-v4 databases have no createdAt index: fall back to an
+      // in-memory sort so the page still renders before the upgrade runs.
+      const all = await db.entries.toArray();
+      all.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      setEntries(all);
+    }
   }
   useEffect(() => {
     load();
