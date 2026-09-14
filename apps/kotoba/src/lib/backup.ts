@@ -1,6 +1,7 @@
 "use client";
 
 import { db } from "./db";
+import { isConstraintError } from "./dedupe";
 import { entryKey } from "./normalize";
 import type { Entry } from "./types";
 
@@ -38,8 +39,13 @@ export async function importBackup(file: File): Promise<{ added: number; skipped
     }
     existing.add(key);
     const { id: _drop, ...rest } = raw;
-    await db.entries.add({ ...rest, key, createdAt: raw.createdAt ?? now, dueAt: raw.dueAt ?? now, intervalDays: raw.intervalDays ?? 1 } as Entry);
-    added++;
+    try {
+      await db.entries.add({ ...rest, key, createdAt: raw.createdAt ?? now, dueAt: raw.dueAt ?? now, intervalDays: raw.intervalDays ?? 1 } as Entry);
+      added++;
+    } catch (err) {
+      if (!isConstraintError(err)) throw err;
+      skipped++;
+    }
   }
   return { added, skipped };
 }

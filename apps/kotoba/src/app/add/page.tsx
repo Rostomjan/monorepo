@@ -63,29 +63,41 @@ export default function AddPage() {
   }
 
   async function handleSave() {
+    const { isConstraintError, splitDuplicates } = await import("../../lib/dedupe");
     const now = Date.now();
+    // Re-check at save time: readings may have been edited after Parse.
+    const fresh = new Set((await db.entries.toArray()).map((e) => e.key));
+    const candidates = rows
+      .filter((r) => r.status !== "dup" && r.surface)
+      .map((r) => ({ ...r, key: entryKey(r.surface, r.reading) }));
+    const { unique, dupCount } = splitDuplicates(candidates, fresh);
     let n = 0;
-    for (const r of rows.filter((r) => r.status !== "dup" && r.surface)) {
-      await db.entries.add({
-        key: entryKey(r.surface, r.reading),
-        surface: r.surface,
-        reading: r.reading || r.surface,
-        meaning: r.meaning,
-        kind: detectKind(r.surface),
-        jlpt: (r.jlpt as Row["jlpt"]) as "N5",
-        frequencyRank: r.freq,
-        pitch: r.pitch,
-        mastery: "unknown",
-        isFavorite: false,
-        needsReview: r.status !== "ok",
-        source: "paste",
-        createdAt: now,
-        dueAt: now,
-        intervalDays: 1,
-      });
-      n++;
+    for (const r of unique) {
+      try {
+        await db.entries.add({
+          key: r.key,
+          surface: r.surface,
+          reading: r.reading || r.surface,
+          meaning: r.meaning,
+          kind: detectKind(r.surface),
+          jlpt: (r.jlpt as Row["jlpt"]) as "N5",
+          frequencyRank: r.freq,
+          pitch: r.pitch,
+          mastery: "unknown",
+          isFavorite: false,
+          needsReview: r.status !== "ok",
+          source: "paste",
+          createdAt: now,
+          dueAt: now,
+          intervalDays: 1,
+        });
+        n++;
+      } catch (err) {
+        if (!isConstraintError(err)) throw err;
+      }
     }
-    setSaved(`Saved ${n} entries. Duplicates skipped, no-hit saved as unknown for later fix.`);
+    const skipped = dupCount + (unique.length - n);
+    setSaved(`Saved ${n} entries.${skipped ? ` Skipped ${skipped} duplicates.` : ""} No-hit saved as unknown for later fix.`);
     setRows([]);
     setText("");
   }

@@ -38,21 +38,23 @@ export default function ProgressPage() {
   const index = useMemo(() => buildProgressIndex(dict as DictRecord[], entries), [entries]);
 
   async function addWords(words: LevelWord[], level: ProgressLevel) {
-    const existing = new Set((await db.entries.toArray()).map((e) => e.key));
+    const { isConstraintError, splitDuplicates } = await import("../../lib/dedupe");
     const now = Date.now();
+    const existing = new Set((await db.entries.toArray()).map((e) => e.key));
+    const { unique, dupCount } = splitDuplicates(
+      words.slice(0, 2000).map((w) => toNewEntry(w, level, now)),
+      existing,
+    );
     let added = 0;
-    let skipped = 0;
-    for (const w of words) {
-      const e = toNewEntry(w, level, now);
-      if (existing.has(e.key)) {
-        skipped++;
-        continue;
+    for (const e of unique) {
+      try {
+        await db.entries.add(e);
+        added++;
+      } catch (err) {
+        if (!isConstraintError(err)) throw err;
       }
-      existing.add(e.key);
-      await db.entries.add(e);
-      added++;
-      if (added >= 2000) break;
     }
+    const skipped = dupCount + (unique.length - added);
     setMsg(`Added ${added} to library${skipped ? `, skipped ${skipped} duplicates` : ""}.`);
     load();
   }

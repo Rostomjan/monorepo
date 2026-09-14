@@ -15,6 +15,7 @@ export default function LibraryPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editReading, setEditReading] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
+  const [msg, setMsg] = useState("");
 
   async function load() {
     setEntries(await db.entries.orderBy("createdAt").reverse().toArray());
@@ -51,13 +52,26 @@ export default function LibraryPage() {
     setEditMeaning(e.meaning);
   }
   async function saveEdit(e: Entry) {
+    const reading = editReading.trim() || e.surface;
+    const meaning = editMeaning.trim();
     const { entryKey } = await import("../../lib/normalize");
-    await db.entries.update(e.id!, {
-      reading: editReading.trim() || e.surface,
-      meaning: editMeaning.trim(),
-      key: entryKey(e.surface, editReading.trim() || e.surface),
-      needsReview: false,
-    });
+    const { mergeEntries } = await import("../../lib/dedupe");
+    const newKey = entryKey(e.surface, reading);
+    if (newKey !== e.key) {
+      const clash = (await db.entries.where("key").equals(newKey).toArray()).find((o) => o.id !== e.id);
+      if (clash?.id !== undefined) {
+        // Merge into the surviving entry instead of creating a duplicate.
+        const merged = mergeEntries({ ...clash, reading, meaning: clash.meaning || meaning }, e);
+        await db.entries.put(merged);
+        await db.entries.delete(e.id!);
+        setMsg(`Merged into existing “${clash.surface}”.`);
+        setEditingId(null);
+        load();
+        return;
+      }
+    }
+    await db.entries.update(e.id!, { reading, meaning, key: newKey, needsReview: !meaning });
+    setMsg("");
     setEditingId(null);
     load();
   }
@@ -73,6 +87,7 @@ export default function LibraryPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Library ({filtered.length})</h1>
+      {msg && <p className="text-sm text-green-600 dark:text-green-400">{msg}</p>}
       <div className="flex flex-wrap gap-2 text-sm">
         <input
           value={q}

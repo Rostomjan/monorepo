@@ -1,6 +1,7 @@
 "use client";
 
 import Dexie, { type Table } from "dexie";
+import { mergeEntries } from "./dedupe";
 import type { Entry, Example } from "./types";
 
 class KotobaDb extends Dexie {
@@ -18,6 +19,30 @@ class KotobaDb extends Dexie {
       entries: "++id, key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended",
       examples: "++id, entryId, level",
     });
+    // v3: key is unique (was plain index). Upgrade folds pre-existing
+    // duplicates — without this the unique index creation would fail on
+    // databases that already contain dupes.
+    this.version(3)
+      .stores({
+        entries: "++id, &key, surface, mastery, jlpt, isFavorite, dueAt, frequencyRank, suspended",
+        examples: "++id, entryId, level",
+      })
+      .upgrade(async (tx) => {
+        const table = tx.table<Entry, number>("entries");
+        const survivors = new Map<string, Entry>();
+        const dupeIds: number[] = [];
+        await table.orderBy("createdAt").each((e) => {
+          const prev = survivors.get(e.key);
+          if (!prev) {
+            survivors.set(e.key, e);
+          } else {
+            survivors.set(e.key, { ...mergeEntries(prev, e), id: prev.id });
+            if (e.id !== undefined) dupeIds.push(e.id);
+          }
+        });
+        await table.bulkPut([...survivors.values()]);
+        await table.bulkDelete(dupeIds);
+      });
   }
 }
 
