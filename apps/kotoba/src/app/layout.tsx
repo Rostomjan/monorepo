@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "kotoba — offline Japanese vocab",
   description: "Paste Japanese, auto-enrich offline, flashcards with SRS. 100% offline study.",
   appleWebApp: { capable: true, title: "kotoba" },
+  icons: { icon: "/icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#007bff" };
