@@ -75,8 +75,8 @@
       "ignoreDependencies": ["@repo/eslint-config"]
     },
     "packages/backend": {
-      "entry": ["convex/**/*.ts"],
-      "project": ["convex/**/*.ts"],
+      "entry": ["convex/**/*.ts", "src/**/*.test.ts"],
+      "project": ["convex/**/*.ts", "src/**/*.ts"],
       "ignoreDependencies": ["@repo/eslint-config"]
     },
     "packages/eslint-config": {

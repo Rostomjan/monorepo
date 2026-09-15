@@ -1,5 +1,9 @@
 import { mutation } from "./_generated/server";
 
+// Convex's deploy typecheck runs without node types; the runtime does
+// provide process.env (deployed variables), so declare the slice we read.
+declare const process: { env: { ALLOW_TEST_HOOKS?: string } };
+
 /**
  * Test-only helpers for the e2e smoke test. Every function refuses unless
  * the deployment sets ALLOW_TEST_HOOKS=1 (dev deployments only, never prod).

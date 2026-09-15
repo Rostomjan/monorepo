@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { computeUserLevel, demoteStage, levelUpReached, nextAvailableAt, STAGE_INTERVAL_MS } from "./kanjiSrs";
+import { computeUserLevel, demoteStage, levelUpReached, nextAvailableAt, STAGE_INTERVAL_MS } from "../convex/kanjiSrs";
 
 describe("nextAvailableAt", () => {
   test("stage 1 waits 4h", () => {
