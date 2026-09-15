@@ -28,6 +28,8 @@ export default defineSchema({
   }).index("by_provider", ["providerId", "accountId"]),
 
   // Kanji learner (single user, no auth in v1; owner is a placeholder for future sync).
+  // Full per-item fields per the locked content pipeline; every CC-derived
+  // field carries its source tag so attribution stays mechanical.
   subjects: defineTable({
     glyph: v.string(),
     type: v.union(
@@ -36,6 +38,16 @@ export default defineSchema({
       v.literal("vocabulary"),
     ),
     level: v.number(),
+    meanings: v.array(v.string()),
+    readings: v.array(v.string()),
+    mnemonic: v.string(),
+    components: v.array(v.string()),
+    audioRef: v.union(v.string(), v.null()),
+    examples: v.array(
+      v.object({ text: v.string(), reading: v.string(), gloss: v.string() }),
+    ),
+    sources: v.array(v.string()),
+    shipped: v.boolean(),
   }).index("by_level", ["level"]),
 
   assignments: defineTable({

@@ -9,6 +9,7 @@ export const getDashboard = query({
   args: {},
   handler: async (ctx) => {
     const assignments = await ctx.db.query("assignments").collect();
+    const subjects = await ctx.db.query("subjects").collect();
 
     const guruOrAbove = assignments.filter((a) => a.stage >= 5).length;
     const total = assignments.length;
@@ -28,6 +29,12 @@ export const getDashboard = query({
       total,
       accuracy,
       forecast: { apprentice, guru, master, enlightened },
+      subjects: {
+        total: subjects.length,
+        radical: subjects.filter((s) => s.type === "radical").length,
+        kanji: subjects.filter((s) => s.type === "kanji").length,
+        vocabulary: subjects.filter((s) => s.type === "vocabulary").length,
+      },
     };
   },
 });

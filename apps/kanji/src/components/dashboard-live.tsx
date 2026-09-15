@@ -1,6 +1,6 @@
 "use client";
 
-import { AccuracyStat, LevelCard, ReviewForecast } from "@repo/ui";
+import { AccuracyStat, LevelCard, ReviewForecast, SubjectCounts } from "@repo/ui";
 import { api } from "@repo/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 
@@ -12,10 +12,11 @@ export function DashboardLive() {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3 w-full max-w-3xl">
+    <div className="grid gap-4 sm:grid-cols-2 w-full max-w-3xl">
       <LevelCard level={data.level} />
-      <ReviewForecast forecast={data.forecast} />
       <AccuracyStat accuracy={data.accuracy} />
+      <ReviewForecast forecast={data.forecast} />
+      <SubjectCounts counts={data.subjects} />
     </div>
   );
 }

@@ -83,3 +83,27 @@ export const AccuracyStat = ({ accuracy }: AccuracyStatProps) => {
     </section>
   );
 };
+
+export interface SubjectCountsProps {
+  counts: {
+    total: number;
+    radical: number;
+    kanji: number;
+    vocabulary: number;
+  };
+}
+
+export const SubjectCounts = ({ counts }: SubjectCountsProps) => {
+  return (
+    <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+      <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+        Subjects
+      </h2>
+      <p className="text-4xl font-bold mt-1">{counts.total}</p>
+      <p className="text-sm text-zinc-500 mt-1">
+        {counts.radical} radicals · {counts.kanji} kanji · {counts.vocabulary}{" "}
+        vocab
+      </p>
+    </section>
+  );
+};

@@ -1,7 +1,9 @@
-import { AccuracyStat, LevelCard, ReviewForecast } from "@repo/ui";
+import { AccuracyStat, LevelCard, ReviewForecast, SubjectCounts } from "@repo/ui";
 import { DashboardLive } from "../components/dashboard-live";
 
 const hasBackend = !!process.env.NEXT_PUBLIC_CONVEX_URL;
+
+const EMPTY_SUBJECTS = { total: 0, radical: 0, kanji: 0, vocabulary: 0 };
 
 export default function Page() {
   return (
@@ -10,12 +12,13 @@ export default function Page() {
       {hasBackend ? (
         <DashboardLive />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-3 w-full max-w-3xl">
+        <div className="grid gap-4 sm:grid-cols-2 w-full max-w-3xl">
           <LevelCard level={null} />
+          <AccuracyStat accuracy={null} />
           <ReviewForecast
             forecast={{ apprentice: 0, guru: 0, master: 0, enlightened: 0 }}
           />
-          <AccuracyStat accuracy={null} />
+          <SubjectCounts counts={EMPTY_SUBJECTS} />
         </div>
       )}
       {!hasBackend && (

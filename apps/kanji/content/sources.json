@@ -1,0 +1,54 @@
+{
+  "comment": "Open-source upstream manifest. Ingest (scripts/ingest.ts) only downloads from these hosts; anything else is refused. No proprietary corpora (RTK, KanjiDamage, Koohii, WaniKani, Kanshudo) appear here or in the pipeline.",
+  "sources": [
+    {
+      "id": "kanjidic2",
+      "role": "kanji spine (meanings, readings, grade, strokes, frequency)",
+      "license": "CC BY-SA 4.0",
+      "attribution": "Electronic Dictionary Research and Development Group (EDRDG), http://www.edrdg.org/kanjidic/",
+      "url": "http://www.edrdg.org/kanjidic/kanjidic2.xml.gz"
+    },
+    {
+      "id": "kradfile",
+      "role": "visual decomposition (kanji to components)",
+      "license": "EDRDG licence (CC BY-SA family); KRADFILE2 (c) Jim Rose",
+      "attribution": "EDRDG, http://www.edrdg.org/krad/kradinf.html",
+      "url": "http://ftp.edrdg.org/pub/Nihongo/kradfile.gz"
+    },
+    {
+      "id": "jmdict-common",
+      "role": "common vocabulary (writings, readings, glosses)",
+      "license": "CC BY-SA 4.0",
+      "attribution": "EDRDG JMdict/EDICT project, https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project (via jmdict-simplified JSON)",
+      "url": "https://github.com/scriptin/jmdict-simplified/releases"
+    },
+    {
+      "id": "jmdict-examples",
+      "role": "filtered example sentences (Tatoeba-sourced jpn/eng pairs)",
+      "license": "sentence text CC BY 2.0 FR bulk + CC0 subset (per Tatoeba downloads)",
+      "attribution": "Tatoeba (tatoeba.org) via jmdict-simplified examples",
+      "url": "https://github.com/scriptin/jmdict-simplified/releases"
+    },
+    {
+      "id": "kanji-alive",
+      "role": "radicals, kanji examples, native-speaker audio refs (mnemonics and dictionary numbers excluded)",
+      "license": "CC-BY 4.0 with exclusions (no mnemonic hints, no Kodansha/Nelson numbers, no textbook groupings)",
+      "attribution": "kanjialive.com — public credit + link back, changes described",
+      "url": "https://github.com/kanjialive/kanji-data-media"
+    },
+    {
+      "id": "kanjivg",
+      "role": "per-glyph stroke-order SVGs, fetched on demand and cached",
+      "license": "CC BY-SA 3.0",
+      "attribution": "Ulrich Apel, https://kanjivg.tagaini.net/",
+      "url": "https://github.com/KanjiVG/kanjivg"
+    },
+    {
+      "id": "kanjium",
+      "role": "pitch-accent display (optional, ticket 07)",
+      "license": "CC BY-SA 4.0",
+      "attribution": "https://github.com/mifunetoshiro/kanjium",
+      "url": "https://github.com/mifunetoshiro/kanjium"
+    }
+  ]
+}
