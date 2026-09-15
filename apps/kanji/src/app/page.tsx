@@ -14,6 +14,9 @@ export default function Page() {
         <Link href="/lesson" className="underline text-zinc-600">
           Lessons
         </Link>
+        <Link href="/review" className="underline text-zinc-600">
+          Reviews
+        </Link>
       </nav>
       {hasBackend ? (
         <DashboardLive />

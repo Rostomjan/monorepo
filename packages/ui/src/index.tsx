@@ -130,13 +130,13 @@ export const LessonCard = ({ glyph, type, meanings, readings, mnemonic }: Lesson
   );
 };
 
-export interface LessonQuizProps {
+export interface QuizPromptProps {
   glyph: string;
   prompt: string;
   onAnswer: (answer: string) => void;
 }
 
-export const LessonQuiz = ({ glyph, prompt, onAnswer }: LessonQuizProps) => {
+export const QuizPrompt = ({ glyph, prompt, onAnswer }: QuizPromptProps) => {
   return (
     <form
       className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 w-full max-w-xl"
@@ -164,5 +164,41 @@ export const LessonQuiz = ({ glyph, prompt, onAnswer }: LessonQuizProps) => {
         Answer
       </button>
     </form>
+  );
+};
+
+export interface WrapUpRow {
+  glyph: string;
+  halves: string;
+  from: number;
+  to: number;
+}
+
+export const WrapUpTable = ({ rows }: { rows: WrapUpRow[] }) => {
+  return (
+    <table className="w-full max-w-xl border-collapse">
+      <thead>
+        <tr className="text-left text-xs font-bold uppercase tracking-widest text-zinc-500">
+          <th className="border border-zinc-200 dark:border-zinc-800 p-2">Item</th>
+          <th className="border border-zinc-200 dark:border-zinc-800 p-2">Halves</th>
+          <th className="border border-zinc-200 dark:border-zinc-800 p-2">Stage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.glyph}>
+            <td className="border border-zinc-200 dark:border-zinc-800 p-2 text-2xl">
+              {row.glyph}
+            </td>
+            <td className="border border-zinc-200 dark:border-zinc-800 p-2 text-sm">
+              {row.halves}
+            </td>
+            <td className="border border-zinc-200 dark:border-zinc-800 p-2 font-semibold">
+              {row.from} {row.to > row.from ? "↑" : row.to < row.from ? "↓" : "→"} {row.to}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 };

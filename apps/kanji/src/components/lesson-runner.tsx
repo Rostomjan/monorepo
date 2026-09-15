@@ -1,6 +1,6 @@
 "use client";
 
-import { LessonCard, LessonQuiz } from "@repo/ui";
+import { LessonCard, QuizPrompt } from "@repo/ui";
 import { api } from "@repo/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
@@ -61,7 +61,7 @@ export function LessonRunner() {
         <p className="text-sm text-zinc-500">
           Quiz {quizTotal - quizQueue.length + 1} of {quizTotal} · {failed.size} failed so far
         </p>
-        <LessonQuiz
+        <QuizPrompt
           key={`${current.item}-${current.half}`}
           glyph={item.glyph}
           prompt={current.half}

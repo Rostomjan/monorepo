@@ -58,6 +58,7 @@ export const completeLessonBatch = mutation({
         stage: 1,
         availableAt: nextAvailableAt(1, now),
         guruFalls: 0,
+        synonyms: [],
       });
       passed += 1;
     }

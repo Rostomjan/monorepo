@@ -56,5 +56,6 @@ export default defineSchema({
     owner: v.optional(v.string()),
     availableAt: v.number(),
     guruFalls: v.number(),
+    synonyms: v.array(v.string()),
   }).index("by_subject", ["subjectId"]),
 });
