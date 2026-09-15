@@ -13,8 +13,11 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as kanjiDashboard from "../kanjiDashboard.js";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  kanjiDashboard: typeof kanjiDashboard;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

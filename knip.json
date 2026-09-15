@@ -34,6 +34,11 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
     },
+    "apps/kanji": {
+      "entry": ["src/app/**/page.{ts,tsx}", "src/app/layout.{ts,tsx}", "src/app/api/**/route.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
     "apps/docs": {
       "entry": ["app/**/page.{ts,tsx}", "app/layout.{ts,tsx}"],
       "project": ["app/**/*.{ts,tsx}"],

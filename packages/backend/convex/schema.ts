@@ -26,4 +26,21 @@ export default defineSchema({
     expiresAt: v.optional(v.number()),
     password: v.optional(v.string()),
   }).index("by_provider", ["providerId", "accountId"]),
+
+  // Kanji learner (single user, no auth in v1; owner is a placeholder for future sync).
+  subjects: defineTable({
+    glyph: v.string(),
+    type: v.union(
+      v.literal("radical"),
+      v.literal("kanji"),
+      v.literal("vocabulary"),
+    ),
+    level: v.number(),
+  }).index("by_level", ["level"]),
+
+  assignments: defineTable({
+    subjectId: v.id("subjects"),
+    stage: v.number(),
+    owner: v.optional(v.string()),
+  }).index("by_subject", ["subjectId"]),
 });
