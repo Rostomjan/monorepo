@@ -54,5 +54,7 @@ export default defineSchema({
     subjectId: v.id("subjects"),
     stage: v.number(),
     owner: v.optional(v.string()),
+    availableAt: v.number(),
+    guruFalls: v.number(),
   }).index("by_subject", ["subjectId"]),
 });

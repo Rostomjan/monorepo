@@ -1,4 +1,5 @@
 import { AccuracyStat, LevelCard, ReviewForecast, SubjectCounts } from "@repo/ui";
+import Link from "next/link";
 import { DashboardLive } from "../components/dashboard-live";
 
 const hasBackend = !!process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -9,6 +10,11 @@ export default function Page() {
   return (
     <main className="min-h-screen flex flex-col items-center gap-6 p-8">
       <h1 className="text-3xl font-bold">kanji</h1>
+      <nav className="flex gap-4 text-sm">
+        <Link href="/lesson" className="underline text-zinc-600">
+          Lessons
+        </Link>
+      </nav>
       {hasBackend ? (
         <DashboardLive />
       ) : (

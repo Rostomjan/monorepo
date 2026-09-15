@@ -14,10 +14,12 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as kanjiDashboard from "../kanjiDashboard.js";
+import type * as kanjiLessons from "../kanjiLessons.js";
 import type * as kanjiSeed from "../kanjiSeed.js";
 
 declare const fullApi: ApiFromModules<{
   kanjiDashboard: typeof kanjiDashboard;
+  kanjiLessons: typeof kanjiLessons;
   kanjiSeed: typeof kanjiSeed;
 }>;
 
