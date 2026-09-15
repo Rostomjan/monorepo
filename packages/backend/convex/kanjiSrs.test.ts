@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { demoteStage, levelUpReached, nextAvailableAt, STAGE_INTERVAL_MS } from "./kanjiSrs";
+import { computeUserLevel, demoteStage, levelUpReached, nextAvailableAt, STAGE_INTERVAL_MS } from "./kanjiSrs";
 
 describe("nextAvailableAt", () => {
   test("stage 1 waits 4h", () => {
@@ -37,5 +37,24 @@ describe("levelUpReached", () => {
     expect(levelUpReached(10, 9)).toBe(true);
     expect(levelUpReached(10, 8)).toBe(false);
     expect(levelUpReached(0, 0)).toBe(false);
+  });
+});
+
+describe("computeUserLevel", () => {
+  test("advances past passed levels, stops at the first unpassed", () => {
+    expect(
+      computeUserLevel([
+        { level: 1, kanjiTotal: 10, kanjiGuru: 9 },
+        { level: 2, kanjiTotal: 10, kanjiGuru: 3 },
+      ]),
+    ).toBe(2);
+  });
+
+  test("kanji-less levels never stall", () => {
+    expect(computeUserLevel([{ level: 1, kanjiTotal: 0, kanjiGuru: 0 }])).toBe(2);
+  });
+
+  test("no levels means level 1", () => {
+    expect(computeUserLevel([])).toBe(1);
   });
 });

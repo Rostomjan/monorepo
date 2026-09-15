@@ -1,13 +1,16 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { nextAvailableAt } from "./kanjiSrs";
+import { nextAvailableAt, summarizeProgress } from "./kanjiSrs";
 
 const TYPE_ORDER = { radical: 0, kanji: 1, vocabulary: 2 } as const;
 
 /**
- * Lesson queue: shipped subjects with no assignment yet, in dependency
- * order (level, then radical -> kanji -> vocabulary). Batch size defaults
- * to 5, adjustable 3-10 per the locked batching rules.
+ * Lesson queue: shipped, unstarted subjects that are unlocked — the
+ * subject's level is at or below the user level and every listed component
+ * is guru'd (radicals have no components, so they unlock by level alone).
+ * Ordered by dependency (level, then radical -> kanji -> vocabulary).
+ * Pending vocab elsewhere never blocks: gating is per-subject, and only
+ * kanji count toward level-up.
  */
 export const getLessonQueue = query({
   args: { limit: v.optional(v.number()) },
@@ -15,9 +18,24 @@ export const getLessonQueue = query({
     const limit = Math.min(10, Math.max(3, Math.round(args.limit ?? 5)));
     const subjects = await ctx.db.query("subjects").collect();
     const assignments = await ctx.db.query("assignments").collect();
-    const assigned = new Set(assignments.map((a) => a.subjectId));
+    const stageBySubject = new Map(assignments.map((a) => [a.subjectId, a.stage]));
+    const { userLevel, guru } = summarizeProgress(
+      subjects.map((s) => ({
+        level: s.level,
+        type: s.type,
+        glyph: s.glyph,
+        stage: stageBySubject.get(s._id) ?? null,
+      })),
+    );
+    const assigned = new Set(stageBySubject.keys());
     return subjects
-      .filter((s) => s.shipped && !assigned.has(s._id))
+      .filter(
+        (s) =>
+          s.shipped &&
+          !assigned.has(s._id) &&
+          s.level <= userLevel &&
+          s.components.every((c) => guru.has(c)),
+      )
       .sort(
         (a, b) =>
           a.level - b.level ||

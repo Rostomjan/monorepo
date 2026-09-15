@@ -42,3 +42,61 @@ export function levelUpReached(kanjiTotal: number, kanjiGuru: number): boolean {
   if (kanjiTotal === 0) return false;
   return kanjiGuru / kanjiTotal >= 0.9;
 }
+
+/**
+ * Current user level from per-level kanji progress, ascending by level.
+ * A level with no kanji counts as passed (radical-only levels never stall).
+ * Levels beyond the highest known level don't exist yet.
+ */
+export function computeUserLevel(
+  levels: Array<{ level: number; kanjiTotal: number; kanjiGuru: number }>,
+): number {
+  const sorted = [...levels].sort((a, b) => a.level - b.level);
+  let current = sorted.length > 0 ? sorted[0].level : 1;
+  for (const l of sorted) {
+    if (l.level > current) break;
+    if (l.kanjiTotal === 0 || levelUpReached(l.kanjiTotal, l.kanjiGuru)) {
+      current = l.level + 1;
+    } else {
+      return l.level;
+    }
+  }
+  return current;
+}
+
+export interface ProgressEntry {
+  level: number;
+  type: string;
+  glyph: string;
+  /** Null when the subject has no assignment yet (still in lessons). */
+  stage: number | null;
+}
+
+/**
+ * Shared progress summary: user level + the set of guru'd glyphs that
+ * unlock dependents. Pending vocab never blocks: only kanji count.
+ */
+export function summarizeProgress(entries: ProgressEntry[]): {
+  userLevel: number;
+  guru: Set<string>;
+} {
+  const guru = new Set(
+    entries.filter((e) => (e.stage ?? 0) >= 5).map((e) => e.glyph),
+  );
+  const byLevel = new Map<number, { total: number; guru: number }>();
+  for (const e of entries) {
+    if (e.type !== "kanji") continue;
+    const bucket = byLevel.get(e.level) ?? { total: 0, guru: 0 };
+    bucket.total += 1;
+    if (guru.has(e.glyph)) bucket.guru += 1;
+    byLevel.set(e.level, bucket);
+  }
+  const userLevel = computeUserLevel(
+    [...byLevel].map(([level, b]) => ({
+      level,
+      kanjiTotal: b.total,
+      kanjiGuru: b.guru,
+    })),
+  );
+  return { userLevel, guru };
+}

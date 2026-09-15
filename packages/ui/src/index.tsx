@@ -173,7 +173,6 @@ export interface WrapUpRow {
   from: number;
   to: number;
 }
-
 export const WrapUpTable = ({ rows }: { rows: WrapUpRow[] }) => {
   return (
     <table className="w-full max-w-xl border-collapse">
@@ -200,5 +199,32 @@ export const WrapUpTable = ({ rows }: { rows: WrapUpRow[] }) => {
         ))}
       </tbody>
     </table>
+  );
+};
+
+export interface LeechItem {
+  glyph: string;
+  type: string;
+}
+
+export const LeechList = ({ leeches }: { leeches: LeechItem[] }) => {
+  if (leeches.length === 0) return null;
+  return (
+    <section className="rounded-lg border border-amber-300 dark:border-amber-800 p-4 w-full max-w-3xl">
+      <h2 className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+        Leeches
+      </h2>
+      <ul className="mt-2 flex flex-wrap gap-2">
+        {leeches.map((l) => (
+          <li
+            key={l.glyph}
+            className="rounded border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xl"
+            title={l.type}
+          >
+            {l.glyph}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 };
