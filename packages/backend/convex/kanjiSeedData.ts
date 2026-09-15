@@ -2215,5 +2215,384 @@ export const SEED_SUBJECTS: SeedSubject[] = [
       "jmdict:examples"
     ],
     "shipped": true
+  },
+  {
+    "glyph": "了",
+    "type": "kanji",
+    "level": 3,
+    "meanings": [
+      "complete"
+    ],
+    "readings": [
+      "リョウ"
+    ],
+    "mnemonic": "One street ending in a hook: a finished road. リョウ (ryou) — the journey ends in Rio: complete.",
+    "components": [
+      "⼀",
+      "⼅"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "与",
+    "type": "kanji",
+    "level": 3,
+    "meanings": [
+      "bestow"
+    ],
+    "readings": [
+      "ヨ"
+    ],
+    "mnemonic": "Wrapped around one fortune: a gift bestowed. ヨ (yo) — yo, here is a gift for participating.",
+    "components": [
+      "⼓",
+      "⼀",
+      "⼘"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "匹",
+    "type": "kanji",
+    "level": 3,
+    "meanings": [
+      "counter"
+    ],
+    "readings": [
+      "ヒツ"
+    ],
+    "mnemonic": "Legs trapped in a box: small animals, counted one head each. ヒツ (hitsu) — count the hits, one per animal.",
+    "components": [
+      "⼉",
+      "⼕"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "匂",
+    "type": "kanji",
+    "level": 3,
+    "meanings": [
+      "scent"
+    ],
+    "readings": [
+      "におい"
+    ],
+    "mnemonic": "A wrapped spoon: lift it and sniff to check the smell. におい (nioi) — kneel and sniff: oh, what a scent.",
+    "components": [
+      "⼓",
+      "⼔"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "了解",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "understanding"
+    ],
+    "readings": [
+      "りょうかい"
+    ],
+    "mnemonic": "Understand plus解 equals comprehension. りょうかい (ryoukai) — the Rio meeting ends in understanding.",
+    "components": [
+      "了",
+      "解"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "彼はゆっくりうなずいて了解の意を示した。",
+        "reading": "",
+        "gloss": "He nodded slowly in comprehension."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "完了",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "completion"
+    ],
+    "readings": [
+      "かんりょう"
+    ],
+    "mnemonic": "Complete plus finish. かんりょう (kanryou) — can you finish in Rio?",
+    "components": [
+      "完",
+      "了"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "屋根が破損した家は今では修理が完了している。",
+        "reading": "",
+        "gloss": "The house with the damaged roof has been repaired."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "終了",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "end"
+    ],
+    "readings": [
+      "しゅうりょう"
+    ],
+    "mnemonic": "End plus finish. しゅうりょう (shuuryou) — the shoe marathon ends in Rio.",
+    "components": [
+      "終",
+      "了"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "トムは勤務終了時間を超えて働くと、５割アップの時給をもらっていた。",
+        "reading": "",
+        "gloss": "Tom got time and a half when he worked beyond his usual quitting time."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "与える",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "to bestow"
+    ],
+    "readings": [
+      "あたえる"
+    ],
+    "mnemonic": "To bestow. あたえる (ataeru) — I tell you: take this gift.",
+    "components": [
+      "与"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "人は天から与えられるのでなければ、なにもうけることはできません。",
+        "reading": "",
+        "gloss": "A man can receive only what is given to him from heaven."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "参加",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "participation"
+    ],
+    "readings": [
+      "さんか"
+    ],
+    "mnemonic": "Join plus add: participation. さんか (sanka) — join the sun parade.",
+    "components": [
+      "参",
+      "加"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは競技に参加しましたか。",
+        "reading": "",
+        "gloss": "Did you take part in the game?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "給与",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "salary"
+    ],
+    "readings": [
+      "きゅうよ"
+    ],
+    "mnemonic": "Provide plus bestow: salary. きゅうよ (kyuuyo) — yo, here is your pay cue.",
+    "components": [
+      "給",
+      "与"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私は給与の５分の１を税金で取られてしまう。",
+        "reading": "",
+        "gloss": "One-fifth of my wages go to taxes."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一匹",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "one small animal"
+    ],
+    "readings": [
+      "いっぴき"
+    ],
+    "mnemonic": "One small animal. いっぴき (ippiki) — one peaky cat.",
+    "components": [
+      "一",
+      "匹"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "彼はネコを一匹と犬を二匹飼っている。",
+        "reading": "",
+        "gloss": "He has a cat and two dogs."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "匹",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "counter"
+    ],
+    "readings": [
+      "ひき"
+    ],
+    "mnemonic": "The counter itself. ひき (hiki) — he holds the key to counting animals.",
+    "components": [
+      "匹"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私たちは１匹の犬と１匹の猫を飼っている。",
+        "reading": "",
+        "gloss": "We own a dog and a cat."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "匂い",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "scent"
+    ],
+    "readings": [
+      "におい"
+    ],
+    "mnemonic": "Smell. におい (nioi) — kneel: oh, what a scent.",
+    "components": [
+      "匂"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あの花はにおいが強いな。",
+        "reading": "",
+        "gloss": "That flower has a powerful smell."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "匂う",
+    "type": "vocabulary",
+    "level": 3,
+    "meanings": [
+      "to smell"
+    ],
+    "readings": [
+      "におう"
+    ],
+    "mnemonic": "To smell. におう (niou) — kneel and sniff: ooh.",
+    "components": [
+      "匂"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "この辺臭うんだけど。",
+        "reading": "",
+        "gloss": "Something stinks here."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
   }
 ];

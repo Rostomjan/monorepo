@@ -1,0 +1,54 @@
+[
+  {
+    "glyph": "了",
+    "type": "kanji",
+    "level": 3,
+    "meanings": ["complete"],
+    "readings": ["リョウ"],
+    "mnemonic": "One street ending in a hook: a finished road. リョウ (ryou) — the journey ends in Rio: complete.",
+    "components": ["⼀", "⼅"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "与",
+    "type": "kanji",
+    "level": 3,
+    "meanings": ["bestow"],
+    "readings": ["ヨ"],
+    "mnemonic": "Wrapped around one fortune: a gift bestowed. ヨ (yo) — yo, here is a gift for participating.",
+    "components": ["⼓", "⼀", "⼘"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "匹",
+    "type": "kanji",
+    "level": 3,
+    "meanings": ["counter"],
+    "readings": ["ヒツ"],
+    "mnemonic": "Legs trapped in a box: small animals, counted one head each. ヒツ (hitsu) — count the hits, one per animal.",
+    "components": ["⼉", "⼕"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "匂",
+    "type": "kanji",
+    "level": 3,
+    "meanings": ["scent"],
+    "readings": ["におい"],
+    "mnemonic": "A wrapped spoon: lift it and sniff to check the smell. におい (nioi) — kneel and sniff: oh, what a scent.",
+    "components": ["⼓", "⼔"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  }
+]
