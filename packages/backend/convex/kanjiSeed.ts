@@ -1,13 +1,32 @@
 import { mutation } from "./_generated/server";
+import { v } from "convex/values";
 import { SEED_SUBJECTS } from "./kanjiSeedData";
+
+// Convex's deploy typecheck runs without node types; the runtime does
+// provide process.env (deployed variables), so declare the slice we read.
+declare const process: { env: { SEED_KEY?: string } };
+
+/**
+ * Destructive mutations are gated by a shared secret: callers pass `key`,
+ * compared against the SEED_KEY deployment variable. Fails closed — without
+ * the variable set, nothing can write. Use a random unshared value in prod
+ * (effectively disabling reseeds) and a known value on dev deployments.
+ */
+function assertSeedKey(key: string): void {
+  const expected = process.env.SEED_KEY;
+  if (!expected || key !== expected) {
+    throw new Error("Missing or invalid seed key");
+  }
+}
 
 /**
  * Reseed semantics: clear + insert. Deleting everything and re-running
  * seedKanji reproduces the subjects table exactly (single-user v1).
  */
 export const clearKanji = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { key: v.string() },
+  handler: async (ctx, args) => {
+    assertSeedKey(args.key);
     for (const table of ["assignments", "subjects"] as const) {
       const docs = await ctx.db.query(table).collect();
       for (const doc of docs) {
@@ -20,8 +39,9 @@ export const clearKanji = mutation({
 });
 
 export const seedKanji = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { key: v.string() },
+  handler: async (ctx, args) => {
+    assertSeedKey(args.key);
     let inserted = 0;
     for (const s of SEED_SUBJECTS) {
       if (!s.shipped) continue;

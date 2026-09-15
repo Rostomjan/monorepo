@@ -18,9 +18,21 @@ seed data        --seed--> Convex deployment (needs CONVEX_URL)
   allowlist (see `scripts/lib/parse.ts`).
 - `bun scripts/build-seed.ts` — validate content files, regenerate the
   Convex seed-data module. Fails loudly on any invalid item.
-- `bun scripts/seed.ts` — clear + reseed the deployment (`CONVEX_URL`
-  required). Delete + reseed reproduces the tables exactly.
+- `bun scripts/seed.ts` — clear + reseed the deployment (`CONVEX_URL` and
+  `SEED_KEY` required). Delete + reseed reproduces the tables exactly.
 - `bun test` — transform/validation unit tests.
+
+## Seed keys
+
+Destructive mutations (`clearKanji`, `seedKanji`) require a `key` argument matching
+the deployment's `SEED_KEY` variable, and refuse when it is unset:
+
+- **Dev:** set `SEED_KEY` to a known value in the Convex dashboard (or local
+  `convex dev` env) and export the same value when running `seed.ts` or the e2e
+  smoke (`SEED_KEY=...`).
+- **Prod:** set `SEED_KEY` to a random value nobody stores. Reseeds then require
+  deliberately revealing it — effectively disabled by default.
+- Never commit keys. The URL + key live in the invoking shell only.
 
 ## Authoring rules (locked content pipeline)
 

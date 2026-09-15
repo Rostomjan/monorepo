@@ -9,7 +9,8 @@ import radicals from "../../kanji/content/level-1/radicals.json";
  *
  * Requirements (else this file skips cleanly, including in CI):
  * - CONVEX_URL (or NEXT_PUBLIC_CONVEX_URL) pointing at a dev deployment with
- *   ALLOW_TEST_HOOKS=1, e.g. after `convex dev` in packages/backend.
+ *   ALLOW_TEST_HOOKS=1 and a known SEED_KEY, e.g. after `convex dev` in
+ *   packages/backend.
  * - The kanji dev server on KANJI_URL (default http://localhost:3001),
  *   booted automatically by playwright.config.ts with NEXT_PUBLIC_CONVEX_URL
  *   passed through.
@@ -38,8 +39,9 @@ function typoOf(meaning: string): string {
 
 test.beforeAll(async () => {
   const client = new ConvexHttpClient(CONVEX_URL);
-  await client.mutation(api.kanjiSeed.clearKanji, {});
-  await client.mutation(api.kanjiSeed.seedKanji, {});
+  const key = process.env.SEED_KEY ?? "";
+  await client.mutation(api.kanjiSeed.clearKanji, { key });
+  await client.mutation(api.kanjiSeed.seedKanji, { key });
   const queue = await client.query(api.kanjiLessons.getLessonQueue, { limit: 5 });
   expect(queue.length).toBe(5);
   await client.mutation(api.kanjiLessons.completeLessonBatch, {

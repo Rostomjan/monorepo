@@ -15,9 +15,15 @@ if (!url) {
   console.error("Deploy first (push to develop/main auto-deploys Convex), then re-run with CONVEX_URL.");
   process.exit(1);
 }
+const key = process.env.SEED_KEY;
+if (!key) {
+  console.error("SEED_KEY is not set — nothing seeded.");
+  console.error("Set SEED_KEY to the target deployment's seed key (never commit it).");
+  process.exit(1);
+}
 
 const client = new ConvexHttpClient(url);
-const cleared = await client.mutation(api.kanjiSeed.clearKanji, {});
+const cleared = await client.mutation(api.kanjiSeed.clearKanji, { key });
 console.log(`cleared: ${JSON.stringify(cleared)}`);
-const seeded = await client.mutation(api.kanjiSeed.seedKanji, {});
+const seeded = await client.mutation(api.kanjiSeed.seedKanji, { key });
 console.log(`seeded: ${JSON.stringify(seeded)}`);
