@@ -2594,5 +2594,1421 @@ export const SEED_SUBJECTS: SeedSubject[] = [
       "jmdict:examples"
     ],
     "shipped": true
+  },
+  {
+    "glyph": "森",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "forest"
+    ],
+    "readings": [
+      "もり"
+    ],
+    "mnemonic": "Three trees crowded together make a forest. もり (mori) — more trees: mori forest.",
+    "components": [
+      "⽊",
+      "⽊",
+      "⽊"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "本",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "book"
+    ],
+    "readings": [
+      "ホン"
+    ],
+    "mnemonic": "A tree with one thick root: the origin of all books. ホン (hon) — honk the book open and read.",
+    "components": [
+      "⽊",
+      "⼀"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "木",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "tree"
+    ],
+    "readings": [
+      "き"
+    ],
+    "mnemonic": "A tree, plain and simple. き (ki) — a key hangs from its branches.",
+    "components": [
+      "⽊"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "林",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "grove"
+    ],
+    "readings": [
+      "はやし"
+    ],
+    "mnemonic": "Two trees side by side: a small grove. はやし (hayashi) — hi! ya see the grove?",
+    "components": [
+      "⽊",
+      "⽊"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "止",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "stop"
+    ],
+    "readings": [
+      "とまる"
+    ],
+    "mnemonic": "A footprint frozen mid-step: stop. とまる (tomaru) — stub your toe and you will stop.",
+    "components": [
+      "⽌"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "正",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "correct"
+    ],
+    "readings": [
+      "セイ"
+    ],
+    "mnemonic": "One line drawn over stop: checked and correct. セイ (sei) — say it correctly: sei.",
+    "components": [
+      "⼀",
+      "⽌"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "小",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "small"
+    ],
+    "readings": [
+      "ショウ"
+    ],
+    "mnemonic": "A small crown for a small king. ショウ (shou) — show me something small.",
+    "components": [
+      "⺌"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "心",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "heart"
+    ],
+    "readings": [
+      "シン"
+    ],
+    "mnemonic": "The heart itself, beating. シン (shin) — your shin aches with heartache.",
+    "components": [
+      "⼼"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "月",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "moon"
+    ],
+    "readings": [
+      "ゲツ"
+    ],
+    "mnemonic": "The crescent moon. ゲツ (getsu) — get Sue to howl at the moon.",
+    "components": [
+      "⽉"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "車",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "car"
+    ],
+    "readings": [
+      "シャ"
+    ],
+    "mnemonic": "A cart with big spinning wheels. シャ (sha) — shout sha as the car zooms past.",
+    "components": [
+      "⾞"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "老",
+    "type": "kanji",
+    "level": 4,
+    "meanings": [
+      "old"
+    ],
+    "readings": [
+      "ロウ"
+    ],
+    "mnemonic": "The elder crowned, spoon of wisdom in hand. ろう (rou) — row slowly, like the old.",
+    "components": [
+      "⽼",
+      "⼔"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽊",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "wood"
+    ],
+    "readings": [],
+    "mnemonic": "A tree with roots below and branches above. き (ki) — a key hangs from the branches.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽌",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "stop"
+    ],
+    "readings": [],
+    "mnemonic": "A footprint that halts mid-step. とめる (tomeru) — tell the mayor: stop!",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⺌",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "small"
+    ],
+    "readings": [],
+    "mnemonic": "A tiny crown for the smallest king. しょうかんむり — show the crown: small but proud.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⼼",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "heart"
+    ],
+    "readings": [],
+    "mnemonic": "A human heart, beating. こころ (kokoro) — row in time with your heart.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽉",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "moon"
+    ],
+    "readings": [],
+    "mnemonic": "The crescent moon. つき (tsuki) — ski under the moon.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽋",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "lack"
+    ],
+    "readings": [],
+    "mnemonic": "A wide yawn: something is lacking — sleep. あくび (akubi) — a cub yawns: lacking naps.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽼",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "old"
+    ],
+    "readings": [],
+    "mnemonic": "An elder with a crown of age. おいかんむり — oi, the old one wears the crown.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾞",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "car"
+    ],
+    "readings": [],
+    "mnemonic": "A cart with big wheels. くるま (kuruma) — a cool rusty machine: the old car.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾨",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "gate"
+    ],
+    "readings": [],
+    "mnemonic": "Two doors of a great gate. もんがまえ — moan at the gate until it opens.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾬",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "rain"
+    ],
+    "readings": [],
+    "mnemonic": "Drops falling from heaven. あめ (ame) — ah, meh: rain again.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "森",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "forest"
+    ],
+    "readings": [
+      "もり"
+    ],
+    "mnemonic": "Three trees: a forest. もり (mori) — more trees.",
+    "components": [
+      "森"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "野獣は森に住んでいる。",
+        "reading": "",
+        "gloss": "Wild animals live in the forest."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "森林",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "forest"
+    ],
+    "readings": [
+      "しんりん"
+    ],
+    "mnemonic": "Forest plus woods. しんりん (shinrin) — shin splints from running in the woods.",
+    "components": [
+      "森",
+      "林"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その国は森林でおおわれている。",
+        "reading": "",
+        "gloss": "The land is clothed with woods."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "本",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "book"
+    ],
+    "readings": [
+      "ほん"
+    ],
+    "mnemonic": "A book. ほん (hon) — honk it open.",
+    "components": [
+      "本"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "昨日はその本を８０ページまで読んだ。",
+        "reading": "",
+        "gloss": "I read the book up to page 80 yesterday."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "日本",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "Japan"
+    ],
+    "readings": [
+      "にほん"
+    ],
+    "mnemonic": "Sun plus origin: Japan. にほん (nihon) — knee-hon: kneel facing the rising sun.",
+    "components": [
+      "日",
+      "本"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "日本は中国の東方にある。",
+        "reading": "",
+        "gloss": "Japan is to the east of China."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "本当",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "truth"
+    ],
+    "readings": [
+      "ほんとう"
+    ],
+    "mnemonic": "Book plus correct: the truth. ほんとう (hontou) — honk the truth out loud.",
+    "components": [
+      "本",
+      "当"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その悪い知らせは残念ながら本当だ。",
+        "reading": "",
+        "gloss": "The bad news is unfortunately true."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "絵本",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "picture book"
+    ],
+    "readings": [
+      "えほん"
+    ],
+    "mnemonic": "Picture plus book. えほん (ehon) — hey, honk at the pictures.",
+    "components": [
+      "絵",
+      "本"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "絵本は子供たちの頭を啓発する。",
+        "reading": "",
+        "gloss": "Picture books will cultivate the minds of children."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "木",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "tree"
+    ],
+    "readings": [
+      "き"
+    ],
+    "mnemonic": "A tree. き (ki) — a key in the branches.",
+    "components": [
+      "木"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その木には実がたわわになっていた。",
+        "reading": "",
+        "gloss": "The tree was heavy with fruit."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "木曜日",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "Thursday"
+    ],
+    "readings": [
+      "もくようび"
+    ],
+    "mnemonic": "Tree day: Thursday. もくようび (mokuyoubi) — mock the tree on Thursday.",
+    "components": [
+      "木",
+      "曜",
+      "日"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その週刊誌は木曜日に出る。",
+        "reading": "",
+        "gloss": "The weekly appears on Thursday."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "大木",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "large tree"
+    ],
+    "readings": [
+      "たいぼく"
+    ],
+    "mnemonic": "Big plus tree. たいぼく (taiboku) — tie a bow around the large tree.",
+    "components": [
+      "大",
+      "木"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "大木の陰に避難した。",
+        "reading": "",
+        "gloss": "We took refuge behind a big tree."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "林",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "grove"
+    ],
+    "readings": [
+      "はやし"
+    ],
+    "mnemonic": "A grove. はやし (hayashi) — hi! ya see it?",
+    "components": [
+      "林"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "林に竹が目立つ。",
+        "reading": "",
+        "gloss": "Bamboo stands out in the woods."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "山林",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "mountain forest"
+    ],
+    "readings": [
+      "さんりん"
+    ],
+    "mnemonic": "Mountain plus grove. さんりん (sanrin) — sun-rin: sunny mountain forest.",
+    "components": [
+      "山",
+      "林"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "止まる",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "to stop"
+    ],
+    "readings": [
+      "とまる"
+    ],
+    "mnemonic": "To stop moving. とまる (tomaru) — toe-maro: stub your toe, stop.",
+    "components": [
+      "止"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "そして、電車はキーッという音を立てて止まった。",
+        "reading": "",
+        "gloss": "Then, the train screeched to a halt."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "止める",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "to stop something"
+    ],
+    "readings": [
+      "とめる"
+    ],
+    "mnemonic": "To stop something. とめる (tomeru) — tell the mayor: stop it.",
+    "components": [
+      "止"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その新聞は政府にインフレを止めるように求めた。",
+        "reading": "",
+        "gloss": "The newspaper called for the government to stop inflation."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "中止",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "cancellation"
+    ],
+    "readings": [
+      "ちゅうし"
+    ],
+    "mnemonic": "Middle plus stop: cancelled. ちゅうし (chuushi) — chewy sushi break: work cancelled.",
+    "components": [
+      "中",
+      "止"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "暴風雨のため道路工事が中止された。",
+        "reading": "",
+        "gloss": "Work on the road was suspended because of the storm."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "正しい",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "correct"
+    ],
+    "readings": [
+      "ただしい"
+    ],
+    "mnemonic": "Right and correct. ただしい (tadashii) — ta-da-she: ta-da, she is correct.",
+    "components": [
+      "正"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "これが正しいかどうか自信がないんだ。",
+        "reading": "",
+        "gloss": "I'm not sure if this is correct."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "正月",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "New Year"
+    ],
+    "readings": [
+      "しょうがつ"
+    ],
+    "mnemonic": "Correct plus moon: the New Year. しょうがつ (shougatsu) — show-guts: show guts in the new year.",
+    "components": [
+      "正",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "正月はすぐそこまで来ている。",
+        "reading": "",
+        "gloss": "New Year's Day is close at hand."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "正解",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "correct answer"
+    ],
+    "readings": [
+      "せいかい"
+    ],
+    "mnemonic": "Correct plus explanation. せいかい (seikai) — say-kai: say the answer, correct.",
+    "components": [
+      "正",
+      "解"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "正解をまるで囲みなさい。",
+        "reading": "",
+        "gloss": "Please circle the right answer."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "改正",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "revision"
+    ],
+    "readings": [
+      "かいせい"
+    ],
+    "mnemonic": "Change plus correct: a revision. かいせい (kaisei) — kai says: revise it correctly.",
+    "components": [
+      "改",
+      "正"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "時刻表が改正された。",
+        "reading": "",
+        "gloss": "The timetable has been revised."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "小さい",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "small"
+    ],
+    "readings": [
+      "ちいさい"
+    ],
+    "mnemonic": "Small. ちいさい (chiisai) — cheesy sigh: so small.",
+    "components": [
+      "小"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その机はメグには小さすぎる。",
+        "reading": "",
+        "gloss": "The desk is too small for Meg."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "小学校",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "primary school"
+    ],
+    "readings": [
+      "しょうがっこう"
+    ],
+    "mnemonic": "Small plus school. しょうがっこう (shougakkou) — show-gakko: show up at the small school.",
+    "components": [
+      "小",
+      "学",
+      "校"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは小学校に通っているの？",
+        "reading": "",
+        "gloss": "Do you go to an elementary school?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "小説",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "novel"
+    ],
+    "readings": [
+      "しょうせつ"
+    ],
+    "mnemonic": "Small plus story: a novel. しょうせつ (shousetsu) — show-sets: showing story sets.",
+    "components": [
+      "小",
+      "説"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "事実は小説よりも奇なり。",
+        "reading": "",
+        "gloss": "Fact is stranger than fiction."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "心",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "heart"
+    ],
+    "readings": [
+      "こころ"
+    ],
+    "mnemonic": "Heart and mind. こころ (kokoro) — row in time with it.",
+    "components": [
+      "心"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたの親切な言葉は大事に心に刻みつけておきます。",
+        "reading": "",
+        "gloss": "I'll treasure your kind words."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "安心",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "relief"
+    ],
+    "readings": [
+      "あんしん"
+    ],
+    "mnemonic": "Peace plus heart: relief. あんしん (anshin) — un-shin: unclench your shins, relief.",
+    "components": [
+      "安",
+      "心"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あいつに仕事を任せておけば安心だ。",
+        "reading": "",
+        "gloss": "You can trust him with any job."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "心配",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "worry"
+    ],
+    "readings": [
+      "しんぱい"
+    ],
+    "mnemonic": "Heart plus distribute: worry spreads. しんぱい (shinpai) — shin-pie: worry gives you shin splints? no — pie for a worried heart.",
+    "components": [
+      "心",
+      "配"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その男の子は心配して病気になった。",
+        "reading": "",
+        "gloss": "The boy got sick from anxiety."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "中心",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "center"
+    ],
+    "readings": [
+      "ちゅうしん"
+    ],
+    "mnemonic": "Middle plus heart: the center. ちゅうしん (chuushin) — chew-shin: chew at the center.",
+    "components": [
+      "中",
+      "心"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その町の中心にすてきな公園がある。",
+        "reading": "",
+        "gloss": "There is a nice park in the center of the town."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "月",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "moon"
+    ],
+    "readings": [
+      "つき"
+    ],
+    "mnemonic": "Moon and month. つき (tsuki) — ski by moonlight.",
+    "components": [
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "宇宙船は月を回る軌道を外れている。",
+        "reading": "",
+        "gloss": "The spaceship is out of orbit around the moon."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "月曜日",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "Monday"
+    ],
+    "readings": [
+      "げつようび"
+    ],
+    "mnemonic": "Moon day: Monday. げつようび (getsuyoubi) — get-youbi: get to the moon day.",
+    "components": [
+      "月",
+      "曜",
+      "日"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "月曜日はいつも憂鬱だ。",
+        "reading": "",
+        "gloss": "I always feel blue on Mondays."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "先月",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "last month"
+    ],
+    "readings": [
+      "せんげつ"
+    ],
+    "mnemonic": "Before plus moon. せんげつ (sengetsu) — send-gets: send last months greetings.",
+    "components": [
+      "先",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "先月は、ほとんど雨が降らなかった。",
+        "reading": "",
+        "gloss": "We had little rain last month."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "毎月",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "every month"
+    ],
+    "readings": [
+      "まいつき"
+    ],
+    "mnemonic": "Every plus moon. まいつき (maitsuki) — my-tsuki: my moon, every month.",
+    "components": [
+      "毎",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私は両親には必ず毎月手紙を書きます。",
+        "reading": "",
+        "gloss": "I never fail to write to my parents every month."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "車",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "car"
+    ],
+    "readings": [
+      "くるま"
+    ],
+    "mnemonic": "A car. くるま (kuruma) — cool rusty machine.",
+    "components": [
+      "車"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "車を運転する時はいくら注意してもしすぎることはない。",
+        "reading": "",
+        "gloss": "You cannot be too careful when you drive a car."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "電車",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "train"
+    ],
+    "readings": [
+      "でんしゃ"
+    ],
+    "mnemonic": "Electric plus car: a train. でんしゃ (densha) — den-sha: the den on rails.",
+    "components": [
+      "電",
+      "車"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは始発電車に間にあいましたか。",
+        "reading": "",
+        "gloss": "Did you catch the first train?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "自転車",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "bicycle"
+    ],
+    "readings": [
+      "じてんしゃ"
+    ],
+    "mnemonic": "Self plus revolve plus car. じてんしゃ (jitensha) — jeep-ten-sha: a jeep with ten gears? a bicycle.",
+    "components": [
+      "自",
+      "転",
+      "車"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "ケンは自転車を白く塗りました。",
+        "reading": "",
+        "gloss": "Ken painted his bicycle white."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "駐車",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "parking"
+    ],
+    "readings": [
+      "ちゅうしゃ"
+    ],
+    "mnemonic": "Stay plus car: parking. ちゅうしゃ (chuusha) — chew-sha: chew while parked.",
+    "components": [
+      "駐",
+      "車"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "彼にどこに駐車したのか聞いてください。",
+        "reading": "",
+        "gloss": "Ask him where he parked his car."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "老人",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "old person"
+    ],
+    "readings": [
+      "ろうじん"
+    ],
+    "mnemonic": "Old plus person. ろうじん (roujin) — row-jin: row gently, old person.",
+    "components": [
+      "老",
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あの老人は食べ物に難しい。",
+        "reading": "",
+        "gloss": "That old man is a fussy eater."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "老後",
+    "type": "vocabulary",
+    "level": 4,
+    "meanings": [
+      "old age"
+    ],
+    "readings": [
+      "ろうご"
+    ],
+    "mnemonic": "Old plus after. ろうご (rougo) — row-go: row on into old age.",
+    "components": [
+      "老",
+      "後"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "彼は老後に備えて貯金した。",
+        "reading": "",
+        "gloss": "He saved money for his old age."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
   }
 ];

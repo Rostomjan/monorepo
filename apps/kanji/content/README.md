@@ -18,6 +18,9 @@ seed data        --seed--> Convex deployment (needs CONVEX_URL)
   allowlist (see `scripts/lib/parse.ts`).
 - `bun scripts/build-seed.ts` — validate content files, regenerate the
   Convex seed-data module. Fails loudly on any invalid item.
+- `bun scripts/qa-level.ts <level>` — QA a level against upstream extracts
+  (readings, components via `radical-forms.json`, glosses, examples,
+  proprietary-source scan). Gate every level through this before seeding.
 - `bun scripts/seed.ts` — clear + reseed the deployment (`CONVEX_URL` and
   `SEED_KEY` required). Delete + reseed reproduces the tables exactly.
 - `bun test` — transform/validation unit tests.

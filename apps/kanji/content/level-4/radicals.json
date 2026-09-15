@@ -1,0 +1,172 @@
+[
+  {
+    "glyph": "⽊",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "wood"
+    ],
+    "readings": [],
+    "mnemonic": "A tree with roots below and branches above. き (ki) — a key hangs from the branches.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽌",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "stop"
+    ],
+    "readings": [],
+    "mnemonic": "A footprint that halts mid-step. とめる (tomeru) — tell the mayor: stop!",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⺌",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "small"
+    ],
+    "readings": [],
+    "mnemonic": "A tiny crown for the smallest king. しょうかんむり — show the crown: small but proud.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⼼",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "heart"
+    ],
+    "readings": [],
+    "mnemonic": "A human heart, beating. こころ (kokoro) — row in time with your heart.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽉",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "moon"
+    ],
+    "readings": [],
+    "mnemonic": "The crescent moon. つき (tsuki) — ski under the moon.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽋",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "lack"
+    ],
+    "readings": [],
+    "mnemonic": "A wide yawn: something is lacking — sleep. あくび (akubi) — a cub yawns: lacking naps.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⽼",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "old"
+    ],
+    "readings": [],
+    "mnemonic": "An elder with a crown of age. おいかんむり — oi, the old one wears the crown.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾞",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "car"
+    ],
+    "readings": [],
+    "mnemonic": "A cart with big wheels. くるま (kuruma) — a cool rusty machine: the old car.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾨",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "gate"
+    ],
+    "readings": [],
+    "mnemonic": "Two doors of a great gate. もんがまえ — moan at the gate until it opens.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "⾬",
+    "type": "radical",
+    "level": 4,
+    "meanings": [
+      "rain"
+    ],
+    "readings": [],
+    "mnemonic": "Drops falling from heaven. あめ (ame) — ah, meh: rain again.",
+    "components": [],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanji-alive:radicals"
+    ],
+    "shipped": true
+  }
+]
