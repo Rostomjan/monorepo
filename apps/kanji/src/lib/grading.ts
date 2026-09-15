@@ -20,8 +20,19 @@ export function checkMeaning(meanings: string[], answer: string): boolean {
 }
 
 export function checkReading(readings: string[], answer: string): boolean {
-  const a = answer.trim();
-  return readings.some((r) => r === a);
+  const a = normalizeReading(answer.trim());
+  return readings.some((r) => normalizeReading(r) === a);
+}
+
+/**
+ * Reading normalization: katakana folds to hiragana (learners type hiragana
+ * for on'yomi, which content stores katakana per upstream), okurigana dots
+ * ("ひと.つ") are stripped. Display keeps the stored form.
+ */
+export function normalizeReading(s: string): string {
+  return s
+    .replace(/\./g, "")
+    .replace(/[ァ-ン]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60));
 }
 
 export type MeaningVerdict = "correct" | "typo" | "wrong";

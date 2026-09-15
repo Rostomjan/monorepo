@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkMeaning, checkMeaningReview, checkReading, halvesFor } from "./grading";
+import { checkMeaning, checkMeaningReview, checkReading, halvesFor, normalizeReading } from "./grading";
 
 describe("halvesFor", () => {
   test("radicals are meaning-only", () => {
@@ -17,10 +17,20 @@ describe("checkMeaning", () => {
 });
 
 describe("checkReading", () => {
+  test("stored on'yomi display form normalizes to hiragana input", () => {
+    expect(normalizeReading("ジュウ")).toBe("じゅう");
+    expect(normalizeReading("ひと.つ")).toBe("ひとつ");
+  });
   test("exact kana match, no forgiveness", () => {
     expect(checkReading(["やすみ"], "やすみ")).toBe(true);
     expect(checkReading(["やすみ"], "やすみ ")).toBe(true);
     expect(checkReading(["やすみ"], "yasumi")).toBe(false);
+  });
+
+  test("katakana on'yomi matches hiragana input, dots stripped", () => {
+    expect(checkReading(["イチ"], "いち")).toBe(true);
+    expect(checkReading(["ひと.つ"], "ひとつ")).toBe(true);
+    expect(checkReading(["イチ"], "いちち")).toBe(false);
   });
 });
 

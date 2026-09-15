@@ -1,0 +1,837 @@
+[
+  {
+    "glyph": "一つ",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "one thing"
+    ],
+    "readings": [
+      "ひとつ"
+    ],
+    "mnemonic": "Only one thing on the table. ひとつ (hitotsu) — hiss the word hit softly: you hit exactly one thing.",
+    "components": [
+      "一"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "１つが通り過ぎたかと思うと、すぐに次の台風が接近する。",
+        "reading": "",
+        "gloss": "No sooner has one typhoon passed than the next one approaches."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一人",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "one person"
+    ],
+    "readings": [
+      "ひとり"
+    ],
+    "mnemonic": "One person standing alone. ひとり (hitori) — he tore away from the group, one lone person.",
+    "components": [
+      "一",
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私は一人の弟がいます。",
+        "reading": "",
+        "gloss": "I have one brother."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一月",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "January"
+    ],
+    "readings": [
+      "いちがつ"
+    ],
+    "mnemonic": "The first month, January. いちがつ (ichigatsu) — itchy guts after the New Year feast.",
+    "components": [
+      "一",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私は１９６８年の１月２日に生まれた。",
+        "reading": "",
+        "gloss": "I was born on January 2 in 1968."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一番",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "number one",
+      "best"
+    ],
+    "readings": [
+      "いちばん"
+    ],
+    "mnemonic": "Number one, the best. いちばん (ichiban) — each barn has one champion rooster: number one.",
+    "components": [
+      "一",
+      "番"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "このネクタイにしましょう、一番よさそうだから。",
+        "reading": "",
+        "gloss": "I will take this tie, as it seems to be the best."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一緒",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "together"
+    ],
+    "readings": [
+      "いっしょ"
+    ],
+    "mnemonic": "Together as one. いっしょ (issho) — issue the order: today we march together.",
+    "components": [
+      "一",
+      "緒"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "「ご一緒してもいいですか」「もちろんです」",
+        "reading": "",
+        "gloss": "\"May I go with you?\" \"Of course.\""
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "二つ",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "two things"
+    ],
+    "readings": [
+      "ふたつ"
+    ],
+    "mnemonic": "Two things. ふたつ (futatsu) — two tats, tattooed one on each arm.",
+    "components": [
+      "二"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "２つの質問をしてもよいですか。",
+        "reading": "",
+        "gloss": "May I ask a couple of questions?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "二人",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "two people"
+    ],
+    "readings": [
+      "ふたり"
+    ],
+    "mnemonic": "Two people. ふたり (futari) — two tari drums, and drums this big need two players.",
+    "components": [
+      "二",
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "二人の男は刑務所から釈放された。",
+        "reading": "",
+        "gloss": "The two men were released from jail."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "二月",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "February"
+    ],
+    "readings": [
+      "にがつ"
+    ],
+    "mnemonic": "February, month two. にがつ (nigatsu) — kneel through the cold guts of winter.",
+    "components": [
+      "二",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "生年月日は１９６０年２月１４日です。",
+        "reading": "",
+        "gloss": "I was born on February 14, 1960."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "二番",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "second",
+      "runner-up"
+    ],
+    "readings": [
+      "にばん"
+    ],
+    "mnemonic": "Runner-up, number two. にばん (niban) — knee-ban: knees are banned from first place.",
+    "components": [
+      "二",
+      "番"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "２番通路です。",
+        "reading": "",
+        "gloss": "They're in aisle two."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三つ",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "three things"
+    ],
+    "readings": [
+      "みっつ"
+    ],
+    "mnemonic": "Three things. みっつ (mittsu) — three baseball mitts in a row.",
+    "components": [
+      "三"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "ボーイさん、コーヒー３つください。",
+        "reading": "",
+        "gloss": "Waiter, three coffees, please."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三日",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "third day",
+      "three days"
+    ],
+    "readings": [
+      "みっか"
+    ],
+    "mnemonic": "The third day. みっか (mikka) — the meek car always arrives on day three.",
+    "components": [
+      "三",
+      "日"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "１０月３日です。",
+        "reading": "",
+        "gloss": "It's the third of October."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三月",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "March"
+    ],
+    "readings": [
+      "さんがつ"
+    ],
+    "mnemonic": "March, month three. さんがつ (sangatsu) — the sun gets stronger: sun-ga-tsu.",
+    "components": [
+      "三",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "３月になると多くの花が咲く。",
+        "reading": "",
+        "gloss": "In March, many flowers come out."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三時",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "three oclock"
+    ],
+    "readings": [
+      "さんじ"
+    ],
+    "mnemonic": "Three oclock. さんじ (sanji) — Sanji the cook serves lunch at three.",
+    "components": [
+      "三",
+      "時"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "三時までには着きますよ。",
+        "reading": "",
+        "gloss": "You'll get there by three o'clock."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "十",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "ten"
+    ],
+    "readings": [
+      "じゅう"
+    ],
+    "mnemonic": "Ten. じゅう (juu) — juice: ten tall glasses of juice.",
+    "components": [
+      "十"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その会は十時に終わった。",
+        "reading": "",
+        "gloss": "The party ended at ten o'clock."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "十分",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "enough"
+    ],
+    "readings": [
+      "じゅうぶん"
+    ],
+    "mnemonic": "Enough. じゅうぶん (juubun) — ten jewels are plenty: jewels-been-enough.",
+    "components": [
+      "十",
+      "分"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私はこの本を買うのに十分なお金を持っている。",
+        "reading": "",
+        "gloss": "I have enough money to buy this book."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "十月",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "October"
+    ],
+    "readings": [
+      "じゅうがつ"
+    ],
+    "mnemonic": "October. じゅうがつ (juugatsu) — juicy guts of Halloween pumpkins.",
+    "components": [
+      "十",
+      "月"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私は１９７２年１０月１０日に生まれました。",
+        "reading": "",
+        "gloss": "I was born on October 10, 1972."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "人",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "person"
+    ],
+    "readings": [
+      "ひと"
+    ],
+    "mnemonic": "A person. ひと (hito) — he stubbed his toe: he-toe, that poor person.",
+    "components": [
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "この人は画家だ！",
+        "reading": "",
+        "gloss": "This fellow is an artist!"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "人気",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "popularity"
+    ],
+    "readings": [
+      "にんき"
+    ],
+    "mnemonic": "Popularity. にんき (ninki) — the ninja key unlocks every door: popularity.",
+    "components": [
+      "人",
+      "気"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "人気がでて彼女はうぬぼれた。",
+        "reading": "",
+        "gloss": "The popularity turned her head."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "日本人",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "Japanese person"
+    ],
+    "readings": [
+      "にほんじん"
+    ],
+    "mnemonic": "A Japanese person. にほんじん (nihonjin) — kneel and honor Jin, a Japanese person.",
+    "components": [
+      "日",
+      "本",
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたが日本人だと私は思っていた。",
+        "reading": "",
+        "gloss": "I thought you were Japanese."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三人",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "three people"
+    ],
+    "readings": [
+      "さんにん"
+    ],
+    "mnemonic": "Three people. さんにん (sannin) — three people kneel to the morning sun.",
+    "components": [
+      "三",
+      "人"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "ケンは三人のなかでもっとも速く走ります。",
+        "reading": "",
+        "gloss": "Ken runs fastest of the three."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "入る",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "to enter"
+    ],
+    "readings": [
+      "はいる"
+    ],
+    "mnemonic": "To enter. はいる (hairu) — say hi as you enter the room.",
+    "components": [
+      "入"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "日本の家に入るときには靴を脱がなくてはなりません。",
+        "reading": "",
+        "gloss": "You must remove your shoes when you enter a Japanese house."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "入れる",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "to put in"
+    ],
+    "readings": [
+      "いれる"
+    ],
+    "mnemonic": "To put in. いれる (ireru) — eel-roo: the electric eel puts itself in the tank.",
+    "components": [
+      "入"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "それは引き出しに入れておきました。",
+        "reading": "",
+        "gloss": "I put it in the drawer."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "入口",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "entrance"
+    ],
+    "readings": [
+      "いりぐち"
+    ],
+    "mnemonic": "Entrance. いりぐち (iriguchi) — the gooey cheese sits right at the entrance.",
+    "components": [
+      "入",
+      "口"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "１台の車が入り口に止まった。",
+        "reading": "",
+        "gloss": "A car stopped at the entrance."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "力",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "power"
+    ],
+    "readings": [
+      "ちから"
+    ],
+    "mnemonic": "Power. ちから (chikara) — cheek-ara: puffed cheeks showing off their power.",
+    "components": [
+      "力"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは私の２倍の力がある。",
+        "reading": "",
+        "gloss": "You are twice as strong as I."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "努力",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "effort"
+    ],
+    "readings": [
+      "どりょく"
+    ],
+    "mnemonic": "Effort. どりょく (doryoku) — effort opens every door: door-yoku.",
+    "components": [
+      "努",
+      "力"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "俺はベストを尽くそうと努力している。",
+        "reading": "",
+        "gloss": "I gotta try to do my best."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "上",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "above"
+    ],
+    "readings": [
+      "うえ"
+    ],
+    "mnemonic": "Above. うえ (ue) — ooh, way up above the clouds.",
+    "components": [
+      "上"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "飛行機は山の上を飛んだ。",
+        "reading": "",
+        "gloss": "The plane flew over the mountain."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "上手",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "skillful"
+    ],
+    "readings": [
+      "じょうず"
+    ],
+    "mnemonic": "Skillful. じょうず (jouzu) — Joe runs the zoo, and he is skillful at it.",
+    "components": [
+      "上",
+      "手"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは上手にバスケットボールができますか。",
+        "reading": "",
+        "gloss": "Do you play basketball well?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "上る",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "to climb"
+    ],
+    "readings": [
+      "のぼる"
+    ],
+    "mnemonic": "To climb. のぼる (noboru) — climb with no borrowed ladder: no-borrow.",
+    "components": [
+      "上"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたは、上れませんよ。",
+        "reading": "",
+        "gloss": "You cannot climb!"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "上着",
+    "type": "vocabulary",
+    "level": 1,
+    "meanings": [
+      "jacket"
+    ],
+    "readings": [
+      "うわぎ"
+    ],
+    "mnemonic": "Jacket. うわぎ (uwagi) — ooh, a waggy-tailed jacket that keeps you warm.",
+    "components": [
+      "上",
+      "着"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "男性の方は上着を着用してください。",
+        "reading": "",
+        "gloss": "Jackets are requested for men."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  }
+]

@@ -110,6 +110,7 @@ export function parseKanjiAliveRadicals(body: string): KanjiAliveRadical[] {
 }
 
 export interface CommonVocabEntry {
+  id: string;
   text: string;
   reading: string;
   glosses: string[];
@@ -117,16 +118,18 @@ export interface CommonVocabEntry {
 
 /**
  * Extract common-written vocab from jmdict-simplified eng-common JSON.
- * Shape: { words: [{ kanji: [{ common, text }], kana: [{ common, text }],
- *   sense: [{ english_definitions, parts_of_speech }] }] }.
- * Keeps entries with at least one common kanji form; reading prefers a
- * common kana form, else the first kana form.
+ * Shape: { words: [{ id, kanji: [{common, text}], kana: [{common, text,
+ *   appliesToKanji}], sense: [{ english_definitions }] }] }.
+ * Keeps entries with at least one common kanji form; each written form gets
+ * its own entry with the reading resolved via appliesToKanji ("*" or the
+ * form itself), falling back to a common kana form, then the first kana form.
  */
 export function extractCommonVocab(doc: {
   words?: Array<{
+    id?: string;
     kanji?: Array<{ common?: boolean; text?: string }>;
-    kana?: Array<{ common?: boolean; text?: string }>;
-    sense?: Array<{ english_definitions?: string[] }>;
+    kana?: Array<{ common?: boolean; text?: string; appliesToKanji?: string[] }>;
+    sense?: Array<{ gloss?: Array<{ lang?: string; text?: string }> }>;
   }>;
 }): CommonVocabEntry[] {
   const out: CommonVocabEntry[] = [];
@@ -134,13 +137,23 @@ export function extractCommonVocab(doc: {
     const commonKanji = (w.kanji ?? []).filter((k) => k.common && k.text);
     if (commonKanji.length === 0) continue;
     const kana = w.kana ?? [];
-    const reading =
-      kana.find((k) => k.common && k.text)?.text ??
-      kana.find((k) => k.text)?.text ??
-      "";
-    const glosses = (w.sense ?? []).flatMap((s) => s.english_definitions ?? []);
+    const glosses = [
+      ...new Set(
+        (w.sense ?? []).flatMap((s) =>
+          (s.gloss ?? []).filter((g) => g.lang === "eng" && g.text).map((g) => g.text as string),
+        ),
+      ),
+    ];
     for (const k of commonKanji) {
-      out.push({ text: k.text as string, reading, glosses: [...new Set(glosses)] });
+      const text = k.text as string;
+      const reading =
+        kana.find(
+          (x) => x.text && (x.appliesToKanji?.includes("*") || x.appliesToKanji?.includes(text)),
+        )?.text ??
+        kana.find((x) => x.common && x.text)?.text ??
+        kana.find((x) => x.text)?.text ??
+        "";
+      out.push({ id: w.id ?? "", text, reading, glosses });
     }
   }
   return out;

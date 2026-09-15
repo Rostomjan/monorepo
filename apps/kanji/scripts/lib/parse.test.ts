@@ -59,19 +59,44 @@ describe("extractCommonVocab", () => {
     const out = extractCommonVocab({
       words: [
         {
+          id: "1",
           kanji: [{ common: true, text: "休み" }],
-          kana: [{ common: true, text: "やすみ" }],
-          sense: [{ english_definitions: ["rest", "holiday"] }],
+          kana: [{ common: true, text: "やすみ", appliesToKanji: ["*"] }],
+          sense: [{ gloss: [{ lang: "eng", text: "rest" }, { lang: "eng", text: "holiday" }] }],
         },
         {
+          id: "2",
           kanji: [{ common: false, text: "稀有" }],
           kana: [{ text: "けう" }],
-          sense: [{ english_definitions: ["rare"] }],
+          sense: [{ gloss: [{ lang: "eng", text: "rare" }] }],
         },
       ],
     });
     expect(out).toEqual([
-      { text: "休み", reading: "やすみ", glosses: ["rest", "holiday"] },
+      { id: "1", text: "休み", reading: "やすみ", glosses: ["rest", "holiday"] },
+    ]);
+  });
+
+  test("resolves readings via appliesToKanji", () => {
+    const out = extractCommonVocab({
+      words: [
+        {
+          id: "3",
+          kanji: [
+            { common: true, text: "入口" },
+            { common: true, text: "入り口" },
+          ],
+          kana: [
+            { common: true, text: "いりぐち", appliesToKanji: ["入口", "入り口"] },
+            { common: false, text: "いりくち", appliesToKanji: ["入口"] },
+          ],
+          sense: [{ gloss: [{ lang: "eng", text: "entrance" }] }],
+        },
+      ],
+    });
+    expect(out.map((e) => [e.text, e.reading])).toEqual([
+      ["入口", "いりぐち"],
+      ["入り口", "いりぐち"],
     ]);
   });
 });

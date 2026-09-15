@@ -1,0 +1,175 @@
+[
+  {
+    "glyph": "一",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "one"
+    ],
+    "readings": [
+      "イチ"
+    ],
+    "mnemonic": "One flat line. Say いち (ichi) — like stretching out the word 'each': eeeeach... ichi.",
+    "components": [
+      "⼀"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "二",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "two"
+    ],
+    "readings": [
+      "ニ"
+    ],
+    "mnemonic": "Two lines stacked like bunk beds. Say に (ni) — picture knees stacked under a blanket, two bumps.",
+    "components": [
+      "⼆"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "三",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "three"
+    ],
+    "readings": [
+      "サン"
+    ],
+    "mnemonic": "One line plus two lines makes three. さん (san) sounds like 'sun' — three suns glaring in the sky.",
+    "components": [
+      "⼀",
+      "⼆"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "十",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "ten"
+    ],
+    "readings": [
+      "ジュウ"
+    ],
+    "mnemonic": "A stick crosses one to make ten. じゅう (juu) sounds like 'juice' — ten glasses of juice in a cross formation.",
+    "components": [
+      "⼗"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "人",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "person"
+    ],
+    "readings": [
+      "ジン"
+    ],
+    "mnemonic": "A person mid-stride, leaning into the wind. じん (jin) — like your friend Jin, a real person.",
+    "components": [
+      "⼈"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "入",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "enter"
+    ],
+    "readings": [
+      "ニュウ"
+    ],
+    "mnemonic": "Duck under the lifted roof to enter. にゅう (nyuu) sounds like 'new' — entering a brand new room.",
+    "components": [
+      "⼊"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "力",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "power"
+    ],
+    "readings": [
+      "ちから"
+    ],
+    "mnemonic": "An arm flexing with power. ちから (chikara) — kara as in karate, the power art.",
+    "components": [
+      "⼒"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "上",
+    "type": "kanji",
+    "level": 1,
+    "meanings": [
+      "above",
+      "up"
+    ],
+    "readings": [
+      "ジョウ"
+    ],
+    "mnemonic": "One short line sits above the crack: above it all. じょう (jou) sounds like 'Joe' — Joe standing above the crowd.",
+    "components": [
+      "⼀",
+      "⼘"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "kanjidic2",
+      "kradfile"
+    ],
+    "shipped": true
+  }
+]

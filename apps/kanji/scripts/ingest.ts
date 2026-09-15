@@ -83,6 +83,11 @@ function parseKanjidic2(xml: string): KanjidicEntry[] {
   const root = Array.isArray(doc.kanjidic2) ? doc.kanjidic2[0] : doc.kanjidic2;
   const chars = root?.character ?? [];
   const text = (v: unknown): string => String((v as { "#text"?: string })["#text"] ?? v);
+  // With isArray forced on, attributes arrive as single-element arrays.
+  const attr = (v: unknown, key: string): unknown => {
+    const a = (v as Record<string, unknown>)[key];
+    return Array.isArray(a) ? a[0] : a;
+  };
   return chars.map((ch) => {
     const rmgroup = (ch.reading_meaning?.[0] as Record<string, unknown[]>)?.rmgroup?.[0] as
       | Record<string, unknown[]>
@@ -98,15 +103,9 @@ function parseKanjidic2(xml: string): KanjidicEntry[] {
     };
     return {
       literal: text(ch.literal?.[0]),
-      meanings: meanings
-        .filter((m) => (m as { "@_m_lang"?: string })["@_m_lang"] === undefined)
-        .map(text),
-      on: readings
-        .filter((r) => r["@_r_type"] === "ja_on")
-        .map(text),
-      kun: readings
-        .filter((r) => r["@_r_type"] === "ja_kun")
-        .map(text),
+      meanings: meanings.filter((m) => attr(m, "@_m_lang") === undefined).map(text),
+      on: readings.filter((r) => attr(r, "@_r_type") === "ja_on").map(text),
+      kun: readings.filter((r) => attr(r, "@_r_type") === "ja_kun").map(text),
       grade: num("grade"),
       strokes: num("stroke_count"),
       freq: num("freq"),
@@ -132,9 +131,10 @@ async function main(): Promise<void> {
   // 2. KRADFILE decomposition.
   const kradGz = join(VENDOR, "kradfile.gz");
   await download(SOURCES.kradfile, kradGz, refresh);
-  const kradBody = Buffer.from(
-    Bun.gunzipSync(new Uint8Array(await Bun.file(kradGz).arrayBuffer())),
-  ).toString("utf8");
+  // KRADFILE is EUC-JP encoded (EDRDG legacy); everything else is UTF-8.
+  const kradBody = new TextDecoder("euc-jp").decode(
+    Buffer.from(Bun.gunzipSync(new Uint8Array(await Bun.file(kradGz).arrayBuffer()))),
+  );
   const krad = parseKradfile(kradBody);
   const decomposition: Record<string, string[]> = {};
   for (const e of krad) decomposition[e.kanji] = e.components;
