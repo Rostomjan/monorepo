@@ -17,6 +17,7 @@ export function LessonRunner() {
   const [failed, setFailed] = useState<Set<number>>(new Set());
   const [feedback, setFeedback] = useState<string | null>(null);
   const [result, setResult] = useState<{ passed: number; failed: number } | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   if (queue === undefined) return <p className="text-zinc-500">Loading lessons…</p>;
   if (queue.length === 0) {
@@ -42,20 +43,40 @@ export function LessonRunner() {
     );
   }
 
-  // Quiz phase.
+  // Quiz phase. Submission happens in the final answer's event handler,
+  // never in render (render-time mutations double-fire under StrictMode).
   if (quizQueue) {
-    if (quizQueue.length === 0) {
-      const results = items.map((item: QueueItem, i: number) => ({
-        subjectId: item._id,
-        passed: !failed.has(i),
-      }));
-      void complete({ results }).then((r) => setResult(r));
-      return <p className="text-zinc-500">Grading…</p>;
-    }
+    if (submitted) return <p className="text-zinc-500">Grading…</p>;
     const current = quizQueue[0];
     const item: QueueItem = items[current.item];
     const accepted =
       current.half === "meaning" ? item.meanings.join(" / ") : item.readings.join(", ");
+    const answerHalf = (answer: string) => {
+      const ok =
+        current.half === "meaning"
+          ? checkMeaning(item.meanings, answer)
+          : checkReading(item.readings, answer);
+      const nextFailed = ok ? failed : new Set(failed).add(current.item);
+      setFailed(nextFailed);
+      if (quizQueue.length === 1) {
+        setSubmitted(true);
+        const results = items.map((it: QueueItem, i: number) => ({
+          subjectId: it._id,
+          passed: i === current.item ? ok : !nextFailed.has(i),
+        }));
+        void complete({ results }).then((r) => setResult(r));
+        return;
+      }
+      if (!ok) {
+        setFeedback(`Not quite — accepted: ${accepted}`);
+        setTimeout(() => {
+          setFeedback(null);
+          setQuizQueue(quizQueue.slice(1));
+        }, 1600);
+      } else {
+        setQuizQueue(quizQueue.slice(1));
+      }
+    };
     return (
       <div className="flex flex-col items-center gap-3">
         <p className="text-sm text-zinc-500">
@@ -65,22 +86,7 @@ export function LessonRunner() {
           key={`${current.item}-${current.half}`}
           glyph={item.glyph}
           prompt={current.half}
-          onAnswer={(answer) => {
-            const ok =
-              current.half === "meaning"
-                ? checkMeaning(item.meanings, answer)
-                : checkReading(item.readings, answer);
-            if (!ok) {
-              setFailed(new Set(failed).add(current.item));
-              setFeedback(`Not quite — accepted: ${accepted}`);
-              setTimeout(() => {
-                setFeedback(null);
-                setQuizQueue(quizQueue.slice(1));
-              }, 1600);
-            } else {
-              setQuizQueue(quizQueue.slice(1));
-            }
-          }}
+          onAnswer={answerHalf}
         />
         {feedback && <p className="text-red-600 font-semibold">{feedback}</p>}
       </div>
