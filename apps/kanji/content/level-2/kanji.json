@@ -1,0 +1,93 @@
+[
+  {
+    "glyph": "刀",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["sword"],
+    "readings": ["かたな"],
+    "mnemonic": "A knife standing on its tip. かたな (katana) — the curved sword of the samurai.",
+    "components": ["⼑"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2"],
+    "shipped": true
+  },
+  {
+    "glyph": "切",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["cut"],
+    "readings": ["セツ"],
+    "mnemonic": "Knife plus spoon: dinner is served, now cut it up. セツ (setsu) — set the table, then cut.",
+    "components": ["⼑", "⼔"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "内",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["inside"],
+    "readings": ["ナイ"],
+    "mnemonic": "A person standing inside the corral. ナイ (nai) — kneel inside behind the knee-high fence.",
+    "components": ["⼈", "⼌"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "丁",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["ward"],
+    "readings": ["チョウ"],
+    "mnemonic": "One street with a hook turn at the end. チョウ (chou) — the chow-mein street, tastiest ward in town.",
+    "components": ["⼀", "⼅"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "写",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["copy"],
+    "readings": ["シャ"],
+    "mnemonic": "One crown all wrapped up: a photo wraps a moment forever. シャ (sha) — shout it for the camera: sha!",
+    "components": ["⼀", "⼍", "⼓"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "協",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["cooperation"],
+    "readings": ["キョウ"],
+    "mnemonic": "Ten powers pulling together. キョウ (kyou) — today (kyou) we cooperate.",
+    "components": ["⼗", "⼒"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  },
+  {
+    "glyph": "卒",
+    "type": "kanji",
+    "level": 2,
+    "meanings": ["graduate"],
+    "readings": ["ソツ"],
+    "mnemonic": "Ten people under one lid: the whole graduating class. ソツ (sotsu) — so totally graduated.",
+    "components": ["⼗", "⼈", "⼇"],
+    "audioRef": null,
+    "examples": [],
+    "sources": ["kanjidic2", "kradfile"],
+    "shipped": true
+  }
+]

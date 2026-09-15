@@ -1,0 +1,590 @@
+[
+  {
+    "glyph": "刀",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "sword"
+    ],
+    "readings": [
+      "かたな"
+    ],
+    "mnemonic": "The sword itself. かたな (katana) — you already know this word: katana.",
+    "components": [
+      "刀"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "「刀の投擲の練習？」「すっぽ抜けただけです」",
+        "reading": "",
+        "gloss": "\"Practising sword throwing?\" \"It just slipped out of my hands.\""
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "包丁",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "kitchen knife"
+    ],
+    "readings": [
+      "ほうちょう"
+    ],
+    "mnemonic": "Wrap plus sword equals kitchen knife. ほうちょう (houchou) — hold the chou steady while you chop.",
+    "components": [
+      "包",
+      "丁"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "子供に包丁をいたずらさせてはダメだよ。",
+        "reading": "",
+        "gloss": "Don't let your boy play with a knife."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "日本刀",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "Japanese sword"
+    ],
+    "readings": [
+      "にほんとう"
+    ],
+    "mnemonic": "Japan plus sword. にほんとう (nihontou) — kneel before the Japanese sword.",
+    "components": [
+      "日",
+      "本",
+      "刀"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "切る",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "to cut"
+    ],
+    "readings": [
+      "きる"
+    ],
+    "mnemonic": "To cut. きる (kiru) — kiru the carrots, not your fingers.",
+    "components": [
+      "切"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "２．大根は拍子木に切る。",
+        "reading": "",
+        "gloss": "2. Cut the daikon into long sticks."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "大切",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "important"
+    ],
+    "readings": [
+      "たいせつ"
+    ],
+    "mnemonic": "Big plus cut: what you would never cut away. たいせつ (taisetsu) — ties that bind are important.",
+    "components": [
+      "大",
+      "切"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "柔道では力より技のほうが大切である。",
+        "reading": "",
+        "gloss": "In judo, technique is more important than strength."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "切手",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "stamp"
+    ],
+    "readings": [
+      "きって"
+    ],
+    "mnemonic": "Cut plus hand: you tear the stamp off. きって (kitte) — kitty stamps the mail with her paws.",
+    "components": [
+      "切",
+      "手"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "趣味は切手を集めることです。",
+        "reading": "",
+        "gloss": "My hobby is collecting stamps."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "親切",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "kind"
+    ],
+    "readings": [
+      "しんせつ"
+    ],
+    "mnemonic": "A parent who would never cut you off is kind. しんせつ (shinsetsu) — she sets the table kindly.",
+    "components": [
+      "親",
+      "切"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたの家族はきっと親切でしょう。",
+        "reading": "",
+        "gloss": "Your family must be very nice."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "内",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "inside"
+    ],
+    "readings": [
+      "うち"
+    ],
+    "mnemonic": "Inside. うち (uchi) — ooh, it is cozy inside.",
+    "components": [
+      "内"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "エイズが私が生きているうちに治ることを願っているよ。",
+        "reading": "",
+        "gloss": "I have a dream that AIDS will be cured in my lifetime."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "内容",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "contents"
+    ],
+    "readings": [
+      "ないよう"
+    ],
+    "mnemonic": "Inside plus容 equals contents. ないよう (naiyou) — read the contents at night, yo.",
+    "components": [
+      "内",
+      "容"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "仮の議事内容を送付しました。",
+        "reading": "",
+        "gloss": "Attached is the tentative agenda."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "内科",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "internal medicine"
+    ],
+    "readings": [
+      "ないか"
+    ],
+    "mnemonic": "Inside plus department: internal medicine. ないか (naika) — night car to the hospital.",
+    "components": [
+      "内",
+      "科"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "内科はどこですか。",
+        "reading": "",
+        "gloss": "Where is the Internal Medicine Department?"
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "国内",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "domestic"
+    ],
+    "readings": [
+      "こくない"
+    ],
+    "mnemonic": "Country plus inside: domestic. こくない (kokunai) — domestic cola every night.",
+    "components": [
+      "国",
+      "内"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "アメリカへ行くくらいなら、国内にいるほうがましだ。",
+        "reading": "",
+        "gloss": "You might as well stay at home as go to America."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "丁寧",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "polite"
+    ],
+    "readings": [
+      "ていねい"
+    ],
+    "mnemonic": "Polite. ていねい (teinei) — take no for an answer, politely.",
+    "components": [
+      "丁",
+      "寧"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "漢字を書くときは点やはらいに気をつけて、なるべく早くていねいに書きましょう。",
+        "reading": "",
+        "gloss": "When drawing kanji be careful of dots and sweeps, write as carefully and quickly as possible."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "一丁",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "one portion"
+    ],
+    "readings": [
+      "いっちょう"
+    ],
+    "mnemonic": "One portion of tofu or tools. いっちょう (itchou) — each chow comes in one portion.",
+    "components": [
+      "一",
+      "丁"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "丁度",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "exactly"
+    ],
+    "readings": [
+      "ちょうど"
+    ],
+    "mnemonic": "Exactly. ちょうど (choudo) — exactly one doe ate the chow.",
+    "components": [
+      "丁",
+      "度"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "私達はちょうど食事を終えた所です。",
+        "reading": "",
+        "gloss": "We've just finished breakfast."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "写真",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "photo"
+    ],
+    "readings": [
+      "しゃしん"
+    ],
+    "mnemonic": "Copy plus truth equals photo. しゃしん (shashin) — press the shutter, capture the truth.",
+    "components": [
+      "写",
+      "真"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "あなたに何枚かの写真を見せましょう。",
+        "reading": "",
+        "gloss": "I will show you some pictures."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "写す",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "to copy"
+    ],
+    "readings": [
+      "うつす"
+    ],
+    "mnemonic": "To copy. うつす (utsusu) — ooh, Sue copies everything.",
+    "components": [
+      "写"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "このページをノートに写しておきなさい。",
+        "reading": "",
+        "gloss": "Copy this page in your notebook."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "描写",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "description"
+    ],
+    "readings": [
+      "びょうしゃ"
+    ],
+    "mnemonic": "Depict plus copy: a description. びょうしゃ (byousha) — be your shot at describing it.",
+    "components": [
+      "描",
+      "写"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "その美しさを言葉では描写できない。",
+        "reading": "",
+        "gloss": "Words cannot describe the beauty."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "協力",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "cooperation"
+    ],
+    "readings": [
+      "きょうりょく"
+    ],
+    "mnemonic": "Cooperate plus power. きょうりょく (kyouryoku) — today we pool our power.",
+    "components": [
+      "協",
+      "力"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "ご協力に感謝します。",
+        "reading": "",
+        "gloss": "I appreciate your cooperation."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "協会",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "association"
+    ],
+    "readings": [
+      "きょうかい"
+    ],
+    "mnemonic": "Cooperate plus meeting: an association. きょうかい (kyoukai) — today the association meets.",
+    "components": [
+      "協",
+      "会"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "協会は彼を会長にした。",
+        "reading": "",
+        "gloss": "The society made him president."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "卒業",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "graduation"
+    ],
+    "readings": [
+      "そつぎょう"
+    ],
+    "mnemonic": "End plus business: graduation. そつぎょう (sotsugyou) — so totally done with school business.",
+    "components": [
+      "卒",
+      "業"
+    ],
+    "audioRef": null,
+    "examples": [
+      {
+        "text": "彼は学校を卒業したあと、ロンドンへ行った。",
+        "reading": "",
+        "gloss": "After he left school, he went to London."
+      }
+    ],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  },
+  {
+    "glyph": "新卒",
+    "type": "vocabulary",
+    "level": 2,
+    "meanings": [
+      "new graduate"
+    ],
+    "readings": [
+      "しんそつ"
+    ],
+    "mnemonic": "New plus graduate. しんそつ (shinsotsu) — a shiny new graduate.",
+    "components": [
+      "新",
+      "卒"
+    ],
+    "audioRef": null,
+    "examples": [],
+    "sources": [
+      "jmdict:common",
+      "jmdict:examples"
+    ],
+    "shipped": true
+  }
+]
