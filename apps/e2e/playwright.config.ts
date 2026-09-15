@@ -25,10 +25,22 @@ export default defineConfig({
       use: { ...devices["Desktop Safari"] },
     },
   ],
-  webServer: {
-    command: "bun run --cwd ../chat dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: "bun run --cwd ../chat dev",
+      url: "http://localhost:3000",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+    {
+      command: "bun run --cwd ../kanji dev",
+      url: "http://localhost:3001",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      env: {
+        PORT: "3001",
+        NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL ?? "",
+      },
+    },
+  ],
 });

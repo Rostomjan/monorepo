@@ -95,9 +95,11 @@
       "version": "0.0.0",
       "devDependencies": {
         "@playwright/test": "1.63.0",
+        "@repo/backend": "workspace:*",
         "@repo/eslint-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "26.4.1",
+        "convex": "^1.45.0",
         "eslint": "^8.57.0",
         "typescript": "7.0.2",
       },

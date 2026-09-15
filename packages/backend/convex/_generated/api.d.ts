@@ -18,6 +18,7 @@ import type * as kanjiItems from "../kanjiItems.js";
 import type * as kanjiLessons from "../kanjiLessons.js";
 import type * as kanjiReviews from "../kanjiReviews.js";
 import type * as kanjiSeed from "../kanjiSeed.js";
+import type * as kanjiTest from "../kanjiTest.js";
 
 declare const fullApi: ApiFromModules<{
   kanjiDashboard: typeof kanjiDashboard;
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   kanjiLessons: typeof kanjiLessons;
   kanjiReviews: typeof kanjiReviews;
   kanjiSeed: typeof kanjiSeed;
+  kanjiTest: typeof kanjiTest;
 }>;
 
 /**

@@ -150,7 +150,7 @@ export const QuizPrompt = ({ glyph, prompt, onAnswer }: QuizPromptProps) => {
       <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
         Quiz · {prompt}
       </p>
-      <p className="text-7xl text-center my-4">{glyph}</p>
+      <p data-testid="quiz-glyph" className="text-7xl text-center my-4">{glyph}</p>
       <input
         name="answer"
         autoComplete="off"
@@ -175,7 +175,7 @@ export interface WrapUpRow {
 }
 export const WrapUpTable = ({ rows }: { rows: WrapUpRow[] }) => {
   return (
-    <table className="w-full max-w-xl border-collapse">
+    <table data-testid="wrap-up" className="w-full max-w-xl border-collapse">
       <thead>
         <tr className="text-left text-xs font-bold uppercase tracking-widest text-zinc-500">
           <th className="border border-zinc-200 dark:border-zinc-800 p-2">Item</th>

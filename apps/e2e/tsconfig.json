@@ -4,6 +4,7 @@
     "paths": {
       "@/*": ["./*"]
     },
+    "resolveJsonModule": true,
     "types": ["node"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
