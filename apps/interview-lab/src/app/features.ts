@@ -120,4 +120,12 @@ export const features: Feature[] = [
     question: "What can you demo on Clerk Free tier?",
     accent: "bg-indigo-600",
   },
+  {
+    href: "/gcp",
+    title: "GCP for Full-Stack",
+    tag: "GCP",
+    desc: "Cloud Run, GCS, Secrets/IAM, SQL vs Firestore — local-first.",
+    question: "How to deploy Next + upload + secrets on GCP?",
+    accent: "bg-sky-600",
+  },
 ];

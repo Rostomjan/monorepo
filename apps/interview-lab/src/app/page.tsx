@@ -3,8 +3,9 @@ import { FeatureCard } from "./components/FeatureCard";
 import { features } from "./features";
 
 export default function Page() {
-  const nextFeatures = features.filter((f) => !f.href.startsWith("/clerk"));
+  const nextFeatures = features.filter((f) => !f.href.startsWith("/clerk") && !f.href.startsWith("/gcp"));
   const clerkFeatures = features.filter((f) => f.href.startsWith("/clerk"));
+  const gcpFeatures = features.filter((f) => f.href.startsWith("/gcp"));
 
   return (
     <main className="space-y-8">
@@ -92,6 +93,24 @@ export default function Page() {
             User lifecycle
           </Link>{" "}
           — each shows <b>Dashboard path + code + “Requires upgrade”</b> when paid.
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-500">GCP — local-first</h2>
+          <Link href="/gcp" className="text-xs underline text-sky-600">
+            View all →
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-zinc-500">
+          Zero creds to learn: Run, GCS presigned upload, Secrets/IAM, SQL vs Firestore. Code + gcloud ready for a
+          real project.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {gcpFeatures.map((f) => (
+            <FeatureCard key={f.href} f={f} />
+          ))}
         </div>
       </div>
 
