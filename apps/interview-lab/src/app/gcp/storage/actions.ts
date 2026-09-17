@@ -58,7 +58,7 @@ export async function mintUploadUrl(input: { filename: string; contentType: stri
         expires: Date.now() + 10 * 60 * 1000,
         contentType,
       });
-    console.log('url', url);
+
     return { ok: true as const, mode: "live" as const, url, objectName, note: "Real v4 URL, 10 min." };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown storage error";
