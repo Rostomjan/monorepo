@@ -1,5 +1,6 @@
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import { FirestoreDemo } from "./FirestoreDemo";
 
 export const metadata = { title: "Cloud SQL vs Firestore" };
 
@@ -7,9 +8,16 @@ export default function Page() {
   return (
     <DemoShell
       title="Cloud SQL vs Firestore"
-      intro="SQL for relations + transactions; Firestore for document scale + realtime. Interviewers want the trade-off + how Next connects (pooling, connector, no per-request connect)."
+      intro="SQL for relations + transactions; Firestore for document scale + realtime. Firestore Demo below is live (free tier); Cloud SQL stays code-only (smallest instance bills). Interviewers want the trade-off + how Next connects."
       demo={
         <>
+          <DemoCard title="Try it — live Firestore (free tier)">
+            <FirestoreDemo />
+            <p className="mt-2 text-xs text-zinc-500">
+              DB: native mode, europe-west1. <code>datastore.user</code> on <code>lab-signer</code> + your user. Cloud
+              SQL intentionally not provisioned (costs ~$10/mo).
+            </p>
+          </DemoCard>
           <DemoCard title="Decision table (local, no DB needed)">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
