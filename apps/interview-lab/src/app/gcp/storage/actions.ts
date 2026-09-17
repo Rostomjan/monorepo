@@ -58,12 +58,15 @@ export async function mintUploadUrl(input: { filename: string; contentType: stri
         expires: Date.now() + 10 * 60 * 1000,
         contentType,
       });
+    console.log('url', url);
     return { ok: true as const, mode: "live" as const, url, objectName, note: "Real v4 URL, 10 min." };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown storage error";
     const hint = msg.includes("client_email")
       ? " User ADC can't sign v4 URLs (needs a service account; org blocks SA keys). Use 'Test live write' below for the live proof, or impersonate lab-signer."
-      : " Check ADC: gcloud auth application-default login, bucket + IAM.";
+      : msg.includes("Could not load the default credentials")
+        ? " No ADC on this host — expected on Vercel. Mint works where ADC exists: local dev (impersonated login) or Cloud Run (attached SA)."
+        : " Check ADC: gcloud auth application-default login, bucket + IAM.";
     return { ok: false as const, error: `Live mint failed (${msg}).${hint}` };
   }
 }

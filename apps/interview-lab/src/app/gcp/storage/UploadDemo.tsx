@@ -16,10 +16,26 @@ export function UploadDemo({ initialMode }: { initialMode: "local" | "live" }) {
   async function onMint() {
     setBusy(true);
     setStatus(null);
+    setResult(null);
     try {
-      const r = await mintUploadUrl({ filename, contentType });
+      // When a file is chosen, mint for the FILE (name + type) so the
+      // signed content-type always matches the PUT — mismatch = 403.
+      const fileType = file?.type ?? "";
+      const useFile =
+        file && (fileType === "image/png" || fileType === "image/jpeg" || fileType === "image/webp");
+      const r = await mintUploadUrl(
+        useFile
+          ? { filename: file.name, contentType: fileType }
+          : { filename, contentType },
+      );
       setResult(r);
-      if (!r.ok) setStatus(r.error);
+      if (!r.ok) {
+        setStatus(r.error);
+      } else if (useFile) {
+        setFilename(file.name);
+        setContentType(fileType);
+        setStatus(`Minted for ${file.name} (${fileType}) — matched to your file.`);
+      }
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Mint failed");
     } finally {
@@ -28,7 +44,14 @@ export function UploadDemo({ initialMode }: { initialMode: "local" | "live" }) {
   }
 
   async function onUpload() {
-    if (!result || !result.ok || !file) return;
+    if (!result || !result.ok) {
+      setStatus("Mint a URL first, then upload.");
+      return;
+    }
+    if (!file) {
+      setStatus("Choose a file first (≤ 1 MB image) — then Upload via PUT.");
+      return;
+    }
     if (result.mode !== "live") {
       setStatus("Local shape — no PUT performed (zero cost). Set GCS_BUCKET to go live.");
       return;
@@ -41,10 +64,17 @@ export function UploadDemo({ initialMode }: { initialMode: "local" | "live" }) {
     try {
       const res = await fetch(result.url, {
         method: "PUT",
+        // Same source of truth as the mint above: file wins when present.
         headers: { "Content-Type": file.type || contentType },
         body: file,
       });
-      setStatus(res.ok ? `Uploaded ${result.objectName} (${file.size} bytes).` : `PUT failed: ${res.status}`);
+      if (res.ok) {
+        setStatus(`Uploaded ${result.objectName} (${file.size} bytes). Delete after practice to stay free.`);
+      } else {
+        const body = await res.text().catch(() => "");
+        const hint = res.status === 403 ? " (type/name mismatch vs minted URL — re-mint with the file chosen)" : "";
+        setStatus(`PUT failed: ${res.status}${hint} ${body.slice(0, 160)}`);
+      }
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -85,7 +115,25 @@ export function UploadDemo({ initialMode }: { initialMode: "local" | "live" }) {
         </label>
         <label className="grid gap-1 text-xs">
           File to PUT (≤ 1 MB, only used when live)
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setFile(f);
+              if (f && (f.type === "image/png" || f.type === "image/jpeg" || f.type === "image/webp")) {
+                setContentType(f.type);
+              }
+            }}
+          />
+          {file && (
+            <span className="text-zinc-500">
+              {file.name} ({file.type || "unknown type"}, {Math.round(file.size / 1024)} KB)
+              {contentType !== file.type && file.type
+                ? " — content-type auto-matched to file"
+                : ""}
+            </span>
+          )}
         </label>
       </div>
       <div className="flex flex-wrap gap-2">

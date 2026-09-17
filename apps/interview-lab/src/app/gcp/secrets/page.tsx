@@ -1,5 +1,6 @@
 import { Callout, CodeBlock, DemoCard } from "../../components/CodeBlock";
 import { DemoShell } from "../../components/DemoShell";
+import { SecretDemo } from "./SecretDemo";
 
 export const metadata = { title: "Secret Manager + IAM" };
 
@@ -7,10 +8,17 @@ export default function Page() {
   return (
     <DemoShell
       title="Secret Manager + IAM"
-      intro="Secrets live in Secret Manager, accessed server-only via service-account IAM. NEXT_PUBLIC_ is baked into client JS — never put a secret there. Local demo is a naming/redaction table."
+      intro="Secrets live in Secret Manager, accessed server-only via service-account IAM. NEXT_PUBLIC_ is baked into client JS — never put a secret there. Live Demo below reads a dummy practice secret; naming table teaches the rule."
       demo={
         <>
-          <DemoCard title="Naming rule (local check)">
+          <DemoCard title="Try it — live read (dummy secret, masked)">
+            <SecretDemo />
+            <p className="mt-2 text-xs text-zinc-500">
+              Free tier: 1 secret, 1 version. Setup: <code>secretmanager.googleapis.com</code> enabled,{" "}
+              <code>LAB_PRACTICE_SECRET</code> v1, <code>secretAccessor</code> on <code>lab-signer</code> + your user.
+              Dummy value only — never a real credential.
+            </p>
+          </DemoCard>          <DemoCard title="Naming rule (local check)">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
