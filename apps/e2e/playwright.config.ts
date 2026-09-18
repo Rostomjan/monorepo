@@ -42,5 +42,11 @@ export default defineConfig({
         NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL ?? "",
       },
     },
+    {
+      command: "bun run --cwd ../interview-lab dev",
+      url: "http://localhost:3003",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
   ],
 });
