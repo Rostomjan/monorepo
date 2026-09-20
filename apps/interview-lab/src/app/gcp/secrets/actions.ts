@@ -13,10 +13,6 @@ function mask(value: string) {
   return value.slice(0, 2) + "***" + value.slice(-1);
 }
 
-export async function getSecretsStatus() {
-  return { projectId: projectId(), practiceSecret: PRACTICE_SECRET };
-}
-
 export async function readPracticeSecret() {
   try {
     const client = new SecretManagerServiceClient();
