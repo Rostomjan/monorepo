@@ -44,6 +44,22 @@ const concepts = [
     badge: "✅ Local explainer",
     color: "bg-cyan-600",
   },
+  {
+    href: "/gcp/bff-dashboard",
+    title: "BFF: Status Dashboard",
+    desc: "One endpoint aggregating bucket + Firestore + secrets, degrades gracefully.",
+    tier: "BFF",
+    badge: "✅ Live aggregate · degrades without ADC",
+    color: "bg-rose-600",
+  },
+  {
+    href: "/gcp/bff-upload-ticket",
+    title: "BFF: Upload Ticket",
+    desc: "One action: signed URL + pre-registered Firestore doc.",
+    tier: "BFF",
+    badge: "✅ Live ticket · needs bucket",
+    color: "bg-orange-600",
+  },
 ];
 
 export default function Page() {

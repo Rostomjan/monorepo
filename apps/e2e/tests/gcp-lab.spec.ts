@@ -8,12 +8,12 @@ test.use({ baseURL: "http://localhost:3003" });
 test("gcp hub lists all demos", async ({ page }) => {
   await page.goto("/gcp");
   await expect(page.getByRole("heading", { name: /GCP for Full-Stack/i })).toBeVisible();
-  for (const name of ["Cloud Run", "Cloud Storage", "Secret Manager", "Cloud SQL vs Firestore", "Firebase vs GCP"]) {
+  for (const name of ["Cloud Run", "Cloud Storage", "Secret Manager", "Cloud SQL vs Firestore", "Firebase vs GCP", "BFF: Status Dashboard", "BFF: Upload Ticket"]) {
     await expect(page.getByRole("link", { name: new RegExp(name) }).first()).toBeVisible();
   }
 });
 
-for (const route of ["/gcp/run", "/gcp/storage", "/gcp/secrets", "/gcp/databases", "/gcp/firebase-vs-gcp"]) {
+for (const route of ["/gcp/run", "/gcp/storage", "/gcp/secrets", "/gcp/databases", "/gcp/firebase-vs-gcp", "/gcp/bff-dashboard", "/gcp/bff-upload-ticket"]) {
   test(`gcp demo renders: ${route}`, async ({ page }) => {
     await page.goto(route);
     await expect(page.getByRole("heading").first()).toBeVisible();

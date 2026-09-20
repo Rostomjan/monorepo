@@ -19,3 +19,7 @@ _Avoid_: lab, playground, tutorial
 **Skill**:
 An interview-tellable ability ("deploy Next.js to Cloud Run with min-instances=0").
 _Avoid_: demo, lab, feature
+
+**BFF**:
+A server endpoint shaped for one screen, aggregating backends with redaction and per-backend degradation.
+_Avoid_: BBF, gateway, proxy
