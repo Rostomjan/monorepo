@@ -124,6 +124,8 @@ jobs:
           # If develop, we could point to the Dev Vercel URL if we had it.
           # For now, we'll use the localhost webserver but it will hit the Dev Convex backend if configured.
           BASE_URL: http://localhost:3000
+          # interview-lab's ClerkProvider requires this at boot (public key, safe for CI).
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
         run: bunx playwright test --project=${{ matrix.browser }}
         working-directory: apps/e2e
       - uses: actions/upload-artifact@v4
