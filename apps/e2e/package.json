@@ -6,8 +6,8 @@
     "@repo/backend": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "26.5.1",
-    "convex": "^1.45.0",
+    "@types/node": "26.6.2",
+    "convex": "^1.46.0",
     "eslint": "^8.57.0",
     "typescript": "7.0.2"
   },
