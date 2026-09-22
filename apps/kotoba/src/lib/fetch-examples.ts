@@ -2,6 +2,7 @@
 
 import { db } from "./db";
 import { countUnknown, templateExamples } from "./examples";
+import { isSentenceLike } from "./normalize";
 import { DEFAULT_EXAMPLE_LEVEL, type ExampleLevel } from "./example-level";
 import { shouldAttemptOnlineUpgrade } from "./network";
 import type { Entry } from "./types";
@@ -21,6 +22,7 @@ export async function getExamples(
   knownSurfaces: Set<string>,
   level: ExampleLevel = DEFAULT_EXAMPLE_LEVEL,
 ): Promise<{ examples: RankedExample[]; upgraded: boolean }> {
+  if (isSentenceLike(entry.surface)) return { examples: [], upgraded: true };
   const templates: RankedExample[] = templateExamples(entry).map((t) => ({
     ...t,
     unknownCount: countUnknown(t.jp, knownSurfaces, entry.surface),
@@ -50,6 +52,7 @@ export async function upgradeExamples(
   level: ExampleLevel = DEFAULT_EXAMPLE_LEVEL,
 ): Promise<RankedExample[] | null> {
   if (!entry.id) return null;
+  if (isSentenceLike(entry.surface)) return null;
   if (!shouldAttemptOnlineUpgrade()) return null;
   try {
     const ctrl = new AbortController();

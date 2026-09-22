@@ -10,6 +10,7 @@ export default function LibraryPage() {
   const [jlpt, setJlpt] = useState("all");
   const [mastery, setMastery] = useState("all");
   const [favOnly, setFavOnly] = useState(false);
+  const [memoOnly, setMemoOnly] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [needsFixOnly, setNeedsFixOnly] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -36,11 +37,17 @@ export default function LibraryPage() {
     (e) =>
       (!q || e.surface.includes(q) || e.reading.includes(q) || e.meaning.includes(q)) &&
       (jlpt === "all" || e.jlpt === jlpt) &&
-      (mastery === "all" || e.mastery === mastery) &&
-      (!favOnly || e.isFavorite) &&
-      (!needsFixOnly || e.needsReview || !e.meaning) &&
-      (showHidden || (!e.suspended && !e.blacklisted)),
+      (memoOnly
+        ? e.isFavorite && e.mastery !== "known" && !e.suspended && !e.blacklisted
+        : (mastery === "all" || e.mastery === mastery) &&
+          (!favOnly || e.isFavorite) &&
+          (!needsFixOnly || e.needsReview || !e.meaning) &&
+          (showHidden || (!e.suspended && !e.blacklisted))),
   );
+
+  const visible = memoOnly
+    ? [...filtered].sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0) || (a.frequencyRank ?? 999999) - (b.frequencyRank ?? 999999))
+    : filtered;
 
   async function toggleFav(e: Entry) {
     await db.entries.update(e.id!, { isFavorite: !e.isFavorite, favoritedAt: Date.now() });
@@ -94,7 +101,7 @@ export default function LibraryPage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Library ({filtered.length})</h1>
+      <h1 className="text-2xl font-bold">Library ({visible.length})</h1>
       {msg && <p className="text-sm text-green-600 dark:text-green-400">{msg}</p>}
       <div className="flex flex-wrap gap-2 text-sm">
         <input
@@ -128,6 +135,17 @@ export default function LibraryPage() {
           ★ useful
         </button>
         <button
+          onClick={() => setMemoOnly(!memoOnly)}
+          title="urgent memorization: starred + not known, ordered by due"
+          className={`rounded-lg border px-3 ${
+            memoOnly
+              ? "border-yellow-300 bg-yellow-100 text-yellow-900 dark:border-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200"
+              : "border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          }`}
+        >
+          ★ Memo
+        </button>
+        <button
           onClick={() => setNeedsFixOnly(!needsFixOnly)}
           title="entries with missing meaning / needs review"
           className={`rounded-lg border px-3 ${
@@ -150,8 +168,82 @@ export default function LibraryPage() {
           hidden
         </button>
       </div>
+      {memoOnly ? (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-zinc-500 dark:text-zinc-400">
+              <th>JP</th>
+              <th>Reading</th>
+              <th>Meaning</th>
+              <th>JLPT</th>
+              <th>Due</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((e) => (
+              <tr key={e.id} className="border-t border-zinc-200 dark:border-zinc-800">
+                <td className="py-1 font-bold text-zinc-900 dark:text-zinc-100">{e.surface}</td>
+                <td className="text-zinc-600 dark:text-zinc-300">
+                  {editingId === e.id ? (
+                    <input
+                      value={editReading}
+                      onChange={(ev) => setEditReading(ev.target.value)}
+                      className="w-28 rounded border border-zinc-200 bg-white px-1 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                    />
+                  ) : (
+                    e.reading
+                  )}
+                </td>
+                <td className="text-zinc-600 dark:text-zinc-400">
+                  {editingId === e.id ? (
+                    <input
+                      value={editMeaning}
+                      onChange={(ev) => setEditMeaning(ev.target.value)}
+                      className="w-full rounded border border-zinc-200 bg-white px-1 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                    />
+                  ) : (
+                    e.meaning || "(no meaning)"
+                  )}
+                </td>
+                <td className="text-zinc-600 dark:text-zinc-300">{e.jlpt}</td>
+                <td className="text-zinc-600 dark:text-zinc-300">
+                  {e.dueAt ? new Date(e.dueAt).toLocaleDateString() : "—"}
+                </td>
+                <td className="flex gap-2 py-1">
+                  {editingId === e.id ? (
+                    <>
+                      <button onClick={() => saveEdit(e)} className="rounded bg-blue-600 px-2 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                        save
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="rounded border border-zinc-200 px-2 dark:border-zinc-700">
+                        cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                  <button onClick={() => setMasteryOf(e, "known")} title="mark known (leave Memo)" className="rounded border border-green-300 px-2 hover:bg-green-50 dark:border-green-700 dark:hover:bg-green-900/30">
+                    known
+                  </button>
+                  <button onClick={() => toggleFav(e)} title="unstar (leave Memo)" className="px-1 text-yellow-600 dark:text-yellow-400">
+                    ★
+                  </button>
+                  <button onClick={() => startEdit(e)} title="edit reading/meaning" className="text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100">
+                    edit
+                  </button>
+                  <button onClick={() => toggleSuspend(e)} title="suspend (exclude from review)" className="text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100">
+                    ⏸
+                  </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
       <div className="flex flex-col gap-2">
-        {filtered.map((e) => (
+        {visible.map((e) => (
           <div key={e.id} className={`flex items-center gap-3 rounded-xl border p-3 ${e.suspended || e.blacklisted ? "border-dashed border-zinc-300 bg-zinc-50 opacity-70 dark:border-zinc-700 dark:bg-zinc-900/50" : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"}`}>
             <div className="flex-1">
               <div className="font-bold text-zinc-900 dark:text-zinc-100">
@@ -219,8 +311,9 @@ export default function LibraryPage() {
             </button>
           </div>
         ))}
-        {filtered.length === 0 && <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing here. Paste some Japanese in Add.</p>}
+        {visible.length === 0 && <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing here. Paste some Japanese in Add.</p>}
       </div>
+      )}
     </main>
   );
 }

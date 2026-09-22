@@ -11,3 +11,9 @@ export function detectKind(surface: string): "word" | "phrase" {
   if (/[、。！？!?…\s]/.test(s) || s.length > 12) return "phrase";
   return "word";
 }
+
+/** Sentence-like phrase: full sentences skip auto LLM/template examples, translation only. */
+export function isSentenceLike(surface: string): boolean {
+  const s = normalizeSurface(surface);
+  return s.length > 8 || /[、。！？!?…\s]/.test(s);
+}

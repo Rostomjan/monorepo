@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   }
   const surface = body.surface?.trim();
   if (!surface) return NextResponse.json({ error: "surface required" }, { status: 400 });
+  if (surface.length > 8 || /[、。！？!?…\s]/.test(surface)) return NextResponse.json({ examples: [], level: parseExampleLevel(body.level) });
   const level = parseExampleLevel(body.level);
   const prompt = `Give 2 short ${level}-level Japanese example sentences using "${surface}" (${body.meaning ?? ""}). Return ONLY a JSON array like [{"jp":"…","en":"…"}].`;
   const ctrl = new AbortController();

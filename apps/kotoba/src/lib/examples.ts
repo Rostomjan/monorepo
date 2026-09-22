@@ -1,7 +1,9 @@
 import type { Entry } from "./types";
+import { isSentenceLike } from "./normalize";
 
 /** Offline template examples. Instant, no network. LLM results cached separately. */
 export function templateExamples(entry: Entry): { jp: string; reading?: string; en?: string }[] {
+  if (isSentenceLike(entry.surface)) return [];
   const w = entry.surface;
   const m = entry.meaning || "…";
   if (entry.kind === "phrase") {
