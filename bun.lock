@@ -104,6 +104,31 @@
         "typescript": "7.0.2",
       },
     },
+    "apps/ichiba": {
+      "name": "ichiba",
+      "version": "0.0.0",
+      "dependencies": {
+        "@repo/tokens": "workspace:*",
+        "@repo/ui": "workspace:*",
+        "next": "16.3.5",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+      },
+      "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "@repo/tailwind-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@tailwindcss/postcss": "4.3.3",
+        "@types/bun": "^1.4.2",
+        "@types/node": "26.6.2",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "eslint": "^8.57.0",
+        "eslint-config-next": "15.0.4",
+        "tailwindcss": "4.3.3",
+        "typescript": "7.0.2",
+      },
+    },
     "apps/kanji": {
       "name": "kanji",
       "version": "0.0.0",
@@ -1386,6 +1411,8 @@
     "https-proxy-agent": ["https-proxy-agent@5.0.1", "", { "dependencies": { "agent-base": "6", "debug": "4" } }, "sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA=="],
 
     "husky": ["husky@9.1.7", "", { "bin": { "husky": "bin.js" } }, "sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA=="],
+
+    "ichiba": ["ichiba@workspace:apps/ichiba"],
 
     "ignore": ["ignore@7.0.5", "", {}, "sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg=="],
 

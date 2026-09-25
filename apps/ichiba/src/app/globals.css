@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Stitch design-system hookup.
+   1. Design in https://stitch.withgoogle.com/ (Ichiba storefront: product grid, PDP, cart).
+   2. In Stitch, export theme tokens (colors, radius, font).
+   3. Paste them into @theme below as --color-*, --radius-*, --font-*.
+   App code only uses semantic utilities (bg-ichiba, text-ichiba); raw hex lives here. */
+@theme {
+  --color-primary: #007bff;
+  --color-ichiba: #bf0000;
+  --color-ichiba-dark: #8f0000;
+  --radius-card: 0.75rem;
+}
