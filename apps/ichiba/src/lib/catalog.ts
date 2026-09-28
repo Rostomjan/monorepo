@@ -56,7 +56,7 @@ const { shops: SHOPS, products: PRODUCTS } = generateCatalog();
 const SHOP_BY_ID = new Map(SHOPS.map((s) => [s.id, s]));
 const PRODUCT_BY_ID = new Map(PRODUCTS.map((p) => [p.id, p]));
 
-export { SHOPS, PRODUCTS };
+export { PRODUCTS };
 
 export function getShop(id: string): Shop | undefined {
   return SHOP_BY_ID.get(id);

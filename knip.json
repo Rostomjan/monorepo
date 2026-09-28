@@ -59,6 +59,17 @@
       "project": ["tests/**/*.ts", "playwright.config.ts"],
       "ignoreDependencies": ["@repo/eslint-config"]
     },
+    "apps/ichiba": {
+      "entry": [
+        "src/app/**/page.{ts,tsx}",
+        "src/app/layout.{ts,tsx}",
+        "src/app/api/**/route.{ts,tsx}",
+        "scripts/*.ts",
+        "k6/*.js"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "k6/**/*.js"],
+      "ignoreDependencies": ["@repo/eslint-config", "eslint-config-next"]
+    },
     "packages/ui": {
       "entry": ["src/index.tsx", "src/**/*.stories.tsx"],
       "project": ["src/**/*.{ts,tsx}"],

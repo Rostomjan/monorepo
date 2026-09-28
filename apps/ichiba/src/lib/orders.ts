@@ -1,6 +1,6 @@
 import { getProduct, getShop } from "./catalog";
 
-export interface OrderItem {
+interface OrderItem {
   productId: string;
   name: string;
   priceYen: number;

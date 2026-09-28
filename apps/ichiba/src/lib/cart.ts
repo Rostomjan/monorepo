@@ -1,4 +1,4 @@
-export interface CartLine {
+interface CartLine {
   productId: string;
   qty: number;
 }

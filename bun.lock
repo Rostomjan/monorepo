@@ -108,15 +108,14 @@
       "name": "ichiba",
       "version": "0.0.0",
       "dependencies": {
-        "@repo/tokens": "workspace:*",
-        "@repo/ui": "workspace:*",
         "next": "16.3.5",
         "react": "19.3.0",
         "react-dom": "19.3.0",
       },
       "devDependencies": {
-        "@repo/eslint-config": "workspace:*",
         "@repo/tailwind-config": "workspace:*",
+        "@repo/tailwind-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@tailwindcss/postcss": "4.3.3",
         "@types/bun": "^1.4.2",
