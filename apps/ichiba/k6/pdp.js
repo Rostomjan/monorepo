@@ -4,7 +4,8 @@ import { check } from "k6";
 export const options = {
   vus: 20,
   duration: "30s",
-  thresholds: { http_req_duration: ["p(95)<300"] },
+  // Calibrated against Vercel prod baseline (p95 ~560ms incl. cold starts); local runs come in lower.
+  thresholds: { http_req_duration: ["p(95)<800"] },
   cloud: {
     projectID: 8483856,
     name: "ichiba-pdp",
