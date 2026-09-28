@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { listOrders } from "@/lib/orders";
 
-export default function OrdersPage() {
-  const orders = listOrders();
+export default async function OrdersPage() {
+  const { userId } = await auth();
+  const orders = listOrders(userId ?? "guest");
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Orders</h1>

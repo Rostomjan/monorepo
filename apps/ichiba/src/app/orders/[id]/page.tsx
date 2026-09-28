@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { getOrder } from "@/lib/orders";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const order = getOrder(decodeURIComponent(id));
+  const { userId } = await auth();
+  const order = getOrder(decodeURIComponent(id), userId ?? "guest");
   if (!order) notFound();
   return (
     <div className="space-y-4">

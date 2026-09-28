@@ -15,6 +15,30 @@ export const Button = ({ children, className, ...props }: ButtonProps) => {
   );
 };
 
+export interface ProductCardProps {
+  shopName: string;
+  name: string;
+  href: string;
+  priceLabel: string;
+  stockText: string;
+}
+
+// Presentational product card (Ichiba storefront). No app logic, no data
+// fetching — the host app passes pre-formatted labels and handles routing.
+export const ProductCard = ({ shopName, name, href, priceLabel, stockText }: ProductCardProps) => {
+  return (
+    <article className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+      <p className="text-xs uppercase tracking-wide text-zinc-500">{shopName}</p>
+      <a href={href} className="mt-1 block font-medium hover:underline">
+        {name}
+      </a>
+      <p className="mt-2 font-bold">{priceLabel}</p>
+      <p className="text-sm text-zinc-500">{stockText}</p>
+    </article>
+  );
+};
+
+
 export interface LevelCardProps {
   level: number | null;
 }

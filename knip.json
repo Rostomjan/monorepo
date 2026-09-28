@@ -64,6 +64,7 @@
         "src/app/**/page.{ts,tsx}",
         "src/app/layout.{ts,tsx}",
         "src/app/api/**/route.{ts,tsx}",
+        "src/proxy.ts",
         "scripts/*.ts",
         "k6/*.js"
       ],

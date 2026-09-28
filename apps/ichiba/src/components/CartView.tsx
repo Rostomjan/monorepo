@@ -1,19 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { clearCart, loadCart, removeLine, saveCart, setQty, type Cart } from "@/lib/cart";
 import { getProduct } from "@/lib/catalog";
 
 export function CartView() {
   const router = useRouter();
+  const { user } = useUser();
+  const ownerId = user?.id ?? "guest";
   const [cart, setCart] = useState<Cart>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setCart(loadCart());
-  }, []);
+    setCart(loadCart(ownerId));
+  }, [ownerId]);
 
   const total = cart.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
 
@@ -44,7 +47,7 @@ export function CartView() {
                   onChange={(e) => {
                     const next = setQty(cart, line.productId, Number(e.target.value) || 0);
                     setCart(next);
-                    saveCart(next);
+                    saveCart(next, ownerId);
                   }}
                   className="w-16 rounded border border-zinc-300 px-2 py-1"
                 />
@@ -53,7 +56,7 @@ export function CartView() {
                   onClick={() => {
                     const next = removeLine(cart, line.productId);
                     setCart(next);
-                    saveCart(next);
+                    saveCart(next, ownerId);
                   }}
                 >
                   Remove
@@ -79,7 +82,7 @@ export function CartView() {
               });
               const json = (await res.json()) as { error?: string };
               if (!res.ok) throw new Error(json.error ?? "checkout failed");
-              clearCart();
+              clearCart(ownerId);
               router.push("/orders");
             } catch (e) {
               setError(e instanceof Error ? e.message : "checkout failed");

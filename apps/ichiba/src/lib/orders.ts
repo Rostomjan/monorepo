@@ -9,6 +9,8 @@ interface OrderItem {
 
 export interface Order {
   id: string;
+  // Stage 2: Clerk user id, or "guest" for signed-out checkout (Stage-1 behavior).
+  userId: string;
   shopId: string;
   shopName: string;
   items: OrderItem[];
@@ -22,7 +24,7 @@ export interface CheckoutLine {
 }
 
 // Pure: split a mixed-shop cart into one Order per Shop (Ichiba rule).
-export function splitCartToOrders(lines: CheckoutLine[]): Order[] {
+export function splitCartToOrders(lines: CheckoutLine[], userId = "guest"): Order[] {
   const byShop = new Map<string, OrderItem[]>();
   for (const line of lines) {
     const product = getProduct(line.productId);
@@ -35,6 +37,7 @@ export function splitCartToOrders(lines: CheckoutLine[]): Order[] {
   const now = new Date().toISOString();
   return [...byShop.entries()].map(([shopId, items], i) => ({
     id: `order-${Date.now()}-${i}-${Math.floor(Math.random() * 1e6)}`,
+    userId,
     shopId,
     shopName: getShop(shopId)?.name ?? shopId,
     items,
@@ -51,10 +54,14 @@ export function placeOrders(orders: Order[]): void {
   ORDER_DB.unshift(...orders);
 }
 
-export function listOrders(): Order[] {
-  return ORDER_DB;
+export function listOrders(userId?: string): Order[] {
+  if (userId === undefined) return ORDER_DB;
+  return ORDER_DB.filter((o) => o.userId === userId);
 }
 
-export function getOrder(id: string): Order | undefined {
-  return ORDER_DB.find((o) => o.id === id);
+export function getOrder(id: string, userId?: string): Order | undefined {
+  const order = ORDER_DB.find((o) => o.id === id);
+  if (!order) return undefined;
+  if (userId !== undefined && order.userId !== userId) return undefined;
+  return order;
 }

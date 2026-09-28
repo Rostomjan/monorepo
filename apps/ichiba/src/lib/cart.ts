@@ -26,12 +26,18 @@ export function cartCount(cart: Cart): number {
   return cart.reduce((n, l) => n + l.qty, 0);
 }
 
-const KEY = "ichiba_cart_v1";
+const KEY_PREFIX = "ichiba_cart_v1";
 
-export function loadCart(): Cart {
+// Stage 2: carts are scoped per owner. Signed-out visitors share the
+// "guest" cart (Stage-1 behavior); signed-in users get one cart each.
+function cartKey(ownerId = "guest"): string {
+  return `${KEY_PREFIX}:${ownerId}`;
+}
+
+export function loadCart(ownerId = "guest"): Cart {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(cartKey(ownerId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as Cart;
     if (!Array.isArray(parsed)) return [];
@@ -41,12 +47,12 @@ export function loadCart(): Cart {
   }
 }
 
-export function saveCart(cart: Cart): void {
+export function saveCart(cart: Cart, ownerId = "guest"): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(cart));
+  window.localStorage.setItem(cartKey(ownerId), JSON.stringify(cart));
 }
 
-export function clearCart(): void {
+export function clearCart(ownerId = "guest"): void {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(KEY);
+  window.localStorage.removeItem(cartKey(ownerId));
 }

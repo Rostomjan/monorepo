@@ -4,10 +4,22 @@
    1. Design in https://stitch.withgoogle.com/ (Ichiba storefront: product grid, PDP, cart).
    2. In Stitch, export theme tokens (colors, radius, font).
    3. Paste them into @theme below as --color-*, --radius-*, --font-*.
-   App code only uses semantic utilities (bg-ichiba, text-ichiba); raw hex lives here. */
+   App code only uses semantic utilities (bg-ichiba, text-ichiba); raw hex lives here.
+   STITCH-TODO: replace the placeholder hex + font below with the Stitch export. */
 @theme {
   --color-primary: #007bff;
+
+  /* Brand (placeholder crimson until the Stitch export lands). */
   --color-ichiba: #bf0000;
   --color-ichiba-dark: #8f0000;
+
+  /* Surfaces. */
+  --color-surface: #ffffff;
+  --color-muted: #71717a;
+
   --radius-card: 0.75rem;
+
+  /* System stack until the Stitch font export lands (see layout.tsx). */
+  --font-sans: var(--font-ichiba), ui-sans-serif, system-ui, sans-serif;
+  --font-ichiba: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
 }

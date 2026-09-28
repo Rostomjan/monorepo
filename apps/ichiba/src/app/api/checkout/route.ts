@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getProduct } from "@/lib/catalog";
 import { placeOrders, splitCartToOrders } from "@/lib/orders";
 
@@ -28,7 +29,9 @@ export async function POST(req: Request) {
     clean.push({ productId: l.productId, qty: l.qty });
   }
   // Mock payment: always succeeds. Stock decrement is in-memory (single instance).
-  const orders = splitCartToOrders(clean);
+  // Orders are attributed to the signed-in user, or "guest" for signed-out checkout.
+  const { userId } = await auth();
+  const orders = splitCartToOrders(clean, userId ?? "guest");
   placeOrders(orders);
   return Response.json({ orderIds: orders.map((o) => o.id), orders });
 }

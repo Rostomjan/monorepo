@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProductCard } from "@repo/ui";
 import { getShop, listProducts, searchProducts } from "@/lib/catalog";
 
 interface SearchParams {
@@ -38,13 +39,14 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((p) => (
-          <li key={p.id} className="rounded-[var(--radius-card)] border p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">{getShop(p.shopId)?.name}</p>
-            <Link href={`/products/${p.id}`} className="mt-1 block font-medium hover:underline">
-              {p.name}
-            </Link>
-            <p className="mt-2 font-bold">¥{p.priceYen.toLocaleString()}</p>
-            <p className="text-sm text-zinc-500">{p.stock > 0 ? `${p.stock} in stock` : "Out of stock"}</p>
+          <li key={p.id}>
+            <ProductCard
+              shopName={getShop(p.shopId)?.name ?? p.shopId}
+              name={p.name}
+              href={`/products/${p.id}`}
+              priceLabel={`¥${p.priceYen.toLocaleString()}`}
+              stockText={p.stock > 0 ? `${p.stock} in stock` : "Out of stock"}
+            />
           </li>
         ))}
       </ul>

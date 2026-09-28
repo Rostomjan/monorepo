@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { addLine, loadCart, saveCart } from "@/lib/cart";
 
 export function AddToCart({ productId }: { productId: string }) {
   const router = useRouter();
+  const { user } = useUser();
+  const ownerId = user?.id ?? "guest";
   const [qty, setQtyState] = useState(1);
   return (
     <div className="flex items-center gap-2">
@@ -21,7 +24,7 @@ export function AddToCart({ productId }: { productId: string }) {
       <button
         className="rounded bg-ichiba text-white px-4 py-2 hover:opacity-90"
         onClick={() => {
-          saveCart(addLine(loadCart(), productId, qty));
+          saveCart(addLine(loadCart(ownerId), productId, qty), ownerId);
           router.push("/cart");
         }}
       >

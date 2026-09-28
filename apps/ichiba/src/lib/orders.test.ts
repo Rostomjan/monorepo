@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { PRODUCTS } from "./catalog";
-import { listOrders, placeOrders, splitCartToOrders } from "./orders";
+import { getOrder, listOrders, placeOrders, splitCartToOrders } from "./orders";
 
 describe("orders", () => {
   test("splits a mixed-shop cart into one order per shop", () => {
@@ -23,5 +23,16 @@ describe("orders", () => {
     const [order] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }]);
     placeOrders([order]);
     expect(listOrders().length).toBe(before + 1);
+  });
+
+  test("attributes orders to users and filters by owner", () => {
+    const [mine] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }], "user_123");
+    const [guest] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }], "guest");
+    placeOrders([mine, guest]);
+    expect(mine.userId).toBe("user_123");
+    expect(listOrders("user_123").map((o) => o.id)).toContain(mine.id);
+    expect(listOrders("user_123").map((o) => o.id)).not.toContain(guest.id);
+    expect(getOrder(guest.id, "user_123")).toBeUndefined();
+    expect(getOrder(guest.id, "guest")?.id).toBe(guest.id);
   });
 });
