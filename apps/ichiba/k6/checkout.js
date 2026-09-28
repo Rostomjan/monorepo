@@ -5,6 +5,10 @@ export const options = {
   vus: 5,
   duration: "30s",
   thresholds: { http_req_failed: ["rate<0.001"] },
+  cloud: {
+    projectID: 8483856,
+    name: "ichiba-checkout",
+  },
 };
 
 const BASE = __ENV.BASE_URL ?? "http://localhost:3003";
