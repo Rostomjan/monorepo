@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { CartLink } from "@/components/CartLink";
+import { cartCount } from "@/lib/cart";
+import { readCart } from "@/lib/cart-store";
 import "./globals.css";
 
 const ichibaFont = Plus_Jakarta_Sans({
@@ -27,7 +28,10 @@ function Logo() {
   );
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Server-rendered cart count: correct on first paint, refreshed by cart
+  // Server Actions via layout revalidation — no client badge state to sync.
+  const count = cartCount(await readCart());
   return (
     <html lang="en">
       <body className={`${ichibaFont.variable} min-h-screen bg-canvas font-sans text-ink antialiased`}>
@@ -60,7 +64,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Link href="/orders" className="hover:text-ink">
                     Orders
                   </Link>
-                  <CartLink />
+                  <Link href="/cart" className="relative inline-flex items-center gap-1.5 hover:text-ink" aria-label={`Cart, ${count} items`}>
+                    <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden className="fill-current">
+                      <path
+                        d="M1.5 2.5h2l2.4 8.2a1 1 0 0 0 1 .8h6.9a1 1 0 0 0 1-.8L16.5 6.5H5.6"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="6.5" cy="13.5" r="1.2" />
+                      <circle cx="13.5" cy="13.5" r="1.2" />
+                    </svg>
+                    <span className="hidden sm:inline">Cart</span>
+                    {count > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-on-brand">
+                        {count}
+                      </span>
+                    )}
+                  </Link>
                 </nav>
                 <span className="h-6 w-px bg-divider" aria-hidden />
                 <Show when="signed-out">

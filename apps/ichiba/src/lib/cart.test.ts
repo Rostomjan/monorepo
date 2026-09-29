@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { addLine, cartCount, loadCart, saveCart } from "@/lib/cart";
+import { addLine, cartCount, parseCart } from "@/lib/cart";
 
 describe("cart", () => {
   test("adds and merges lines", () => {
@@ -11,11 +11,24 @@ describe("cart", () => {
     expect(cartCount([{ productId: "a", qty: 2 }, { productId: "b", qty: 3 }])).toBe(5);
   });
 
-  test("loadCart returns [] without window", () => {
-    expect(loadCart()).toEqual([]);
+  test("parseCart accepts a well-formed cart", () => {
+    expect(parseCart([{ productId: "shop-1-p1", qty: 2 }])).toEqual([{ productId: "shop-1-p1", qty: 2 }]);
   });
 
-  test("saveCart is a no-op without window", () => {
-    expect(() => saveCart([{ productId: "a", qty: 1 }])).not.toThrow();
+  test("parseCart rejects malformed entries without throwing", () => {
+    expect(parseCart(null)).toEqual([]);
+    expect(parseCart("nope")).toEqual([]);
+    expect(
+      parseCart([
+        { productId: "a", qty: 1 },
+        { productId: "", qty: 1 },
+        { productId: "b", qty: 0 },
+        { productId: "c", qty: 100 },
+        { productId: "d", qty: 1.5 },
+        { productId: "a", qty: 2 },
+        "junk",
+        null,
+      ]),
+    ).toEqual([{ productId: "a", qty: 1 }]);
   });
 });

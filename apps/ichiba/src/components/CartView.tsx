@@ -1,11 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useMemo, useState } from "react";
-import { clearCart, loadCart, removeLine, saveCart, setQty, type Cart } from "@/lib/cart";
 import { getProduct, getShop } from "@/lib/catalog";
+import { removeFromCart, setLineQty } from "@/lib/cart-actions";
+import { readCart } from "@/lib/cart-store";
+import { CheckoutForm } from "./CheckoutForm";
 
 const KANJI_NUMERALS = ["壱", "弐", "参", "四", "伍", "陸", "七", "八", "九", "十"];
 
@@ -13,40 +10,10 @@ function yen(n: number): string {
   return `¥${n.toLocaleString()}`;
 }
 
-export function CartView() {
-  const router = useRouter();
-  const { user } = useUser();
-  const ownerId = user?.id ?? "guest";
-  const [cart, setCart] = useState<Cart>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setCart(loadCart(ownerId));
-  }, [ownerId]);
-
-  const update = (next: Cart) => {
-    setCart(next);
-    saveCart(next, ownerId);
-  };
-
-  const groups = useMemo(() => {
-    const byShop = new Map<string, { productId: string; qty: number }[]>();
-    for (const line of cart) {
-      const p = getProduct(line.productId);
-      if (!p) continue;
-      const list = byShop.get(p.shopId) ?? [];
-      list.push(line);
-      byShop.set(p.shopId, list);
-    }
-    return [...byShop.entries()].map(([shopId, lines], i) => {
-      const subtotal = lines.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
-      return { shopId, shopName: getShop(shopId)?.name ?? shopId, lines, subtotal, numeral: KANJI_NUMERALS[i % KANJI_NUMERALS.length] };
-    });
-  }, [cart]);
-
-  const itemCount = cart.reduce((n, l) => n + l.qty, 0);
-  const total = groups.reduce((n, g) => n + g.subtotal, 0);
+// Server-rendered from the cookie cart: correct on first paint, and every
+// mutation revalidates through Server Actions — no client cart state to sync.
+export async function CartView() {
+  const cart = await readCart();
 
   if (cart.length === 0) {
     return (
@@ -58,6 +25,22 @@ export function CartView() {
       </div>
     );
   }
+
+  const byShop = new Map<string, { productId: string; qty: number }[]>();
+  for (const line of cart) {
+    const product = getProduct(line.productId);
+    if (!product) continue;
+    const list = byShop.get(product.shopId) ?? [];
+    list.push(line);
+    byShop.set(product.shopId, list);
+  }
+  const groups = [...byShop.entries()].map(([shopId, lines], i) => {
+    const subtotal = lines.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
+    return { shopId, shopName: getShop(shopId)?.name ?? shopId, lines, subtotal, numeral: KANJI_NUMERALS[i % KANJI_NUMERALS.length] };
+  });
+
+  const itemCount = cart.reduce((n, l) => n + l.qty, 0);
+  const total = groups.reduce((n, g) => n + g.subtotal, 0);
 
   return (
     <div className="space-y-6 py-6">
@@ -100,8 +83,6 @@ export function CartView() {
         </div>
       </div>
 
-      {error && <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-700">{error}</p>}
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Shop groups */}
         <div className="space-y-6 lg:col-span-8">
@@ -142,41 +123,36 @@ export function CartView() {
                         <p className="text-[13px] text-muted">{yen(p.priceYen)} each</p>
                       </div>
                       <div className="ml-auto flex flex-wrap items-center gap-2">
-                        <div className="flex items-center rounded-lg bg-white shadow-sm" role="group" aria-label={`Quantity for ${p.name}`}>
+                        <form className="flex items-center rounded-lg bg-white shadow-sm">
                           <button
-                            type="button"
+                            type="submit"
+                            formAction={setLineQty.bind(null, p.id, line.qty - 1)}
                             aria-label={`Decrease quantity of ${p.name}`}
-                            onClick={() => update(setQty(cart, line.productId, line.qty - 1))}
                             className="px-2.5 py-1.5 font-bold text-muted hover:text-ink"
                           >
                             −
                           </button>
-                          <input
-                            aria-label={`Quantity for ${p.name}`}
-                            type="number"
-                            min={0}
-                            max={99}
-                            value={line.qty}
-                            onChange={(e) => update(setQty(cart, line.productId, Number(e.target.value) || 0))}
-                            className="w-12 border-x border-strip bg-transparent py-1.5 text-center text-sm font-semibold outline-none"
-                          />
+                          <span aria-label={`Quantity for ${p.name}`} className="w-12 border-x border-strip py-1.5 text-center text-sm font-semibold">
+                            {line.qty}
+                          </span>
                           <button
-                            type="button"
+                            type="submit"
+                            formAction={setLineQty.bind(null, p.id, Math.min(99, line.qty + 1))}
                             aria-label={`Increase quantity of ${p.name}`}
-                            onClick={() => update(setQty(cart, line.productId, Math.min(99, line.qty + 1)))}
                             className="px-2.5 py-1.5 font-bold text-muted hover:text-ink"
                           >
                             +
                           </button>
-                        </div>
+                        </form>
                         <p className="w-20 text-right text-xl font-bold text-ink">{yen(p.priceYen * line.qty)}</p>
-                        <button
-                          type="button"
-                          onClick={() => update(removeLine(cart, line.productId))}
-                          className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-muted shadow-sm hover:text-brand-deep"
-                        >
-                          Remove
-                        </button>
+                        <form action={removeFromCart.bind(null, p.id)}>
+                          <button
+                            type="submit"
+                            className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-muted shadow-sm hover:text-brand-deep"
+                          >
+                            Remove
+                          </button>
+                        </form>
                       </div>
                     </li>
                   );
@@ -258,32 +234,7 @@ export function CartView() {
               </div>
 
               <div className="space-y-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={async () => {
-                    setBusy(true);
-                    setError(null);
-                    try {
-                      const res = await fetch("/api/checkout", {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ items: cart }),
-                      });
-                      const json = (await res.json()) as { error?: string };
-                      if (!res.ok) throw new Error(json.error ?? "checkout failed");
-                      clearCart(ownerId);
-                      router.push("/orders");
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : "checkout failed");
-                    } finally {
-                      setBusy(false);
-                    }
-                  }}
-                  className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-on-brand shadow-md hover:bg-brand-deep disabled:opacity-50"
-                >
-                  {busy ? "Checking out…" : `Checkout · ${yen(total)}`}
-                </button>
+                <CheckoutForm totalLabel={yen(total)} />
                 <Link
                   href="/"
                   className="block w-full rounded-xl bg-filter-active py-3 text-center text-sm font-semibold text-ink shadow-sm hover:bg-pill"

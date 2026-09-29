@@ -1,23 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { addLine, loadCart, saveCart } from "@/lib/cart";
+import { useTransition } from "react";
+import { addToCart } from "@/lib/cart-actions";
 
-// Compact card CTA: adds one unit and jumps to the cart.
-// Presentational slot for `ProductCard action` — cart logic lives here in the app.
+// Compact card CTA. Mutates the server-side cart via Server Action (the
+// layout badge revalidates automatically), then jumps to the cart.
 export function QuickAdd({ productId }: { productId: string }) {
   const router = useRouter();
-  const { user } = useUser();
-  const ownerId = user?.id ?? "guest";
+  const [pending, startTransition] = useTransition();
   return (
     <button
       type="button"
+      disabled={pending}
       onClick={() => {
-        saveCart(addLine(loadCart(ownerId), productId, 1), ownerId);
-        router.push("/cart");
+        startTransition(async () => {
+          await addToCart(productId, 1);
+          router.push("/cart");
+        });
       }}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-strip px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-filter-active"
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-strip px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-filter-active disabled:opacity-50"
     >
       <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden className="fill-current">
         <path
@@ -31,7 +33,7 @@ export function QuickAdd({ productId }: { productId: string }) {
         <circle cx="6.5" cy="13.5" r="1.2" />
         <circle cx="13.5" cy="13.5" r="1.2" />
       </svg>
-      Add to Cart
+      {pending ? "Adding…" : "Add to Cart"}
     </button>
   );
 }

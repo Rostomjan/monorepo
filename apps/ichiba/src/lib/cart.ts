@@ -26,33 +26,18 @@ export function cartCount(cart: Cart): number {
   return cart.reduce((n, l) => n + l.qty, 0);
 }
 
-const KEY_PREFIX = "ichiba_cart_v1";
-
-// Stage 2: carts are scoped per owner. Signed-out visitors share the
-// "guest" cart (Stage-1 behavior); signed-in users get one cart each.
-function cartKey(ownerId = "guest"): string {
-  return `${KEY_PREFIX}:${ownerId}`;
-}
-
-export function loadCart(ownerId = "guest"): Cart {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(cartKey(ownerId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Cart;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((l) => typeof l.productId === "string" && typeof l.qty === "number" && l.qty > 0);
-  } catch {
-    return [];
+// Pure validator for untrusted persisted carts (cookie JSON, API bodies).
+// Never throws: malformed input becomes an empty cart.
+export function parseCart(value: unknown): Cart {
+  if (!Array.isArray(value)) return [];
+  const out: Cart = [];
+  for (const l of value) {
+    if (typeof l !== "object" || l === null) continue;
+    const { productId, qty } = l as { productId?: unknown; qty?: unknown };
+    if (typeof productId !== "string" || productId.length === 0 || productId.length > 64) continue;
+    if (!Number.isInteger(qty) || (qty as number) < 1 || (qty as number) > 99) continue;
+    if (out.some((e) => e.productId === productId)) continue;
+    out.push({ productId, qty: qty as number });
   }
-}
-
-export function saveCart(cart: Cart, ownerId = "guest"): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(cartKey(ownerId), JSON.stringify(cart));
-}
-
-export function clearCart(ownerId = "guest"): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(cartKey(ownerId));
+  return out;
 }
