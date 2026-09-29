@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (typeof l.productId !== "string" || typeof l.qty !== "number") {
       return Response.json({ error: "each item needs productId:string, qty:number" }, { status: 400 });
     }
-    const product = getProduct(l.productId);
+    const product = await getProduct(l.productId);
     if (!product) return Response.json({ error: `unknown product: ${l.productId}` }, { status: 400 });
     if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 99) {
       return Response.json({ error: `bad qty for ${l.productId}` }, { status: 400 });
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   // Mock payment: always succeeds. Stock decrement is in-memory (single instance).
   // Orders are attributed to the signed-in user, or "guest" for signed-out checkout.
   const { userId } = await auth();
-  const orders = splitCartToOrders(clean, userId ?? "guest");
+  const orders = await splitCartToOrders(clean, userId ?? "guest");
   placeOrders(orders);
   return Response.json({ orderIds: orders.map((o) => o.id), orders });
 }

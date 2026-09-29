@@ -6,9 +6,9 @@ import { getProduct, getShop } from "@/lib/catalog";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = getProduct(decodeURIComponent(id));
+  const product = await getProduct(decodeURIComponent(id));
   if (!product) notFound();
-  const shop = getShop(product.shopId);
+  const shop = await getShop(product.shopId);
 
   return (
     <div className="space-y-4 py-6">

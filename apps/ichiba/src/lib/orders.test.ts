@@ -1,33 +1,46 @@
 import { describe, expect, test } from "bun:test";
-import { PRODUCTS } from "./catalog";
-import { getOrder, listOrders, placeOrders, splitCartToOrders } from "./orders";
+import { generateCatalog } from "./catalog";
+import { getOrder, listOrders, placeOrders, splitCartToOrders, type CatalogLookup } from "./orders";
+
+// Fixture-backed lookup: exercises order logic without a database.
+const { products, shops } = generateCatalog();
+const productById = new Map(products.map((p) => [p.id, p]));
+const shopNameById = new Map(shops.map((s) => [s.id, s.name]));
+const lookup: CatalogLookup = {
+  product: async (id) => productById.get(id),
+  shopName: async (id) => shopNameById.get(id),
+};
 
 describe("orders", () => {
-  test("splits a mixed-shop cart into one order per shop", () => {
-    const a = PRODUCTS[0];
-    const b = PRODUCTS.find((p) => p.shopId !== a.shopId)!;
-    const orders = splitCartToOrders([
-      { productId: a.id, qty: 2 },
-      { productId: b.id, qty: 1 },
-    ]);
+  test("splits a mixed-shop cart into one order per shop", async () => {
+    const a = products[0];
+    const b = products.find((p) => p.shopId !== a.shopId)!;
+    const orders = await splitCartToOrders(
+      [
+        { productId: a.id, qty: 2 },
+        { productId: b.id, qty: 1 },
+      ],
+      "guest",
+      lookup,
+    );
     expect(orders).toHaveLength(2);
     expect(orders[0].totalYen).toBeGreaterThan(0);
   });
 
-  test("rejects unknown products", () => {
-    expect(() => splitCartToOrders([{ productId: "nope", qty: 1 }])).toThrow();
+  test("rejects unknown products", async () => {
+    await expect(splitCartToOrders([{ productId: "nope", qty: 1 }], "guest", lookup)).rejects.toThrow();
   });
 
-  test("stores orders in-memory", () => {
+  test("stores orders in-memory", async () => {
     const before = listOrders().length;
-    const [order] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }]);
+    const [order] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "guest", lookup);
     placeOrders([order]);
     expect(listOrders().length).toBe(before + 1);
   });
 
-  test("attributes orders to users and filters by owner", () => {
-    const [mine] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }], "user_123");
-    const [guest] = splitCartToOrders([{ productId: PRODUCTS[0].id, qty: 1 }], "guest");
+  test("attributes orders to users and filters by owner", async () => {
+    const [mine] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "user_123", lookup);
+    const [guest] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "guest", lookup);
     placeOrders([mine, guest]);
     expect(mine.userId).toBe("user_123");
     expect(listOrders("user_123").map((o) => o.id)).toContain(mine.id);

@@ -1,4 +1,26 @@
 services:
+  # Ichiba catalog database (Stage 3). Local: `docker compose up db`, then
+  # export DATABASE_URL=postgresql://ichiba:ichiba@localhost:5432/ichiba
+  # and run `bun run db:migrate` + `bun run db:seed` in apps/ichiba.
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ichiba
+      POSTGRES_PASSWORD: ichiba
+      POSTGRES_DB: ichiba
+    volumes:
+      - ichiba-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ichiba -d ichiba"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ichiba-pgdata:
+
   api:
     build:
       context: .

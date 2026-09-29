@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProduct, getShop } from "@/lib/catalog";
+import { getProducts, listShops } from "@/lib/catalog";
 import { removeFromCart, setLineQty } from "@/lib/cart-actions";
 import { readCart } from "@/lib/cart-store";
 import { CheckoutForm } from "./CheckoutForm";
@@ -15,8 +15,7 @@ function yen(n: number): string {
 export async function CartView() {
   const cart = await readCart();
 
-  if (cart.length === 0) {
-    return (
+  if (cart.length === 0) {    return (
       <div className="space-y-4 py-6">
         <h1 className="text-[28px] font-bold text-ink">Shopping Cart</h1>
         <p className="rounded-xl bg-white p-8 text-center text-muted shadow-sm">
@@ -26,17 +25,19 @@ export async function CartView() {
     );
   }
 
+  const byIds = await getProducts(cart.map((l) => l.productId));
+  const shopNameById = new Map((await listShops()).map((s) => [s.id, s.name]));
   const byShop = new Map<string, { productId: string; qty: number }[]>();
   for (const line of cart) {
-    const product = getProduct(line.productId);
+    const product = byIds.get(line.productId);
     if (!product) continue;
     const list = byShop.get(product.shopId) ?? [];
     list.push(line);
     byShop.set(product.shopId, list);
   }
   const groups = [...byShop.entries()].map(([shopId, lines], i) => {
-    const subtotal = lines.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
-    return { shopId, shopName: getShop(shopId)?.name ?? shopId, lines, subtotal, numeral: KANJI_NUMERALS[i % KANJI_NUMERALS.length] };
+    const subtotal = lines.reduce((n, l) => n + (byIds.get(l.productId)?.priceYen ?? 0) * l.qty, 0);
+    return { shopId, shopName: shopNameById.get(shopId) ?? shopId, lines, subtotal, numeral: KANJI_NUMERALS[i % KANJI_NUMERALS.length] };
   });
 
   const itemCount = cart.reduce((n, l) => n + l.qty, 0);
@@ -111,7 +112,7 @@ export async function CartView() {
 
               <ul className="mx-4 space-y-3 rounded-xl bg-strip p-4">
                 {g.lines.map((line) => {
-                  const p = getProduct(line.productId);
+                  const p = byIds.get(line.productId);
                   if (!p) return null;
                   return (
                     <li key={line.productId} className="flex flex-wrap items-center gap-x-4 gap-y-3">

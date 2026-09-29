@@ -23,11 +23,28 @@ export interface CheckoutLine {
   qty: number;
 }
 
-// Pure: split a mixed-shop cart into one Order per Shop (Ichiba rule).
-export function splitCartToOrders(lines: CheckoutLine[], userId = "guest"): Order[] {
+// Lookup injected so unit tests run on fixtures without a database;
+// production callers use the default Postgres-backed lookup.
+export interface CatalogLookup {
+  product: (id: string) => Promise<{ id: string; shopId: string; name: string; priceYen: number } | undefined>;
+  shopName: (shopId: string) => Promise<string | undefined>;
+}
+
+const dbLookup: CatalogLookup = {
+  product: (id) => getProduct(id),
+  shopName: async (shopId) => (await getShop(shopId))?.name,
+};
+
+// Pure apart from the injected lookup: split a mixed-shop cart into one
+// Order per Shop (Ichiba rule).
+export async function splitCartToOrders(
+  lines: CheckoutLine[],
+  userId = "guest",
+  lookup: CatalogLookup = dbLookup,
+): Promise<Order[]> {
   const byShop = new Map<string, OrderItem[]>();
   for (const line of lines) {
-    const product = getProduct(line.productId);
+    const product = await lookup.product(line.productId);
     if (!product) throw new Error(`unknown product: ${line.productId}`);
     if (line.qty <= 0 || line.qty > 99) throw new Error(`bad qty for ${line.productId}`);
     const items = byShop.get(product.shopId) ?? [];
@@ -35,15 +52,21 @@ export function splitCartToOrders(lines: CheckoutLine[], userId = "guest"): Orde
     byShop.set(product.shopId, items);
   }
   const now = new Date().toISOString();
-  return [...byShop.entries()].map(([shopId, items], i) => ({
-    id: `order-${Date.now()}-${i}-${Math.floor(Math.random() * 1e6)}`,
-    userId,
-    shopId,
-    shopName: getShop(shopId)?.name ?? shopId,
-    items,
-    totalYen: items.reduce((n, it) => n + it.priceYen * it.qty, 0),
-    createdAt: now,
-  }));
+  const orders: Order[] = [];
+  let i = 0;
+  for (const [shopId, items] of byShop) {
+    orders.push({
+      id: `order-${Date.now()}-${i}-${Math.floor(Math.random() * 1e6)}`,
+      userId,
+      shopId,
+      shopName: (await lookup.shopName(shopId)) ?? shopId,
+      items,
+      totalYen: items.reduce((n, it) => n + it.priceYen * it.qty, 0),
+      createdAt: now,
+    });
+    i++;
+  }
+  return orders;
 }
 
 // Single-instance store (Stage-1 baseline).

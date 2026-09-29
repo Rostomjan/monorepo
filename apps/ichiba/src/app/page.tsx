@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FilterPill, ProductCard } from "@repo/ui";
-import { PRODUCTS, getShop, listShops, searchProducts } from "@/lib/catalog";
+import { listShops, queryProducts } from "@/lib/catalog";
 import { QuickAdd } from "@/components/QuickAdd";
 
 interface SearchParams {
@@ -33,27 +33,23 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
   const shopId = sp.shop ?? "";
   const sort = sp.sort ?? "featured";
   const view = sp.view ?? "grid";
-  const page = Number(sp.page ?? "1") || 1;
+  const pageNum = Number(sp.page ?? "1") || 1;
 
   const searching = q.trim().length > 0;
-  const shopFilter = listShops().find((s) => s.id === shopId);
+  const shops = await listShops();
+  const shopFilter = shops.find((s) => s.id === shopId);
+  const shopNameById = new Map(shops.map((s) => [s.id, s.name]));
 
-  let items = searching ? searchProducts(q, 500) : [...PRODUCTS];
-  if (shopFilter) items = items.filter((p) => p.shopId === shopFilter.id);
-  if (sort === "price-asc") items = [...items].sort((a, b) => a.priceYen - b.priceYen);
-  if (sort === "price-desc") items = [...items].sort((a, b) => b.priceYen - a.priceYen);
+  const {
+    items: pageItems,
+    total,
+    totalPages,
+    page: safePage,
+    shopCounts,
+  } = await queryProducts({ q, shopId: shopFilter?.id, sort, page: pageNum, perPage: PER_PAGE });
 
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const safePage = Math.min(Math.max(1, page), totalPages);
+  const pillShops = shops.slice(0, 4);
   const start = (safePage - 1) * PER_PAGE;
-  const pageItems = items.slice(start, start + PER_PAGE);
-
-  const pillShops = listShops().slice(0, 4);
-  const shopCounts = new Map<string, number>();
-  for (const p of searching ? searchProducts(q, 500) : PRODUCTS) {
-    shopCounts.set(p.shopId, (shopCounts.get(p.shopId) ?? 0) + 1);
-  }
 
   const pages: number[] = [];
   for (let p = 1; p <= totalPages && pages.length < 5; p++) {
@@ -217,7 +213,7 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
           {pageItems.map((p, i) => (
             <li key={p.id}>
               <ProductCard
-                shopName={getShop(p.shopId)?.name ?? p.shopId}
+                shopName={shopNameById.get(p.shopId) ?? p.shopId}
                 name={p.name}
                 href={`/products/${p.id}`}
                 priceLabel={yen(p.priceYen)}

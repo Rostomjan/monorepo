@@ -20,7 +20,7 @@ function cleanQty(qty: unknown, fallback = 1): number {
 }
 
 export async function addToCart(productId: string, qty: unknown = 1): Promise<void> {
-  const product = getProduct(productId);
+  const product = await getProduct(productId);
   if (!product) throw new Error(`unknown product: ${productId}`);
   const n = cleanQty(qty);
   if (n < 1) throw new Error(`bad qty for ${productId}`);
@@ -45,11 +45,11 @@ export async function checkoutAction(): Promise<{ error: string } | never> {
   const cart = await readCart();
   if (cart.length === 0) return { error: "Your cart is empty." };
   for (const line of cart) {
-    const product = getProduct(line.productId);
+    const product = await getProduct(line.productId);
     if (!product) return { error: `Unknown product: ${line.productId}.` };
     if (line.qty > product.stock) return { error: `Insufficient stock for ${product.name}.` };
   }
-  placeOrders(splitCartToOrders(cart, await cartOwner()));
+  placeOrders(await splitCartToOrders(cart, await cartOwner()));
   await writeCart([]);
   refreshCartUI();
   redirect("/orders");
