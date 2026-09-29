@@ -26,6 +26,15 @@ export function cartCount(cart: Cart): number {
   return cart.reduce((n, l) => n + l.qty, 0);
 }
 
+// Pure: fold a guest cart into a user cart (union by product, cap 99).
+export function mergeCarts(userCart: Cart, guestCart: Cart): Cart {
+  let merged = [...userCart];
+  for (const line of guestCart) {
+    merged = addLine(merged, line.productId, line.qty);
+  }
+  return merged;
+}
+
 // Pure validator for untrusted persisted carts (cookie JSON, API bodies).
 // Never throws: malformed input becomes an empty cart.
 export function parseCart(value: unknown): Cart {

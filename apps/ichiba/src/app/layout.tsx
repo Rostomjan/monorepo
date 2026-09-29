@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { cartCount } from "@/lib/cart";
-import { readCart } from "@/lib/cart-store";
+import { mergeGuestCart, readCart } from "@/lib/cart-store";
 import "./globals.css";
 
 const ichibaFont = Plus_Jakarta_Sans({
@@ -31,6 +31,8 @@ function Logo() {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Server-rendered cart count: correct on first paint, refreshed by cart
   // Server Actions via layout revalidation — no client badge state to sync.
+  // Guest carts fold into the user cart once, right after sign-in.
+  await mergeGuestCart();
   const count = cartCount(await readCart());
   return (
     <html lang="en">
