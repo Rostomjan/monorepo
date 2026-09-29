@@ -83,11 +83,3 @@ export function searchProducts(query: string, limit = 20): Product[] {
   }
   return out;
 }
-
-export function listProducts(page = 1, perPage = 20): { items: Product[]; total: number; totalPages: number } {
-  const total = PRODUCTS.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const start = (safePage - 1) * perPage;
-  return { items: PRODUCTS.slice(start, start + perPage), total, totalPages };
-}
