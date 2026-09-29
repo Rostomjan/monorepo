@@ -19,10 +19,10 @@ export function AddToCart({ productId }: { productId: string }) {
         max={99}
         value={qty}
         onChange={(e) => setQtyState(Math.min(99, Math.max(1, Number(e.target.value) || 1)))}
-        className="w-16 rounded border border-zinc-300 px-2 py-1"
-      />
+          className="w-16 rounded-lg border border-strip bg-white px-2 py-1 shadow-sm outline-none"
+        />
       <button
-        className="rounded bg-ichiba text-white px-4 py-2 hover:opacity-90"
+        className="rounded-lg bg-brand text-white px-4 py-2 font-semibold hover:bg-brand-deep"
         onClick={() => {
           saveCart(addLine(loadCart(ownerId), productId, qty), ownerId);
           router.push("/cart");

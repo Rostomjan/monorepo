@@ -62,6 +62,10 @@ export function getShop(id: string): Shop | undefined {
   return SHOP_BY_ID.get(id);
 }
 
+export function listShops(): Shop[] {
+  return SHOPS;
+}
+
 export function getProduct(id: string): Product | undefined {
   return PRODUCT_BY_ID.get(id);
 }

@@ -1,25 +1,55 @@
 @import "tailwindcss";
 
-/* Stitch design-system hookup.
-   1. Design in https://stitch.withgoogle.com/ (Ichiba storefront: product grid, PDP, cart).
-   2. In Stitch, export theme tokens (colors, radius, font).
-   3. Paste them into @theme below as --color-*, --radius-*, --font-*.
-   App code only uses semantic utilities (bg-ichiba, text-ichiba); raw hex lives here.
-   STITCH-TODO: replace the placeholder hex + font below with the Stitch export. */
-@theme {
-  --color-primary: #007bff;
+/* Tailwind v4 ignores tailwind.config.ts content globs unless referenced
+   with @config — explicit @source keeps presentational classes from
+   packages/ui in the generated CSS. */
+@source "../../../../packages/ui/src";
 
-  /* Brand (placeholder crimson until the Stitch export lands). */
-  --color-ichiba: #bf0000;
-  --color-ichiba-dark: #8f0000;
+/* Ichiba design-system theme — extracted from Figma file "ichiba"
+   (Search Results + Shopping Cart frames, 1280px desktop).
+   App code uses only these semantic utilities (bg-brand, text-ink,
+   bg-strip, …); raw hex lives here so a re-export is a one-file change. */
+@theme {
+  /* Brand (crimson). */
+  --color-primary: #d92d20;
+  --color-brand: #d92d20;
+  --color-brand-deep: #b50c08;
+  --color-on-brand: #fff6f5;
+
+  /* Text. */
+  --color-ink: #0d1c2e;
+  --color-muted: #565e74;
+  --color-nav: #5c403b;
+  --color-dark: #233144;
+  --color-on-dark: #eaf1ff;
 
   /* Surfaces. */
   --color-surface: #ffffff;
-  --color-muted: #71717a;
+  --color-canvas: #f8f9ff;
+  --color-strip: #eff4ff;
+  --color-pill: #e6eeff;
+  --color-filter-active: #dce9ff;
+  --color-media: #eff4ff;
+
+  /* Trust green. */
+  --color-success: #006646;
+  --color-success-dot: #00825a;
+  --color-mint: #85f8c4;
+
+  /* Lines / misc. */
+  --color-divider: #e5bdb7;
+  --color-secondary: #565e74;
+
+  /* Back-compat alias for the pre-Figma crimson. */
+  --color-ichiba: #d92d20;
+  --color-ichiba-dark: #b50c08;
 
   --radius-card: 0.75rem;
+  --radius-media: 0.5rem;
 
-  /* System stack until the Stitch font export lands (see layout.tsx). */
-  --font-sans: var(--font-ichiba), ui-sans-serif, system-ui, sans-serif;
-  --font-ichiba: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  /* Plus Jakarta Sans via next/font (see layout.tsx); CJK fallback covers
+     kanji brand marks (市 / 和 / 壱). */
+  --font-sans: var(--font-ichiba), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-ichiba: "Plus Jakarta Sans", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-kanji: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }

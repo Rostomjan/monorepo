@@ -9,23 +9,23 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = getOrder(decodeURIComponent(id), userId ?? "guest");
   if (!order) notFound();
   return (
-    <div className="space-y-4">
-      <Link href="/orders" className="text-sm text-zinc-500 underline">
+    <div className="space-y-4 py-6">
+      <Link href="/orders" className="text-sm font-semibold text-muted underline hover:text-ink">
         ← Back to orders
       </Link>
-      <h1 className="text-2xl font-bold">{order.shopName}</h1>
-      <p className="text-sm text-zinc-500">{order.createdAt}</p>
-      <ul className="divide-y rounded border">
+      <h1 className="text-[28px] font-bold text-ink">{order.shopName}</h1>
+      <p className="text-sm text-muted">{order.createdAt}</p>
+      <ul className="divide-y divide-strip rounded-xl bg-white shadow-sm">
         {order.items.map((it) => (
-          <li key={it.productId} className="flex justify-between p-3">
-            <span>
+          <li key={it.productId} className="flex justify-between p-4">
+            <span className="text-ink">
               {it.name} × {it.qty}
             </span>
-            <span>¥{(it.priceYen * it.qty).toLocaleString()}</span>
+            <span className="font-semibold text-ink">¥{(it.priceYen * it.qty).toLocaleString()}</span>
           </li>
         ))}
       </ul>
-      <p className="text-lg font-bold">Total: ¥{order.totalYen.toLocaleString()}</p>
+      <p className="text-lg font-bold text-ink">Total: ¥{order.totalYen.toLocaleString()}</p>
     </div>
   );
 }

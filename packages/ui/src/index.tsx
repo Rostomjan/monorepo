@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
 
@@ -21,20 +21,135 @@ export interface ProductCardProps {
   href: string;
   priceLabel: string;
   stockText: string;
+  /** Optional short description line under the title (Figma card body). */
+  description?: string;
+  /** Optional struck-through compare-at price, e.g. "¥5,800". */
+  compareAtLabel?: string;
+  /** Overlay badge on the media tile, e.g. "TOKYO CRAFT". */
+  badge?: string;
+  /** Right-side dispatch note, e.g. "Dispatch: 24h". */
+  dispatchText?: string;
+  /** Low-stock styling (amber) instead of the default green. */
+  lowStock?: boolean;
+  /** Optional add-to-cart slot rendered as the card CTA. App wires the logic. */
+  action?: ReactNode;
 }
 
-// Presentational product card (Ichiba storefront). No app logic, no data
-// fetching — the host app passes pre-formatted labels and handles routing.
-export const ProductCard = ({ shopName, name, href, priceLabel, stockText }: ProductCardProps) => {
+// Presentational product card (Ichiba storefront, Figma "Article - CARD").
+// No app logic, no data fetching — the host app passes pre-formatted labels,
+// routing href, and an optional `action` node for the Add to Cart CTA.
+export const ProductCard = ({
+  shopName,
+  name,
+  href,
+  priceLabel,
+  stockText,
+  description,
+  compareAtLabel,
+  badge,
+  dispatchText = "Dispatch: 24h",
+  lowStock = false,
+  action,
+}: ProductCardProps) => {
   return (
-    <article className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{shopName}</p>
-      <a href={href} className="mt-1 block font-medium hover:underline">
+    <article className="flex flex-col rounded-xl bg-white p-4 shadow-[0_1px_2px_rgb(0_0_0/0.06),0_1px_3px_rgb(0_0_0/0.1)]">
+      <div className="relative rounded-lg bg-strip">
+        <div className="aspect-[4/3] w-full" aria-hidden />
+        {badge && (
+          <span className="absolute left-2 top-2 rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold tracking-wide text-nav shadow-sm backdrop-blur">
+            {badge}
+          </span>
+        )}
+      </div>
+
+      <p className="mt-3 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted">
+        {shopName}
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden className="fill-muted">
+          <path d="M3.5 2 6.5 5 3.5 8" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        </svg>
+      </p>
+      <a href={href} className="mt-1 block text-base font-semibold text-ink hover:underline">
         {name}
       </a>
-      <p className="mt-2 font-bold">{priceLabel}</p>
-      <p className="text-sm text-zinc-500">{stockText}</p>
+      {description && <p className="mt-1 line-clamp-1 text-[13px] text-muted">{description}</p>}
+
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="text-xl font-bold text-ink">{priceLabel}</span>
+        {compareAtLabel && <s className="text-[13px] text-muted">{compareAtLabel}</s>}
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+        <StockBadge text={stockText} tone={lowStock ? "low" : "ok"} />
+        <span className="text-[13px] text-muted">{dispatchText}</span>
+      </div>
+
+      {action ?? (
+        <a
+          href={href}
+          className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-strip px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-filter-active"
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden className="fill-current">
+            <path d="M2 3h2l2.4 8.2a1 1 0 0 0 1 .8h6.9a1 1 0 0 0 1-.8L17 7H6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" transform="translate(-1 -1)" />
+            <circle cx="6.5" cy="13.5" r="1.2" />
+            <circle cx="13.5" cy="13.5" r="1.2" />
+          </svg>
+          Add to Cart
+        </a>
+      )}
     </article>
+  );
+};
+
+export interface StockBadgeProps {
+  text: string;
+  tone?: "ok" | "low" | "out";
+}
+
+// Presentational stock pill (Figma "Inventory Status"). Color-only, no logic.
+export const StockBadge = ({ text, tone = "ok" }: StockBadgeProps) => {
+  const dot = tone === "ok" ? "bg-success-dot" : tone === "low" ? "bg-[#b54708]" : "bg-brand-deep";
+  const fg = tone === "ok" ? "text-success" : tone === "low" ? "text-[#b54708]" : "text-brand-deep";
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold ${fg}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
+      {text}
+    </span>
+  );
+};
+
+export interface FilterPillProps {
+  label: string;
+  count?: number;
+  active?: boolean;
+  href: string;
+}
+
+// Presentational shop-filter pill (Figma "Shop Filter Tags Pill Rail").
+// Anchor-styled so the host app's routing stays in the app layer.
+export const FilterPill = ({ label, count, active = false, href }: FilterPillProps) => {
+  return (
+    <a
+      href={href}
+      aria-current={active || undefined}
+      className={
+        active
+          ? "inline-flex items-center gap-2 rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-on-brand shadow-sm"
+          : "inline-flex items-center gap-2 rounded-full bg-pill px-4 py-1.5 text-sm font-semibold text-muted transition-colors hover:bg-filter-active hover:text-ink"
+      }
+    >
+      {label}
+      {count !== undefined && (
+        <span
+          className={
+            active
+              ? "rounded-full bg-white/25 px-1.5 text-[11px] font-semibold"
+              : "rounded-full bg-white/70 px-1.5 text-[11px]"
+          }
+        >
+          {count}
+        </span>
+      )}
+    </a>
   );
 };
 

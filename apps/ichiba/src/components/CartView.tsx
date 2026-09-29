@@ -1,10 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { clearCart, loadCart, removeLine, saveCart, setQty, type Cart } from "@/lib/cart";
-import { getProduct } from "@/lib/catalog";
+import { getProduct, getShop } from "@/lib/catalog";
+
+const KANJI_NUMERALS = ["壱", "弐", "参", "四", "伍", "陸", "七", "八", "九", "十"];
+
+function yen(n: number): string {
+  return `¥${n.toLocaleString()}`;
+}
 
 export function CartView() {
   const router = useRouter();
@@ -18,81 +25,302 @@ export function CartView() {
     setCart(loadCart(ownerId));
   }, [ownerId]);
 
-  const total = cart.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
+  const update = (next: Cart) => {
+    setCart(next);
+    saveCart(next, ownerId);
+  };
+
+  const groups = useMemo(() => {
+    const byShop = new Map<string, { productId: string; qty: number }[]>();
+    for (const line of cart) {
+      const p = getProduct(line.productId);
+      if (!p) continue;
+      const list = byShop.get(p.shopId) ?? [];
+      list.push(line);
+      byShop.set(p.shopId, list);
+    }
+    return [...byShop.entries()].map(([shopId, lines], i) => {
+      const subtotal = lines.reduce((n, l) => n + (getProduct(l.productId)?.priceYen ?? 0) * l.qty, 0);
+      return { shopId, shopName: getShop(shopId)?.name ?? shopId, lines, subtotal, numeral: KANJI_NUMERALS[i % KANJI_NUMERALS.length] };
+    });
+  }, [cart]);
+
+  const itemCount = cart.reduce((n, l) => n + l.qty, 0);
+  const total = groups.reduce((n, g) => n + g.subtotal, 0);
 
   if (cart.length === 0) {
-    return <p className="text-zinc-600">Your cart is empty.</p>;
+    return (
+      <div className="space-y-4 py-6">
+        <h1 className="text-[28px] font-bold text-ink">Shopping Cart</h1>
+        <p className="rounded-xl bg-white p-8 text-center text-muted shadow-sm">
+          Your cart is empty. <Link href="/" className="font-semibold text-brand-deep underline">Browse the marketplace</Link>
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      {error && <p className="rounded border border-red-300 bg-red-50 p-2 text-red-700">{error}</p>}
-      <ul className="divide-y rounded border">
-        {cart.map((line) => {
-          const p = getProduct(line.productId);
-          if (!p) return null;
-          return (
-            <li key={line.productId} className="flex items-center justify-between gap-4 p-3">
-              <div>
-                <p className="font-medium">{p.name}</p>
-                <p className="text-sm text-zinc-500">¥{p.priceYen.toLocaleString()}</p>
+    <div className="space-y-6 py-6">
+      {/* Breadcrumbs + title */}
+      <div>
+        <p className="text-[11px] font-bold tracking-wider text-muted">
+          <Link href="/" className="hover:text-ink">MARKETPLACE</Link>
+          <span aria-hidden> / </span>
+          <span className="text-ink">ORDER CONSOLIDATION</span>
+          <span aria-hidden> • </span>
+          <span className="text-brand-deep">
+            {groups.length} {groups.length === 1 ? "MERCHANT" : "MERCHANTS"}
+          </span>
+        </p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="flex items-center gap-3 text-[28px] font-bold leading-9 text-ink">
+              Shopping Cart
+              <span className="rounded-full bg-filter-active px-3 py-1 text-xs font-semibold text-muted">
+                {itemCount} {itemCount === 1 ? "Item" : "Items"}
+              </span>
+            </h1>
+            <p className="mt-2 flex items-center gap-2 rounded-lg bg-filter-active px-3 py-2 text-[13px] font-semibold text-ink shadow-sm">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden className="fill-brand-deep">
+                <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm-.9 10.2-3-3 1.4-1.4 1.6 1.6 4.4-4.4L10.9 5 7.1 9.8Z" />
+              </svg>
+              Mixed shops OK — checkout splits into one independent order per artisan shop.
+            </p>
+          </div>
+          <p className="flex items-center gap-2 text-[13px]">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-success">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden className="fill-success">
+                <path d="M8 1 9.8 5.4 14.5 5.6 10.9 8.7 12 13.4 8 10.9 4 13.4 5.1 8.7 1.5 5.6 6.2 5.4Z" />
+              </svg>
+              100% Provenance Guaranteed
+            </span>
+            <span className="text-muted" aria-hidden>|</span>
+            <span className="text-muted">Dispatching directly from Japan</span>
+          </p>
+        </div>
+      </div>
+
+      {error && <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-700">{error}</p>}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Shop groups */}
+        <div className="space-y-6 lg:col-span-8">
+          {groups.map((g) => (
+            <section key={g.shopId} aria-label={g.shopName} className="overflow-hidden rounded-xl bg-white shadow-sm">
+              <span className="block h-1 bg-brand" aria-hidden />
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-filter-active font-kanji text-lg font-semibold text-brand-deep">
+                    {g.numeral}
+                  </span>
+                  <div>
+                    <h2 className="font-semibold text-ink">{g.shopName}</h2>
+                    <p className="text-[13px] text-muted">
+                      {g.lines.length} {g.lines.length === 1 ? "item" : "items"} · Ships from Japan
+                    </p>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                  <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden className="fill-success">
+                    <path d="M6.5 11.5 3 8l1.4-1.4 2.1 2.1 5.1-5.1L13 5z" />
+                  </svg>
+                  Free Insured Delivery
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  aria-label={`Quantity for ${p.name}`}
-                  type="number"
-                  min={0}
-                  max={99}
-                  value={line.qty}
-                  onChange={(e) => {
-                    const next = setQty(cart, line.productId, Number(e.target.value) || 0);
-                    setCart(next);
-                    saveCart(next, ownerId);
-                  }}
-                  className="w-16 rounded border border-zinc-300 px-2 py-1"
-                />
+
+              <ul className="mx-4 space-y-3 rounded-xl bg-strip p-4">
+                {g.lines.map((line) => {
+                  const p = getProduct(line.productId);
+                  if (!p) return null;
+                  return (
+                    <li key={line.productId} className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                      <span className="h-16 w-16 shrink-0 rounded-xl bg-pill shadow-inner" aria-hidden />
+                      <div className="min-w-0 flex-1 basis-48">
+                        <p className="truncate font-semibold text-ink">
+                          <Link href={`/products/${p.id}`} className="hover:underline">{p.name}</Link>
+                        </p>
+                        <p className="text-[13px] text-muted">{yen(p.priceYen)} each</p>
+                      </div>
+                      <div className="ml-auto flex flex-wrap items-center gap-2">
+                        <div className="flex items-center rounded-lg bg-white shadow-sm" role="group" aria-label={`Quantity for ${p.name}`}>
+                          <button
+                            type="button"
+                            aria-label={`Decrease quantity of ${p.name}`}
+                            onClick={() => update(setQty(cart, line.productId, line.qty - 1))}
+                            className="px-2.5 py-1.5 font-bold text-muted hover:text-ink"
+                          >
+                            −
+                          </button>
+                          <input
+                            aria-label={`Quantity for ${p.name}`}
+                            type="number"
+                            min={0}
+                            max={99}
+                            value={line.qty}
+                            onChange={(e) => update(setQty(cart, line.productId, Number(e.target.value) || 0))}
+                            className="w-12 border-x border-strip bg-transparent py-1.5 text-center text-sm font-semibold outline-none"
+                          />
+                          <button
+                            type="button"
+                            aria-label={`Increase quantity of ${p.name}`}
+                            onClick={() => update(setQty(cart, line.productId, Math.min(99, line.qty + 1)))}
+                            className="px-2.5 py-1.5 font-bold text-muted hover:text-ink"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="w-20 text-right text-xl font-bold text-ink">{yen(p.priceYen * line.qty)}</p>
+                        <button
+                          type="button"
+                          onClick={() => update(removeLine(cart, line.productId))}
+                          className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-muted shadow-sm hover:text-brand-deep"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="flex items-center justify-between p-4">
+                <p className="flex items-center gap-1.5 text-[13px] text-nav">
+                  <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden className="fill-success">
+                    <path d="M6.5 11.5 3 8l1.4-1.4 2.1 2.1 5.1-5.1L13 5z" />
+                  </svg>
+                  {g.shopName} Dispatch Group
+                </p>
+                <p className="text-[15px] text-ink">
+                  Subtotal: <strong className="text-lg font-semibold">{yen(g.subtotal)}</strong>
+                </p>
+              </div>
+            </section>
+          ))}
+
+          {/* Trust badges */}
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3" aria-label="Buyer assurances">
+            {[
+              { title: "Direct Atelier Packing", sub: "Inspected before dispatch", tone: "bg-success" },
+              { title: "Express Regional Air", sub: "Insured multi-shop routing", tone: "bg-filter-active" },
+              { title: "Buyer Protection", sub: "Full damage replacement", tone: "bg-brand" },
+            ].map((b) => (
+              <div key={b.title} className="rounded-xl bg-white p-4 shadow-sm">
+                <span className={`inline-flex rounded-lg ${b.tone} p-2`} aria-hidden>
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="fill-white">
+                    <path d="M6.5 11.5 3 8l1.4-1.4 2.1 2.1 5.1-5.1L13 5z" />
+                  </svg>
+                </span>
+                <p className="mt-2 font-semibold text-ink">{b.title}</p>
+                <p className="text-[13px] text-muted">{b.sub}</p>
+              </div>
+            ))}
+          </section>
+        </div>
+
+        {/* Summary sidebar */}
+        <div className="space-y-4 lg:col-span-4">
+          <section aria-label="Order summary" className="overflow-hidden rounded-xl bg-white shadow-md">
+            <span className="block h-1.5 bg-brand" aria-hidden />
+            <div className="space-y-4 p-5">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-lg font-semibold text-ink">Order Summary</h2>
+                <p className="text-xs text-muted">
+                  {groups.length} Multi-{groups.length === 1 ? "Order" : "Orders"}
+                </p>
+              </div>
+
+              <dl className="space-y-2 text-[15px]">
+                <div className="flex justify-between">
+                  <dt className="text-muted">Subtotal ({itemCount} items)</dt>
+                  <dd className="font-semibold text-ink">{yen(total)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted">Insured delivery</dt>
+                  <dd className="font-semibold text-success">Free</dd>
+                </div>
+              </dl>
+
+              <div className="rounded-lg bg-strip p-3">
+                <p className="text-[11px] font-bold tracking-wider text-muted">SHOP SUB-SPLITS</p>
+                <ul className="mt-2 space-y-1.5">
+                  {groups.map((g) => (
+                    <li key={g.shopId} className="flex justify-between text-sm">
+                      <span className="truncate text-muted">{g.shopName}</span>
+                      <span className="font-semibold text-ink">{yen(g.subtotal)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex items-baseline justify-between border-t border-strip pt-3">
+                <p className="font-semibold text-ink">Total</p>
+                <p className="text-[28px] font-extrabold text-brand-deep">{yen(total)}</p>
+              </div>
+
+              <div className="space-y-2">
                 <button
-                  className="text-sm text-zinc-500 underline"
-                  onClick={() => {
-                    const next = removeLine(cart, line.productId);
-                    setCart(next);
-                    saveCart(next, ownerId);
+                  type="button"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                      const res = await fetch("/api/checkout", {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ items: cart }),
+                      });
+                      const json = (await res.json()) as { error?: string };
+                      if (!res.ok) throw new Error(json.error ?? "checkout failed");
+                      clearCart(ownerId);
+                      router.push("/orders");
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "checkout failed");
+                    } finally {
+                      setBusy(false);
+                    }
                   }}
+                  className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-on-brand shadow-md hover:bg-brand-deep disabled:opacity-50"
                 >
-                  Remove
+                  {busy ? "Checking out…" : `Checkout · ${yen(total)}`}
                 </button>
+                <Link
+                  href="/"
+                  className="block w-full rounded-xl bg-filter-active py-3 text-center text-sm font-semibold text-ink shadow-sm hover:bg-pill"
+                >
+                  Continue shopping
+                </Link>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="flex items-center justify-between">
-        <p className="text-lg font-bold">Total: ¥{total.toLocaleString()}</p>
-        <button
-          disabled={busy}
-          className="rounded bg-ichiba px-4 py-2 text-white hover:opacity-90 disabled:opacity-50"
-          onClick={async () => {
-            setBusy(true);
-            setError(null);
-            try {
-              const res = await fetch("/api/checkout", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ items: cart }),
-              });
-              const json = (await res.json()) as { error?: string };
-              if (!res.ok) throw new Error(json.error ?? "checkout failed");
-              clearCart(ownerId);
-              router.push("/orders");
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "checkout failed");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy ? "Checking out…" : "Mock Checkout"}
-        </button>
+
+              <div>
+                <p className="text-center text-[11px] font-bold tracking-wider text-muted">
+                  SUPPORTED MULTI-VENDOR CHECKOUT
+                </p>
+                <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                  {["VISA", "Mastercard", "JCB", "AMEX", "Konbini"].map((m) => (
+                    <span key={m} className="rounded bg-pill px-2 py-1 text-[11px] font-semibold text-muted">
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl bg-white p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 font-semibold text-ink">
+              <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden className="fill-brand-deep">
+                <path d="M2 3h12v10H2z" stroke="currentColor" strokeWidth="1.4" fill="none" />
+                <path d="M2 6h12" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+              Multi-shop shipping note
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Items from different artisan shops ship in separate insured parcels, but you only check out once.
+              Tracking for each dispatch group appears under Orders.
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   );

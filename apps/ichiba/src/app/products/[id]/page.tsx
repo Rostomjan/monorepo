@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/AddToCart";
+import { StockBadge } from "@repo/ui";
 import { getProduct, getShop } from "@/lib/catalog";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,15 +11,34 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const shop = getShop(product.shopId);
 
   return (
-    <div className="space-y-4">
-      <Link href="/" className="text-sm text-zinc-500 underline">
+    <div className="space-y-4 py-6">
+      <p className="text-[11px] font-bold tracking-wider text-muted">
+        <Link href="/" className="hover:text-ink">MARKETPLACE</Link>
+        <span aria-hidden> / </span>
+        <span className="text-ink">{shop?.name.toUpperCase() ?? "PRODUCT"}</span>
+      </p>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="rounded-xl bg-strip p-6 shadow-sm">
+          <div className="aspect-[4/3] w-full" aria-hidden />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{shop?.name}</p>
+          <h1 className="mt-1 text-3xl font-bold text-ink">{product.name}</h1>
+          <p className="mt-2 text-2xl font-bold text-ink">¥{product.priceYen.toLocaleString()}</p>
+          <div className="mt-2">
+            <StockBadge
+              text={product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+              tone={product.stock <= 0 ? "out" : product.stock <= 5 ? "low" : "ok"}
+            />
+          </div>
+          <div className="mt-4">
+            <AddToCart productId={product.id} />
+          </div>
+        </div>
+      </div>
+      <Link href="/" className="inline-block text-sm font-semibold text-muted underline hover:text-ink">
         ← Back to products
       </Link>
-      <p className="text-sm uppercase tracking-wide text-zinc-500">{shop?.name}</p>
-      <h1 className="text-3xl font-bold">{product.name}</h1>
-      <p className="text-2xl font-bold">¥{product.priceYen.toLocaleString()}</p>
-      <p className="text-sm text-zinc-500">{product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}</p>
-      <AddToCart productId={product.id} />
     </div>
   );
 }
