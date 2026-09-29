@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { getProduct } from "@/lib/catalog";
-import { placeOrders, splitCartToOrders } from "@/lib/orders";
+import { checkoutCart } from "@/lib/orders";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -18,20 +17,17 @@ export async function POST(req: Request) {
     if (typeof l.productId !== "string" || typeof l.qty !== "number") {
       return Response.json({ error: "each item needs productId:string, qty:number" }, { status: 400 });
     }
-    const product = await getProduct(l.productId);
-    if (!product) return Response.json({ error: `unknown product: ${l.productId}` }, { status: 400 });
-    if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 99) {
-      return Response.json({ error: `bad qty for ${l.productId}` }, { status: 400 });
-    }
-    if (l.qty > product.stock) {
-      return Response.json({ error: `insufficient stock for ${l.productId}` }, { status: 409 });
-    }
     clean.push({ productId: l.productId, qty: l.qty });
   }
-  // Mock payment: always succeeds. Stock decrement is in-memory (single instance).
-  // Orders are attributed to the signed-in user, or "guest" for signed-out checkout.
+  // Mock payment: always succeeds. Stock decrement is atomic (single
+  // transaction). Orders are attributed to the signed-in user, or "guest".
   const { userId } = await auth();
-  const orders = await splitCartToOrders(clean, userId ?? "guest");
-  placeOrders(orders);
-  return Response.json({ orderIds: orders.map((o) => o.id), orders });
+  try {
+    const orders = await checkoutCart(clean, userId ?? "guest");
+    return Response.json({ orderIds: orders.map((o) => o.id), orders });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "checkout failed";
+    const status = message.startsWith("insufficient stock") ? 409 : 400;
+    return Response.json({ error: message }, { status });
+  }
 }

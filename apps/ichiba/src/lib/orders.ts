@@ -1,4 +1,7 @@
+import { desc, eq, inArray } from "drizzle-orm";
 import { getProduct, getShop } from "./catalog";
+import { db } from "./db/client";
+import { orderItems, orders, products, shops } from "./db/schema";
 
 interface OrderItem {
   productId: string;
@@ -69,22 +72,99 @@ export async function splitCartToOrders(
   return orders;
 }
 
-// Single-instance store (Stage-1 baseline).
-// Scaling hook: this breaks with 2+ instances — Stage-5 moves it to Postgres/Redis.
-const ORDER_DB: Order[] = [];
-
-export function placeOrders(orders: Order[]): void {
-  ORDER_DB.unshift(...orders);
+// Postgres-backed store. Reads reassemble orders + items; writes go
+// through checkoutCart below — never bare inserts.
+async function assemble(heads: Array<{
+  id: string;
+  userId: string;
+  shopId: string;
+  shopName: string;
+  totalYen: number;
+  createdAt: string;
+}>): Promise<Order[]> {
+  if (heads.length === 0) return [];
+  const lines = await db()
+    .select()
+    .from(orderItems)
+    .where(
+      inArray(
+        orderItems.orderId,
+        heads.map((h) => h.id),
+      ),
+    )
+    .orderBy(orderItems.productId);
+  const byOrder = new Map<string, OrderItem[]>();
+  for (const l of lines) {
+    const list = byOrder.get(l.orderId) ?? [];
+    list.push({ productId: l.productId, name: l.name, priceYen: l.priceYen, qty: l.qty });
+    byOrder.set(l.orderId, list);
+  }
+  return heads.map((h) => ({
+    id: h.id,
+    userId: h.userId,
+    shopId: h.shopId,
+    shopName: h.shopName,
+    items: byOrder.get(h.id) ?? [],
+    totalYen: h.totalYen,
+    createdAt: h.createdAt,
+  }));
 }
 
-export function listOrders(userId?: string): Order[] {
-  if (userId === undefined) return ORDER_DB;
-  return ORDER_DB.filter((o) => o.userId === userId);
+export async function listOrders(userId?: string): Promise<Order[]> {
+  const heads = await db()
+    .select()
+    .from(orders)
+    .where(userId === undefined ? undefined : eq(orders.userId, userId))
+    .orderBy(desc(orders.createdAt));
+  return assemble(heads);
 }
 
-export function getOrder(id: string, userId?: string): Order | undefined {
-  const order = ORDER_DB.find((o) => o.id === id);
+export async function getOrder(id: string, userId?: string): Promise<Order | undefined> {
+  const [order] = await assemble(await db().select().from(orders).where(eq(orders.id, id)).limit(1));
   if (!order) return undefined;
   if (userId !== undefined && order.userId !== userId) return undefined;
   return order;
+}
+
+// Atomic checkout: validate + lock rows + decrement stock + split into
+// per-shop orders + persist, all in one transaction. Concurrent checkouts
+// for the same product serialize on the row lock instead of overselling.
+export async function checkoutCart(lines: CheckoutLine[], userId = "guest"): Promise<Order[]> {
+  if (lines.length === 0 || lines.length > 50) throw new Error("items must be a non-empty array (max 50)");
+  return db().transaction(async (tx) => {
+    const seen = new Map<string, { id: string; shopId: string; name: string; priceYen: number }>();
+    for (const line of lines) {
+      if (!Number.isInteger(line.qty) || line.qty < 1 || line.qty > 99) {
+        throw new Error(`bad qty for ${line.productId}`);
+      }
+      const [product] = await tx.select().from(products).where(eq(products.id, line.productId)).for("update").limit(1);
+      if (!product) throw new Error(`unknown product: ${line.productId}`);
+      if (line.qty > product.stock) throw new Error(`insufficient stock for ${line.productId}`);
+      await tx
+        .update(products)
+        .set({ stock: product.stock - line.qty })
+        .where(eq(products.id, line.productId));
+      seen.set(product.id, product);
+    }
+    const txLookup: CatalogLookup = {
+      product: async (id) => seen.get(id),
+      shopName: async (shopId) =>
+        (await tx.select({ name: shops.name }).from(shops).where(eq(shops.id, shopId)).limit(1))[0]?.name,
+    };
+    const split = await splitCartToOrders(lines, userId, txLookup);
+    for (const o of split) {
+      await tx.insert(orders).values({
+        id: o.id,
+        userId: o.userId,
+        shopId: o.shopId,
+        shopName: o.shopName,
+        totalYen: o.totalYen,
+        createdAt: o.createdAt,
+      });
+      await tx.insert(orderItems).values(
+        o.items.map((it) => ({ orderId: o.id, productId: it.productId, name: it.name, priceYen: it.priceYen, qty: it.qty })),
+      );
+    }
+    return split;
+  });
 }

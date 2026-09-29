@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { generateCatalog } from "./catalog";
-import { getOrder, listOrders, placeOrders, splitCartToOrders, type CatalogLookup } from "./orders";
+import { splitCartToOrders, type CatalogLookup } from "./orders";
 
 // Fixture-backed lookup: exercises order logic without a database.
+// Persistence (listOrders/getOrder/checkoutCart) is covered by e2e against
+// a real Postgres, since CI has no database service for unit tests.
 const { products, shops } = generateCatalog();
 const productById = new Map(products.map((p) => [p.id, p]));
 const shopNameById = new Map(shops.map((s) => [s.id, s.name]));
@@ -25,27 +27,15 @@ describe("orders", () => {
     );
     expect(orders).toHaveLength(2);
     expect(orders[0].totalYen).toBeGreaterThan(0);
+    expect(orders[0].items[0].name).toBe(a.name);
   });
 
   test("rejects unknown products", async () => {
     await expect(splitCartToOrders([{ productId: "nope", qty: 1 }], "guest", lookup)).rejects.toThrow();
   });
 
-  test("stores orders in-memory", async () => {
-    const before = listOrders().length;
-    const [order] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "guest", lookup);
-    placeOrders([order]);
-    expect(listOrders().length).toBe(before + 1);
-  });
-
-  test("attributes orders to users and filters by owner", async () => {
+  test("attributes orders to users", async () => {
     const [mine] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "user_123", lookup);
-    const [guest] = await splitCartToOrders([{ productId: products[0].id, qty: 1 }], "guest", lookup);
-    placeOrders([mine, guest]);
     expect(mine.userId).toBe("user_123");
-    expect(listOrders("user_123").map((o) => o.id)).toContain(mine.id);
-    expect(listOrders("user_123").map((o) => o.id)).not.toContain(guest.id);
-    expect(getOrder(guest.id, "user_123")).toBeUndefined();
-    expect(getOrder(guest.id, "guest")?.id).toBe(guest.id);
   });
 });

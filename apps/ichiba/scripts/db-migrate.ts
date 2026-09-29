@@ -20,7 +20,7 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const sql = postgres(url, { max: 1 });
+const sql = postgres(url, { max: 1, onnotice: () => {} });
 for (const file of files) {
   await sql.unsafe(readFileSync(join(dir, file), "utf8"));
   console.log(`applied ${file}`);

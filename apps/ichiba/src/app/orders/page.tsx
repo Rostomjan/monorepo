@@ -4,7 +4,7 @@ import { listOrders } from "@/lib/orders";
 
 export default async function OrdersPage() {
   const { userId } = await auth();
-  const orders = listOrders(userId ?? "guest");
+  const orders = await listOrders(userId ?? "guest");
   return (
     <div className="space-y-4 py-6">
       <p className="text-[11px] font-bold tracking-wider text-muted">

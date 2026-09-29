@@ -24,5 +24,9 @@ for (let i = 0; i < p.length; i += 500) {
   await sql`INSERT INTO products ${sql(chunk)} ON CONFLICT (id) DO NOTHING`;
 }
 const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM products`;
+// Load-test anchor: k6/checkout.js buys shop-1-p1 every run and its threshold
+// tolerates zero failures, so this product carries effectively infinite stock.
+// Re-applied on every seed (the upserts above are DO NOTHING on conflict).
+await sql`UPDATE products SET stock = 100000 WHERE id = 'shop-1-p1'`;
 console.log(`seeded ${s.length} shops, ${count} products total`);
 await sql.end();

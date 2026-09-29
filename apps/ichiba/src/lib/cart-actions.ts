@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getProduct } from "./catalog";
 import { addLine, removeLine, setQty } from "./cart";
 import { cartOwner, readCart, writeCart } from "./cart-store";
-import { placeOrders, splitCartToOrders } from "./orders";
+import { checkoutCart } from "./orders";
 
 function refreshCartUI(): void {
   // Layout-scoped revalidation refreshes the server-rendered header badge
@@ -39,17 +39,16 @@ export async function removeFromCart(productId: string): Promise<void> {
   refreshCartUI();
 }
 
-// Checkout reads the server-side cart (never trusts client-submitted items).
-// Mock payment always succeeds; over-claimed stock fails the whole checkout.
+// Checkout reads the server-side cart (never trusts client-submitted items)
+// and settles it in one transaction. Mock payment always succeeds.
 export async function checkoutAction(): Promise<{ error: string } | never> {
   const cart = await readCart();
   if (cart.length === 0) return { error: "Your cart is empty." };
-  for (const line of cart) {
-    const product = await getProduct(line.productId);
-    if (!product) return { error: `Unknown product: ${line.productId}.` };
-    if (line.qty > product.stock) return { error: `Insufficient stock for ${product.name}.` };
+  try {
+    await checkoutCart(cart, await cartOwner());
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "checkout failed" };
   }
-  placeOrders(await splitCartToOrders(cart, await cartOwner()));
   await writeCart([]);
   refreshCartUI();
   redirect("/orders");
