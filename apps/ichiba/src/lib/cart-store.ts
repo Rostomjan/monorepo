@@ -6,6 +6,12 @@ import { getProducts } from "./catalog";
 // Server-only cart persistence (cookie-backed).
 // Stage 2 semantics preserved: signed-out visitors share the "guest" cart,
 // signed-in users get one cart each (cookie name is owner-scoped).
+//
+// Cookie discipline (Next.js forbids mutating cookies during render):
+// - readCart() never writes — it returns a merged *view* for signed-in
+//   users with a leftover guest cart.
+// - Consolidation (fold + delete guest cookie) happens only in writeCart(),
+//   which runs exclusively inside Server Actions, where mutation is allowed.
 
 const COOKIE_PREFIX = "ichiba_cart_v1";
 
@@ -28,16 +34,6 @@ function parseCookie(raw: string | undefined): Cart {
   }
 }
 
-export async function readCart(): Promise<Cart> {
-  const jar = await cookies();
-  return parseCookie(jar.get(cookieName(await cartOwner()))?.value);
-}
-
-export async function writeCart(cart: Cart): Promise<void> {
-  const jar = await cookies();
-  jar.set(cookieName(await cartOwner()), JSON.stringify(cart), cookieOpts());
-}
-
 function cookieOpts() {
   return {
     httpOnly: true as const,
@@ -48,21 +44,25 @@ function cookieOpts() {
   };
 }
 
-// One-time fold of the guest cart into the user cart at login. Runs on every
-// request but only writes when a non-empty guest cart exists; stale product
-// ids are dropped so junk never migrates into the user cart.
-export async function mergeGuestCart(): Promise<void> {
-  const owner = await cartOwner();
-  if (owner === "guest") return;
+export async function readCart(): Promise<Cart> {
   const jar = await cookies();
-  const guest = parseCookie(jar.get(cookieName("guest"))?.value);
-  if (guest.length === 0) return;
+  const owner = await cartOwner();
   const user = parseCookie(jar.get(cookieName(owner))?.value);
+  if (owner === "guest") return user;
+  const guest = parseCookie(jar.get(cookieName("guest"))?.value);
+  if (guest.length === 0) return user;
+  // Transient post-login state: show the union, dropping stale product ids
+  // so phantom lines never inflate the badge. Persisted on the next write.
   const validIds = new Set((await getProducts([...user, ...guest].map((l) => l.productId))).keys());
-  const merged = mergeCarts(
+  return mergeCarts(
     user.filter((l) => validIds.has(l.productId)),
     guest.filter((l) => validIds.has(l.productId)),
   );
-  jar.set(cookieName(owner), JSON.stringify(merged), cookieOpts());
-  jar.delete(cookieName("guest"));
+}
+
+export async function writeCart(cart: Cart): Promise<void> {
+  const jar = await cookies();
+  const owner = await cartOwner();
+  jar.set(cookieName(owner), JSON.stringify(cart), cookieOpts());
+  if (owner !== "guest") jar.delete(cookieName("guest"));
 }
