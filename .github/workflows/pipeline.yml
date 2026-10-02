@@ -181,9 +181,19 @@ jobs:
         working-directory: apps/ichiba
         env:
           DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+      - name: Check Clerk test keys
+        # The ichiba dev server throws on every request without Clerk keys,
+        # which surfaces as a 3-minute webServer timeout. Fail fast instead.
+        run: |
+          if [ -z "${{ secrets.CLERK_PUBLISHABLE_KEY }}" ] || [ -z "${{ secrets.CLERK_SECRET_KEY }}" ]; then
+            echo "Ichiba e2e needs CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY repo secrets (Clerk test-mode keys from https://dashboard.clerk.com/~/api-keys)."
+            exit 1
+          fi
       - name: Run ichiba Playwright flow
         env:
           DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
         run: bun run test:ichiba
         working-directory: apps/e2e
       - uses: actions/upload-artifact@v7
