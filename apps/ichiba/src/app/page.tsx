@@ -36,17 +36,14 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
   const pageNum = Number(sp.page ?? "1") || 1;
 
   const searching = q.trim().length > 0;
-  const shops = await listShops();
+  // Independent queries fire together: one fewer sequential DB round trip.
+  // Unknown shop ids filter to empty (rather than silently listing all).
+  const [shops, { items: pageItems, total, totalPages, page: safePage, shopCounts }] = await Promise.all([
+    listShops(),
+    queryProducts({ q, shopId: shopId || undefined, sort, page: pageNum, perPage: PER_PAGE }),
+  ]);
   const shopFilter = shops.find((s) => s.id === shopId);
   const shopNameById = new Map(shops.map((s) => [s.id, s.name]));
-
-  const {
-    items: pageItems,
-    total,
-    totalPages,
-    page: safePage,
-    shopCounts,
-  } = await queryProducts({ q, shopId: shopFilter?.id, sort, page: pageNum, perPage: PER_PAGE });
 
   const pillShops = shops.slice(0, 4);
   const start = (safePage - 1) * PER_PAGE;

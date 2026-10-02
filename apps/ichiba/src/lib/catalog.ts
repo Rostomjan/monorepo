@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { db } from "./db/client";
 import { products, shops } from "./db/schema";
 
@@ -56,14 +57,31 @@ export function generateCatalog(shopCount = 40, productsPerShop = 30, seed = 42)
 }
 
 export async function getShop(id: string): Promise<Shop | undefined> {
-  const rows = await db().select().from(shops).where(eq(shops.id, id)).limit(1);
-  return rows[0];
+  return cachedShop(id);
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {
-  const rows = await db().select().from(products).where(eq(products.id, id)).limit(1);
-  return rows[0];
+  return cachedProduct(id);
 }
+
+// Entity lookups are cacheable (5 min TTL): names/prices change rarely, and
+// the only stock-sensitive path (checkout) re-checks atomically with
+// SELECT … FOR UPDATE, so a stale read can only surface a friendly 409.
+const cachedShop = unstable_cache(
+  async (id: string) => (await db().select().from(shops).where(eq(shops.id, id)).limit(1))[0],
+  ["ichiba-shop"],
+  { revalidate: 300 },
+);
+
+const cachedProduct = unstable_cache(
+  async (id: string) => (await db().select().from(products).where(eq(products.id, id)).limit(1))[0],
+  ["ichiba-product"],
+  { revalidate: 300 },
+);
+
+const cachedShops = unstable_cache(() => db().select().from(shops).orderBy(asc(shops.id)), ["ichiba-shops"], {
+  revalidate: 300,
+});
 
 export async function getProducts(ids: string[]): Promise<Map<string, Product>> {
   if (ids.length === 0) return new Map();
@@ -72,7 +90,7 @@ export async function getProducts(ids: string[]): Promise<Map<string, Product>> 
 }
 
 export async function listShops(): Promise<Shop[]> {
-  return db().select().from(shops).orderBy(asc(shops.id));
+  return cachedShops();
 }
 
 // LIKE metacharacters in user input must not become wildcards.

@@ -14,11 +14,19 @@ export async function GET() {
   };
   try {
     const rows = await db().execute(
-      sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('shops', 'products')`,
+      sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('shops', 'products', 'orders', 'order_items')`,
     );
     const found = new Set((rows as unknown as Array<{ tablename: string }>).map((r) => r.tablename));
-    status.relations = { shops: found.has("shops"), products: found.has("products") };
-    status.database = status.relations.shops && status.relations.products ? "ready" : "missing-migrations";
+    status.relations = {
+      shops: found.has("shops"),
+      products: found.has("products"),
+      orders: found.has("orders"),
+      order_items: found.has("order_items"),
+    };
+    status.database =
+      status.relations.shops && status.relations.products && status.relations.orders && status.relations.order_items
+        ? "ready"
+        : "missing-migrations";
     if (status.database !== "ready") status.ok = false;
   } catch (e) {
     status.ok = false;
