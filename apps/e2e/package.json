@@ -15,6 +15,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "playwright test",
+    "test:ichiba": "playwright test -c playwright.ichiba.config.ts",
     "test:report": "playwright show-report",
     "test:ui": "playwright test --ui",
     "type-check": "tsc --noEmit"

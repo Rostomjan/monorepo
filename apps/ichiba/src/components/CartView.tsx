@@ -115,7 +115,7 @@ export async function CartView() {
                   const p = byIds.get(line.productId);
                   if (!p) return null;
                   return (
-                    <li key={line.productId} className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                    <li key={line.productId} data-testid="cart-line" className="flex flex-wrap items-center gap-x-4 gap-y-3">
                       <span className="h-16 w-16 shrink-0 rounded-xl bg-pill shadow-inner" aria-hidden />
                       <div className="min-w-0 flex-1 basis-48">
                         <p className="truncate font-semibold text-ink">

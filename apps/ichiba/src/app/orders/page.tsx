@@ -20,7 +20,7 @@ export default async function OrdersPage() {
       )}
       <ul className="space-y-3">
         {orders.map((o) => (
-          <li key={o.id} className="rounded-xl bg-white p-4 shadow-sm">
+          <li key={o.id} data-testid="order-row" className="rounded-xl bg-white p-4 shadow-sm">
             <Link href={`/orders/${encodeURIComponent(o.id)}`} className="font-semibold text-ink hover:underline">
               {o.shopName}
             </Link>
