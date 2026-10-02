@@ -106,7 +106,7 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
               <FilterPill
                 key={s.id}
                 label={s.name}
-                count={shopCounts.get(s.id) ?? 0}
+                count={shopCounts[s.id] ?? 0}
                 active={s.id === shopFilter?.id}
                 href={hrefWith(sp, { shop: s.id, page: "" })}
               />

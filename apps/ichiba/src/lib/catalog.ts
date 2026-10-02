@@ -122,7 +122,7 @@ export interface ProductQueryResult {
   total: number;
   totalPages: number;
   page: number;
-  shopCounts: Map<string, number>;
+  shopCounts: Record<string, number>;
 }
 
 function sortOrder(sort: string | undefined, q: string) {
@@ -135,32 +135,42 @@ function sortOrder(sort: string | undefined, q: string) {
 export async function queryProducts(opts: ProductQuery): Promise<ProductQueryResult> {
   const q = (opts.q ?? "").trim();
   const perPage = Math.min(Math.max(opts.perPage ?? 12, 1), 60);
-  const match = matchCondition(q);
-  const where = opts.shopId ? and(match, eq(products.shopId, opts.shopId)) : match;
-
-  // Count first so the page clamps to range (same contract as the old
-  // in-memory listProducts); items + per-shop counts follow in parallel.
-  const countRows = await db().select({ n: count() }).from(products).where(where);
-  const total = countRows[0]?.n ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const page = Math.min(Math.max(opts.page ?? 1, 1), totalPages);
-
-  const [itemRows, shopRows] = await Promise.all([
-    db()
-      .select()
-      .from(products)
-      .where(where)
-      .orderBy(...sortOrder(opts.sort, q))
-      .limit(perPage)
-      .offset((page - 1) * perPage),
-    db().select({ shopId: products.shopId, n: count() }).from(products).where(match).groupBy(products.shopId),
-  ]);
-
-  return {
-    items: itemRows,
-    total,
-    totalPages,
-    page,
-    shopCounts: new Map(shopRows.map((r) => [r.shopId, r.n])),
-  };
+  return cachedQuery(q, opts.shopId ?? "", opts.sort ?? "featured", Math.max(opts.page ?? 1, 1), perPage);
 }
+
+// Listing results cache 60s: same staleness contract as the entity caches
+// (checkout re-validates stock atomically, so this can never oversell).
+const cachedQuery = unstable_cache(
+  async (q: string, shopId: string, sort: string, page: number, perPage: number): Promise<ProductQueryResult> => {
+    const match = matchCondition(q);
+    const where = shopId ? and(match, eq(products.shopId, shopId)) : match;
+
+    // Count first so the page clamps to range (same contract as the old
+    // in-memory listProducts); items + per-shop counts follow in parallel.
+    const countRows = await db().select({ n: count() }).from(products).where(where);
+    const total = countRows[0]?.n ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+
+    const [itemRows, shopRows] = await Promise.all([
+      db()
+        .select()
+        .from(products)
+        .where(where)
+        .orderBy(...sortOrder(sort, q))
+        .limit(perPage)
+        .offset((safePage - 1) * perPage),
+      db().select({ shopId: products.shopId, n: count() }).from(products).where(match).groupBy(products.shopId),
+    ]);
+
+    return {
+      items: itemRows,
+      total,
+      totalPages,
+      page: safePage,
+      shopCounts: Object.fromEntries(shopRows.map((r) => [r.shopId, r.n])),
+    };
+  },
+  ["ichiba-query"],
+  { revalidate: 60 },
+);
