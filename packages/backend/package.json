@@ -8,7 +8,7 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "^1.4.2",
-    "@types/node": "26.6.2",
+    "@types/node": "26.6.4",
     "eslint": "^8.57.0",
     "typescript": "7.0.2"
   },
