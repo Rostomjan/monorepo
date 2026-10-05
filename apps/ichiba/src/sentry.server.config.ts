@@ -8,6 +8,6 @@ Sentry.init({
   environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
   // Free tier: 100% in dev, 10% in prod. Bump only when debugging prod.
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
-  // Keep logs off on free tier — they count toward quota.
-  enableLogs: false,
+  // No logs integration is configured, so nothing log-like is sent.
+  // (Sentry v11 removed the enableLogs option; removal is valid on v10 too.)
 });
