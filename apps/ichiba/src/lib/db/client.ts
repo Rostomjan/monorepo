@@ -2,10 +2,11 @@ import postgres from "postgres";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
-// Lazy singleton: importing this module must never connect (Next prerenders
+// Lazy singletons: importing this module must never connect (Next prerenders
 // routes at build time with no DATABASE_URL). First query throws a clear
 // error instead of a driver connection failure.
 let _db: PostgresJsDatabase<typeof schema> | null = null;
+let _dbRead: PostgresJsDatabase<typeof schema> | null = null;
 
 function databaseUrl(): string {
   // Vercel's Neon integration names it POSTGRES_URL; standalone Neon docs
@@ -24,4 +25,16 @@ export function db(): PostgresJsDatabase<typeof schema> {
     _db = drizzle(postgres(databaseUrl(), { max: 5 }), { schema });
   }
   return _db;
+}
+
+// Read path. Points at a Neon read replica when REPLICA_URL is set,
+// otherwise falls back to the primary. Writes (checkout transaction) and
+// read-your-write flows (post-checkout /orders) always use db().
+export function dbRead(): PostgresJsDatabase<typeof schema> {
+  const replica = process.env.REPLICA_URL;
+  if (!replica) return db();
+  if (!_dbRead) {
+    _dbRead = drizzle(postgres(replica, { max: 5 }), { schema });
+  }
+  return _dbRead;
 }
