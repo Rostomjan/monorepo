@@ -18,9 +18,6 @@ services:
       timeout: 5s
       retries: 5
 
-volumes:
-  ichiba-pgdata:
-
   api:
     build:
       context: .
@@ -49,3 +46,84 @@ volumes:
     depends_on:
       api:
         condition: service_started
+
+  # ---- scale-lab (opt-in): `docker compose --profile scale-lab up --build` ----
+  # Default `docker compose up` ignores these. They simulate prod: 2 Next
+  # replicas behind an nginx LB+gateway, shared Postgres, Redis ready for
+  # Stage 2 caching work, k6 runner for load tests in apps/ichiba/k6.
+  redis:
+    image: redis:7-alpine
+    profiles: ["scale-lab"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ichiba-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ichiba1:
+    build:
+      context: .
+      dockerfile: apps/ichiba/Dockerfile
+    profiles: ["scale-lab"]
+    ports:
+      - "3004:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://ichiba:ichiba@db:5432/ichiba
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/api/health | grep -q '\"ok\":true'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  ichiba2:
+    build:
+      context: .
+      dockerfile: apps/ichiba/Dockerfile
+    profiles: ["scale-lab"]
+    ports:
+      - "3005:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://ichiba:ichiba@db:5432/ichiba
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3003/api/health | grep -q '\"ok\":true'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  gateway:
+    image: nginx:1.27-alpine
+    profiles: ["scale-lab"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/scale-lab/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ichiba1
+      - ichiba2
+
+  k6:
+    image: grafana/k6:latest
+    profiles: ["scale-lab"]
+    volumes:
+      - ./apps/ichiba/k6:/scripts:ro
+    # Keep idle so you can `docker compose --profile scale-lab run --rm k6
+    # run /scripts/search.js -e BASE_URL=http://gateway:8080`.
+    entrypoint: ["sleep", "infinity"]
+
+volumes:
+  ichiba-pgdata:
+  ichiba-redisdata:
