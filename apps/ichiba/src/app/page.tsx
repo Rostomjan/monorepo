@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FilterPill, ProductCard } from "@repo/ui";
-import { listShops, queryProducts } from "@/lib/catalog";
+import { listShops, queryProducts, type Product, type Shop } from "@/lib/catalog";
 import { QuickAdd } from "@/components/QuickAdd";
 
 interface SearchParams {
@@ -43,10 +43,30 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
   const searching = q.trim().length > 0;
   // Independent queries fire together: one fewer sequential DB round trip.
   // Unknown shop ids filter to empty (rather than silently listing all).
-  const [shops, { items: pageItems, total, totalPages, page: safePage, shopCounts }] = await Promise.all([
-    listShops(),
-    queryProducts({ q, shopId: shopId || undefined, sort, page: pageNum, perPage: PER_PAGE }),
-  ]);
+  // A DB blip (e.g. rotated DATABASE_URL, Sentry 7766142040) degrades to an
+  // "unavailable" notice instead of a 500: checkout re-validates stock
+  // atomically, so serving no results here can never oversell.
+  let shops: Shop[] = [];
+  let pageItems: Product[] = [];
+  let total = 0;
+  let totalPages = 1;
+  let safePage = pageNum;
+  let shopCounts: Record<string, number> = {};
+  let catalogDown = false;
+  try {
+    const [s, r] = await Promise.all([
+      listShops(),
+      queryProducts({ q, shopId: shopId || undefined, sort, page: pageNum, perPage: PER_PAGE }),
+    ]);
+    shops = s;
+    pageItems = r.items;
+    total = r.total;
+    totalPages = r.totalPages;
+    safePage = r.page;
+    shopCounts = r.shopCounts;
+  } catch {
+    catalogDown = true;
+  }
   const shopFilter = shops.find((s) => s.id === shopId);
   const shopNameById = new Map(shops.map((s) => [s.id, s.name]));
 
@@ -204,7 +224,20 @@ export default async function Page({ searchParams }: { searchParams?: Promise<Se
       </div>
 
       {/* Product grid */}
-      {pageItems.length > 0 ? (
+      {catalogDown ? (
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm" role="alert">
+          <p className="font-semibold text-ink">Catalog temporarily unavailable</p>
+          <p className="mt-1 text-sm text-muted">
+            We couldn&apos;t reach the product database. Your cart and orders are safe.
+          </p>
+          <Link
+            href="/"
+            className="mt-4 inline-block rounded-full bg-brand px-5 py-2 text-sm font-semibold text-on-brand hover:bg-brand-deep"
+          >
+            Try again
+          </Link>
+        </div>
+      ) : pageItems.length > 0 ? (
         <ul
           className={
             view === "list"
