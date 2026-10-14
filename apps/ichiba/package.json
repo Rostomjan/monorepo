@@ -13,11 +13,11 @@
     "db:seed": "bun scripts/db-seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.10",
+    "@clerk/nextjs": "^7.9.14",
     "@repo/ui": "workspace:*",
     "@sentry/nextjs": "^11",
-    "drizzle-orm": "^0.45.3",
-    "next": "16.3.8",
+    "drizzle-orm": "^0.45.4",
+    "next": "16.4.0",
     "postgres": "^3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -26,8 +26,8 @@
     "@repo/tailwind-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
-    "@types/bun": "^1.4.2",
-    "@types/node": "26.6.4",
+    "@types/bun": "^1.4.3",
+    "@types/node": "26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "^8.57.0",
