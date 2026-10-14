@@ -1,0 +1,31 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "figma": {
+        "type": "remote",
+        "url": "https://mcp.figma.com/mcp",
+        "disabled": true
+      },
+      // Headless fallback — no Desktop app, no OAuth, no mcp:connect scope.
+      // Uses Figma REST API via Personal Access Token.
+      // 1. Generate token: Figma → Settings → Security → Personal access tokens
+      //    Scopes: file_content:read, file_metadata:read (+ file_variables:read etc. as needed)
+      // 2. Set env: export FIGMA_API_KEY="figd_xxx" (never commit the value)
+      // 3. Disable "figma" above, enable "figma-pat" below.
+      "figma-pat": {
+        "type": "local",
+        "command": ["npx", "-y", "figma-developer-mcp", "--figma-api-key={env:FIGMA_API_KEY}", "--stdio"]
+      }
+      // Local Desktop fallback — no OAuth, bypasses the mcp:connect allowlist.
+      // Requires Figma Desktop app with Dev Mode running.
+      // Uncomment to use instead of the remote server:
+      // "figma-desktop": {
+      //   "type": "remote",
+      //   "url": "http://127.0.0.1:3845/mcp",
+      //   "disabled": true,
+      //   "oauth": false
+      // }
+    }
+  }
+}
