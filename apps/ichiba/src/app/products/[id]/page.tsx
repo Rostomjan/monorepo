@@ -4,6 +4,10 @@ import { AddToCart } from "@/components/AddToCart";
 import { StockBadge } from "@repo/ui";
 import { getProduct, getShop } from "@/lib/catalog";
 
+// Vercel Full Route Cache replaces nginx product-page caching: entity
+// staleness matches the 5-min unstable_cache TTL in catalog.ts.
+export const revalidate = 300;
+
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProduct(decodeURIComponent(id));

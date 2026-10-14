@@ -13,6 +13,11 @@ interface SearchParams {
 
 const PER_PAGE = 12;
 
+// Vercel Full Route Cache replaces nginx `proxy_cache_valid 200 60s`:
+// listing staleness matches the 60s unstable_cache TTL in catalog.ts
+// (checkout re-validates stock atomically, so this can never oversell).
+export const revalidate = 60;
+
 function hrefWith(base: SearchParams, overrides: Partial<SearchParams>): string {
   const params = new URLSearchParams();
   const merged = { ...base, ...overrides };

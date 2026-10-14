@@ -32,5 +32,9 @@ export async function GET() {
     status.ok = false;
     status.database = e instanceof Error ? e.message.slice(0, 160) : "unreachable";
   }
-  return Response.json(status, { status: status.ok ? 200 : 503 });
+  // Never cache health: it drives LB failover decisions (mirrors nginx rule).
+  return Response.json(status, {
+    status: status.ok ? 200 : 503,
+    headers: { "Cache-Control": "no-store" },
+  });
 }

@@ -1,7 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { checkoutCart } from "@/lib/orders";
+import { checkWriteRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // Cloud replacement for nginx `limit_req zone=write_zone`: 429 when over
+  // budget. No-op locally (no Upstash env) so dev/CI stay green.
+  if (!(await checkWriteRateLimit(req))) {
+    return Response.json({ error: "too many requests" }, { status: 429 });
+  }
   let body: unknown;
   try {
     body = await req.json();
