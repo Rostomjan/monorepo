@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "dependencies": {
     "@repo/typescript-config": "workspace:*",
-    "convex": "^1.46.0"
+    "convex": "^1.47.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

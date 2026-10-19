@@ -2,12 +2,12 @@
   "name": "e2e",
   "version": "0.0.0",
   "devDependencies": {
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@repo/backend": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "26.6.5",
-    "convex": "^1.46.0",
+    "convex": "^1.47.0",
     "eslint": "^8.57.0",
     "typescript": "7.0.2"
   },
