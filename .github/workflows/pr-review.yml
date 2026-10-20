@@ -1,0 +1,241 @@
+name: PR Gate
+
+# REVIEW AGENTS + AUTO-MERGE GATE
+#
+# Every PR gets two fresh OpenCode sessions (fast + strong model, both from the
+# free `opencode` provider by default) plus a deterministic triage step. If
+# triage rates the PR low-impact and both agents approve, the gate queues an
+# auto-merge (squash). Anything else waits for a human.
+#
+# Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`.
+
+on:
+  pull_request:
+    branches: ["main", "develop"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Swap reviewer models via repo variables without touching this file.
+  FAST_MODEL: ${{ vars.REVIEW_FAST_MODEL || 'opencode/glm-5.3-flash-free' }}
+  STRONG_MODEL: ${{ vars.REVIEW_STRONG_MODEL || 'opencode/minimax-m3.1-flash-free#high' }}
+  # Branches the gate may auto-merge into. Remove "main" to keep prod merges human.
+  AUTO_MERGE_TARGETS: "develop main"
+  # Diff size under which the gate may auto-merge (additions + deletions).
+  MAX_DIFF_LINES: "400"
+
+jobs:
+  triage:
+    name: Triage impact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mergeable: ${{ steps.triage.outputs.mergeable }}
+    steps:
+      - name: Classify PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        id: triage
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          # Labels may not exist on first use; create them idempotently.
+          gh label create "auto-merge" --color 0e8a16 --description "Triage: low impact, agent-approved" || true
+          gh label create "needs-human" --color d4c5f9 --description "Triage: human review required" || true
+
+          data=$(gh pr view "$PR" --repo "$REPO" --json files,additions,deletions)
+          lines=$(($(echo "$data" | jq -r '.additions') + $(echo "$data" | jq -r '.deletions')))
+
+          mergeable=true
+          deny_regex='^(packages/backend/|\.github/|infra/|docker-compose\.yml$|\.env)'
+          for path in $(echo "$data" | jq -r '.files[].path'); do
+            if echo "$path" | grep -qE "$deny_regex"; then
+              echo "Deny path touched: $path"
+              mergeable=false
+            fi
+          done
+
+          # Bigger diffs are only low-impact if they are entirely docs/config/deps.
+          if [ "$lines" -gt "${{ env.MAX_DIFF_LINES }}" ]; then
+            docs_regex='^(docs/|README|\.env\.example|package\.json$|bun\.lock$)'
+            for path in $(echo "$data" | jq -r '.files[].path'); do
+              if ! echo "$path" | grep -qE "$docs_regex"; then
+                echo "Large diff (${lines} lines) touches non-docs file: $path"
+                mergeable=false
+              fi
+            done
+          fi
+
+          if [ "$mergeable" = "true" ]; then
+            gh pr label "$PR" --add "auto-merge" --repo "$REPO" || true
+            gh pr label "$PR" --remove "needs-human" --repo "$REPO" || true
+          else
+            gh pr label "$PR" --add "needs-human" --repo "$REPO" || true
+            gh pr label "$PR" --remove "auto-merge" --repo "$REPO" || true
+          fi
+
+          echo "mergeable=$mergeable" >> "$GITHUB_OUTPUT"
+          echo "Triage verdict: $mergeable (${lines} changed lines)"
+
+  review-fast:
+    name: Review - fast sweep
+    needs: triage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Fetch diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+      - name: Install opencode
+        run: npm install -g opencode-ai@latest
+      - name: Run fast reviewer
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          gh pr label "$PR" --remove "review-fast:approved" --repo "$REPO" || true
+          gh pr label "$PR" --remove "review-fast:changes" --repo "$REPO" || true
+
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            gh pr comment "$PR" \
+              --body "Reviewer agent skipped: secret \`OPENCODE_API_KEY\` is not set (see docs/PR-GATE.md). Auto-merge stays blocked until reviews run." || true
+            exit 0
+          fi
+
+          set +e
+          opencode run --agent review-fast -m "$FAST_MODEL" \
+            --title "pr-$PR-review-fast" \
+            --file /tmp/pr.diff \
+            "You are reviewing a pull request in a monorepo. The attached file is the full diff. Follow your agent instructions exactly." \
+            > /tmp/review.md 2>/tmp/review.err
+          rc=$?
+          set -e
+
+          if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
+            echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
+            cat /tmp/review.err >&2 || true
+            gh pr comment "$PR" --body-file /tmp/review.err || true
+            exit 1
+          fi
+
+          if grep -q "VERDICT: APPROVED" /tmp/review.md; then
+            gh pr label "$PR" --add "review-fast:approved" --repo "$REPO"
+            gh pr label "$PR" --remove "review-fast:changes" --repo "$REPO" || true
+          else
+            gh pr label "$PR" --add "review-fast:changes" --repo "$REPO"
+            gh pr label "$PR" --remove "review-fast:approved" --repo "$REPO" || true
+            gh pr comment "$PR" \
+              --body "**Fast reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body-file /tmp/review.md || true
+          fi
+
+  review-strong:
+    name: Review - intent (strong)
+    needs: triage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Fetch diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+      - name: Install opencode
+        run: npm install -g opencode-ai@latest
+      - name: Run strong reviewer
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          gh pr label "$PR" --remove "review-strong:approved" --repo "$REPO" || true
+          gh pr label "$PR" --remove "review-strong:changes" --repo "$REPO" || true
+
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            exit 0
+          fi
+
+          set +e
+          opencode run --agent review-strong -m "$STRONG_MODEL" \
+            --title "pr-$PR-review-strong" \
+            --file /tmp/pr.diff \
+            "You are reviewing a pull request in a monorepo. The attached file is the full diff. The PR description is the stated intent. Follow your agent instructions exactly." \
+            > /tmp/review.md 2>/tmp/review.err
+          rc=$?
+          set -e
+
+          if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
+            echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
+            cat /tmp/review.err >&2 || true
+            gh pr comment "$PR" --body-file /tmp/review.err || true
+            exit 1
+          fi
+
+          if grep -q "VERDICT: APPROVED" /tmp/review.md; then
+            gh pr label "$PR" --add "review-strong:approved" --repo "$REPO"
+            gh pr label "$PR" --remove "review-strong:changes" --repo "$REPO" || true
+          else
+            gh pr label "$PR" --add "review-strong:changes" --repo "$REPO"
+            gh pr label "$PR" --remove "review-strong:approved" --repo "$REPO" || true
+            gh pr comment "$PR" \
+              --body "**Strong reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body-file /tmp/review.md || true
+          fi
+
+  gate:
+    name: Gate
+    needs: [triage, review-fast, review-strong]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # This job is a branch-protection required check: it is red whenever the PR
+    # is not allowed to auto-merge, so a stale auto-merge queue can only ever
+    # fire when the latest run of this gate authorized the current state.
+    steps:
+      - name: Evaluate merge eligibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGEABLE: ${{ needs.triage.outputs.mergeable }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          base=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q '.baseRefName')
+          case " $AUTO_MERGE_TARGETS " in
+            *" $base "*) ;;
+            *) echo "Base branch '$base' is not in AUTO_MERGE_TARGETS; human merge required. Gate green for non-auto branches."
+               exit 0 ;;
+          esac
+
+          if [ "$MERGEABLE" != "true" ]; then
+            echo "Triage marked this PR needs-human; auto-merge not authorized."
+            exit 1
+          fi
+
+          labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name')
+          missing=0
+          grep -qx "review-fast:approved" <<< "$labels" || { echo "Fast reviewer has not approved"; missing=1; }
+          grep -qx "review-strong:approved" <<< "$labels" || { echo "Strong reviewer has not approved"; missing=1; }
+          if [ "$missing" -ne 0 ]; then
+            echo "Reviewer approval missing; auto-merge not authorized."
+            exit 1
+          fi
+
+          gh pr merge "$PR" --repo "$REPO" --auto --squash --delete-branch \
+            || { echo "Failed to queue auto-merge (is 'allow auto-merge' enabled? see scripts/set-branch-protection.sh)"; exit 1; }
+          echo "Auto-merge queued: all checks green -> squash merge."
