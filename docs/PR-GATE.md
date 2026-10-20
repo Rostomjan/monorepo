@@ -45,17 +45,21 @@ gh variable set REVIEW_STRONG_MODEL -b "opencode/minimax-m3.1-flash-free#high"
 
 ## Setup
 
+Reviewer models default to the free `opencode` provider and run **keyless** in
+CI — no secret needed. A branch-protection required check is attached to the
+Gate job, so a reviewer failure blocks merges rather than bypassing review.
+
 ```bash
-# 1. Reviewer credential: the `opencode` provider key used by opencode run.
+# Optional: only if you switch a reviewer model to a provider that needs auth.
 gh secret set OPENCODE_API_KEY
 
-# 2. Branch protection, merge settings, auto-merge flag (idempotent).
+# One-time, idempotent: PRs-only for main/develop + required checks + auto-merge.
 bash scripts/set-branch-protection.sh
 ```
 
-If `OPENCODE_API_KEY` is unset, reviewers skip with a one-time PR comment and
-auto-merge stays blocked - the pipeline degrades to human review, never to
-unreviewed merges.
+Run the protection script only after the gate has produced at least one full
+green loop on a real PR — a required check that never passes would freeze
+merges.
 
 ## Force a human merge
 
