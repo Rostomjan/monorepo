@@ -102,11 +102,12 @@ jobs:
         run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
       - name: Install opencode
         # npm `opencode-ai@latest` is still V1, which rejects V2 config.
-        # V2 comes from the official installer.
+        # V2 comes from the official installer. GITHUB_PATH only takes effect
+        # in the NEXT step, so assert via the explicit binary path here.
         run: |
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
-          opencode --version
+          "$HOME/.opencode/bin/opencode" --version
       - name: Run fast reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
@@ -169,7 +170,7 @@ jobs:
         run: |
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
-          opencode --version
+          "$HOME/.opencode/bin/opencode" --version
       - name: Run strong reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
