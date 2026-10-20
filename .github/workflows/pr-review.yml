@@ -46,10 +46,12 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
+          add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
 
           # Labels may not exist on first use; create them idempotently.
           gh label create "auto-merge" --color 0e8a16 --description "Triage: low impact, agent-approved" || true
-          gh label create "needs-human" --color d4c5f9 --description "Triage: human review required" || true
+          gh label create "needs-human" --color dedede --description "Triage: human review required" || true
 
           data=$(gh pr view "$PR" --repo "$REPO" --json files,additions,deletions)
           lines=$(($(echo "$data" | jq -r '.additions') + $(echo "$data" | jq -r '.deletions')))
@@ -75,11 +77,11 @@ jobs:
           fi
 
           if [ "$mergeable" = "true" ]; then
-            gh pr label "$PR" --add "auto-merge" --repo "$REPO" || true
-            gh pr label "$PR" --remove "needs-human" --repo "$REPO" || true
+            add_label "auto-merge"
+            remove_label "needs-human" || true
           else
-            gh pr label "$PR" --add "needs-human" --repo "$REPO" || true
-            gh pr label "$PR" --remove "auto-merge" --repo "$REPO" || true
+            add_label "needs-human"
+            remove_label "auto-merge" || true
           fi
 
           echo "mergeable=$mergeable" >> "$GITHUB_OUTPUT"
@@ -99,7 +101,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
       - name: Install opencode
-        run: npm install -g opencode-ai@latest
+        # npm `opencode-ai@latest` is still V1, which rejects V2 config.
+        # V2 comes from the official installer.
+        run: |
+          curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+          opencode --version
       - name: Run fast reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
@@ -109,8 +116,13 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
-          gh pr label "$PR" --remove "review-fast:approved" --repo "$REPO" || true
-          gh pr label "$PR" --remove "review-fast:changes" --repo "$REPO" || true
+          # gh's `gh pr label` subcommand is absent on some runner images; use the
+          # issues REST API directly. Labels named like "review-fast:changes".
+          add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
+
+          remove_label "review-fast:approved" || true
+          remove_label "review-fast:changes" || true
 
           set +e
           opencode run --agent review-fast -m "$FAST_MODEL" \
@@ -129,11 +141,11 @@ jobs:
           fi
 
           if grep -q "VERDICT: APPROVED" /tmp/review.md; then
-            gh pr label "$PR" --add "review-fast:approved" --repo "$REPO"
-            gh pr label "$PR" --remove "review-fast:changes" --repo "$REPO" || true
+            add_label "review-fast:approved"
+            remove_label "review-fast:changes" || true
           else
-            gh pr label "$PR" --add "review-fast:changes" --repo "$REPO"
-            gh pr label "$PR" --remove "review-fast:approved" --repo "$REPO" || true
+            add_label "review-fast:changes"
+            remove_label "review-fast:approved" || true
             gh pr comment "$PR" \
               --body "**Fast reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
             gh pr comment "$PR" --body-file /tmp/review.md || true
@@ -153,7 +165,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
       - name: Install opencode
-        run: npm install -g opencode-ai@latest
+        # npm `opencode-ai@latest` is still V1, which rejects V2 config.
+        run: |
+          curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+          opencode --version
       - name: Run strong reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
@@ -163,8 +179,11 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
-          gh pr label "$PR" --remove "review-strong:approved" --repo "$REPO" || true
-          gh pr label "$PR" --remove "review-strong:changes" --repo "$REPO" || true
+          add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
+
+          remove_label "review-strong:approved" || true
+          remove_label "review-strong:changes" || true
 
           set +e
           opencode run --agent review-strong -m "$STRONG_MODEL" \
@@ -183,11 +202,11 @@ jobs:
           fi
 
           if grep -q "VERDICT: APPROVED" /tmp/review.md; then
-            gh pr label "$PR" --add "review-strong:approved" --repo "$REPO"
-            gh pr label "$PR" --remove "review-strong:changes" --repo "$REPO" || true
+            add_label "review-strong:approved"
+            remove_label "review-strong:changes" || true
           else
-            gh pr label "$PR" --add "review-strong:changes" --repo "$REPO"
-            gh pr label "$PR" --remove "review-strong:approved" --repo "$REPO" || true
+            add_label "review-strong:changes"
+            remove_label "review-strong:approved" || true
             gh pr comment "$PR" \
               --body "**Strong reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
             gh pr comment "$PR" --body-file /tmp/review.md || true
