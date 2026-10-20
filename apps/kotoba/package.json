@@ -4,10 +4,10 @@
   "dependencies": {
     "@sentry/nextjs": "^11",
     "dexie": "^4.4.6",
-    "next": "16.4.0",
+    "next": "16.4.2",
     "papaparse": "^5.7.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
