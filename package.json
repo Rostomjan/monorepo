@@ -39,6 +39,7 @@
     "new": "bun scripts/scaffold.ts",
     "prepare": "husky",
     "test": "bun test scripts && turbo test --filter='!e2e'",
+    "test:scripts": "bun test scripts",
     "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
     "update": "bunx npm-check-updates -u --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks,storybook,@storybook/* && bun install",

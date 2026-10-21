@@ -221,9 +221,9 @@ jobs:
           remove_label "review-strong:approved"
           remove_label "review-strong:changes"
 
-          if [ -n "${{ secrets.OPENCODE_API_KEY }}" ]; then
-            export OPENCODE_API_KEY="${{ secrets.OPENCODE_API_KEY }}"
-          fi
+          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
+          # invalid token by providers; only expose it when configured.
+          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
 
           set +e
           opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
