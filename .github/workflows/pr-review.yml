@@ -17,6 +17,9 @@ on:
 
 permissions:
   contents: read
+  checks: read # Gate reads statusCheckRollup (CheckRuns) — declaring any
+               # permissions block replaces the default token scope, so the
+               # check-run read must be granted explicitly.
   issues: write # labels are issue resources: gh label create / add / remove
   pull-requests: write
 
