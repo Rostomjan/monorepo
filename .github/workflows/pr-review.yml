@@ -47,15 +47,17 @@ jobs:
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
           add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
-          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
+          create_label() { gh api -X POST "repos/$REPO/labels" -f name="$1" -f color="$2" -f description="$3" > /dev/null 2>&1 || true; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
-          # Labels may not exist on first use; create them idempotently.
-          gh label create "auto-merge" --color 0e8a16 --description "Triage: low impact, agent-approved" || true
-          gh label create "needs-human" --color dedede --description "Triage: human review required" || true
-          gh label create "review-fast:approved" --color 0e8a16 --description "Fast reviewer approved" || true
-          gh label create "review-fast:changes" --color d93f0b --description "Fast reviewer requested changes" || true
-          gh label create "review-strong:approved" --color 0e8a16 --description "Strong reviewer approved" || true
-          gh label create "review-strong:changes" --color d93f0b --description "Strong reviewer requested changes" || true
+          # Idempotent creates via REST across gh versions (issues-label adds
+          # auto-create missing labels too; this is the belt to its suspenders).
+          create_label "auto-merge" "0e8a16" "Triage: low impact, agent-approved"
+          create_label "needs-human" "dedede" "Triage: human review required"
+          create_label "review-fast:approved" "0e8a16" "Fast reviewer approved"
+          create_label "review-fast:changes" "d93f0b" "Fast reviewer requested changes"
+          create_label "review-strong:approved" "0e8a16" "Strong reviewer approved"
+          create_label "review-strong:changes" "d93f0b" "Strong reviewer requested changes"
 
           data=$(gh pr view "$PR" --repo "$REPO" --json files,additions,deletions)
           lines=$(($(echo "$data" | jq -r '.additions') + $(echo "$data" | jq -r '.deletions')))
@@ -124,25 +126,42 @@ jobs:
           # gh's `gh pr label` subcommand is absent on some runner images; use the
           # issues REST API directly. Labels named like "review-fast:changes".
           add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
-          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
-          remove_label "review-fast:approved" || true
-          remove_label "review-fast:changes" || true
+          remove_label "review-fast:approved"
+          remove_label "review-fast:changes"
 
-          set -o pipefail
+          # Only pass a credential when one is configured: an empty
+          # OPENCODE_API_KEY can be treated as an invalid token by providers.
+          if [ -n "${{ secrets.OPENCODE_API_KEY }}" ]; then
+            export OPENCODE_API_KEY="${{ secrets.OPENCODE_API_KEY }}"
+          fi
+
+          set +e
           opencode run --format json --agent review-fast -m "$FAST_MODEL" \
             --title "pr-$PR-review-fast" \
             --file /tmp/pr.diff \
             "You are reviewing a pull request in a monorepo. The attached file is the full diff. Follow your agent instructions exactly." \
-            2>/tmp/review.err | jq -r 'select(.type=="text") | .part.text' > /tmp/review.md
+            > /tmp/review.jsonl 2>/tmp/review.err
           rc=$?
+          set -e
 
-          if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
-            echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
-            tail -5 /tmp/review.err >&2 || true
+          if [ "$rc" -ne 0 ]; then
+            echo "opencode run failed (rc=$rc); last stderr lines:" >&2
+            tail -15 /tmp/review.err >&2 || true
             gh pr comment "$PR" \
-              --body "**Fast reviewer returned no verdict** (rc=$rc) on commit ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body "$(tail -30 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+              --body "**Fast reviewer crashed** (rc=$rc) on ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body "$(tail -20 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+            exit 1
+          fi
+
+          jq -r 'select(.type=="text") | .part.text' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
+
+          if ! grep -q "VERDICT: " /tmp/review.md; then
+            echo "Reviewer ran but produced no verdict" >&2
+            gh pr comment "$PR" \
+              --body "**Fast reviewer returned no verdict** on ${{ github.event.pull_request.head.sha }}. Final message:" || true
+            gh pr comment "$PR" --body "$(tail -40 /tmp/review.md 2>/dev/null || echo 'empty')" || true
             exit 1
           fi
 
@@ -186,25 +205,40 @@ jobs:
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
           add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
-          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null; }
+          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
-          remove_label "review-strong:approved" || true
-          remove_label "review-strong:changes" || true
+          remove_label "review-strong:approved"
+          remove_label "review-strong:changes"
 
-          set -o pipefail
+          if [ -n "${{ secrets.OPENCODE_API_KEY }}" ]; then
+            export OPENCODE_API_KEY="${{ secrets.OPENCODE_API_KEY }}"
+          fi
+
+          set +e
           opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
             --title "pr-$PR-review-strong" \
             --file /tmp/pr.diff \
             "You are reviewing a pull request in a monorepo. The attached file is the full diff. The PR description is the stated intent. Follow your agent instructions exactly." \
-            2>/tmp/review.err | jq -r 'select(.type=="text") | .part.text' > /tmp/review.md
+            > /tmp/review.jsonl 2>/tmp/review.err
           rc=$?
+          set -e
 
-          if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
-            echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
-            tail -5 /tmp/review.err >&2 || true
+          if [ "$rc" -ne 0 ]; then
+            echo "opencode run failed (rc=$rc); last stderr lines:" >&2
+            tail -15 /tmp/review.err >&2 || true
             gh pr comment "$PR" \
-              --body "**Strong reviewer returned no verdict** (rc=$rc) on commit ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body "$(tail -30 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+              --body "**Strong reviewer crashed** (rc=$rc) on ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body "$(tail -20 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+            exit 1
+          fi
+
+          jq -r 'select(.type=="text") | .part.text' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
+
+          if ! grep -q "VERDICT: " /tmp/review.md; then
+            echo "Reviewer ran but produced no verdict" >&2
+            gh pr comment "$PR" \
+              --body "**Strong reviewer returned no verdict** on ${{ github.event.pull_request.head.sha }}. Final message:" || true
+            gh pr comment "$PR" --body "$(tail -40 /tmp/review.md 2>/dev/null || echo 'empty')" || true
             exit 1
           fi
 
