@@ -52,6 +52,10 @@ jobs:
           # Labels may not exist on first use; create them idempotently.
           gh label create "auto-merge" --color 0e8a16 --description "Triage: low impact, agent-approved" || true
           gh label create "needs-human" --color dedede --description "Triage: human review required" || true
+          gh label create "review-fast:approved" --color 0e8a16 --description "Fast reviewer approved" || true
+          gh label create "review-fast:changes" --color d93f0b --description "Fast reviewer requested changes" || true
+          gh label create "review-strong:approved" --color 0e8a16 --description "Strong reviewer approved" || true
+          gh label create "review-strong:changes" --color d93f0b --description "Strong reviewer requested changes" || true
 
           data=$(gh pr view "$PR" --repo "$REPO" --json files,additions,deletions)
           lines=$(($(echo "$data" | jq -r '.additions') + $(echo "$data" | jq -r '.deletions')))
@@ -125,19 +129,20 @@ jobs:
           remove_label "review-fast:approved" || true
           remove_label "review-fast:changes" || true
 
-          set +e
-          opencode run --agent review-fast -m "$FAST_MODEL" \
+          set -o pipefail
+          opencode run --format json --agent review-fast -m "$FAST_MODEL" \
             --title "pr-$PR-review-fast" \
             --file /tmp/pr.diff \
             "You are reviewing a pull request in a monorepo. The attached file is the full diff. Follow your agent instructions exactly." \
-            > /tmp/review.md 2>/tmp/review.err
+            2>/tmp/review.err | jq -r 'select(.type=="text") | .part.text' > /tmp/review.md
           rc=$?
-          set -e
 
           if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
             echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
-            cat /tmp/review.err >&2 || true
-            gh pr comment "$PR" --body-file /tmp/review.err || true
+            tail -5 /tmp/review.err >&2 || true
+            gh pr comment "$PR" \
+              --body "**Fast reviewer returned no verdict** (rc=$rc) on commit ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body "$(tail -30 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
             exit 1
           fi
 
@@ -186,19 +191,20 @@ jobs:
           remove_label "review-strong:approved" || true
           remove_label "review-strong:changes" || true
 
-          set +e
-          opencode run --agent review-strong -m "$STRONG_MODEL" \
+          set -o pipefail
+          opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
             --title "pr-$PR-review-strong" \
             --file /tmp/pr.diff \
             "You are reviewing a pull request in a monorepo. The attached file is the full diff. The PR description is the stated intent. Follow your agent instructions exactly." \
-            > /tmp/review.md 2>/tmp/review.err
+            2>/tmp/review.err | jq -r 'select(.type=="text") | .part.text' > /tmp/review.md
           rc=$?
-          set -e
 
           if [ "$rc" -ne 0 ] || ! grep -q "VERDICT: " /tmp/review.md; then
             echo "Reviewer failed or produced no verdict (rc=$rc)" >&2
-            cat /tmp/review.err >&2 || true
-            gh pr comment "$PR" --body-file /tmp/review.err || true
+            tail -5 /tmp/review.err >&2 || true
+            gh pr comment "$PR" \
+              --body "**Strong reviewer returned no verdict** (rc=$rc) on commit ${{ github.event.pull_request.head.sha }}:" || true
+            gh pr comment "$PR" --body "$(tail -30 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
             exit 1
           fi
 
@@ -217,10 +223,12 @@ jobs:
     name: Gate
     needs: [triage, review-fast, review-strong]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    # This job is a branch-protection required check: it is red whenever the PR
-    # is not allowed to auto-merge, so a stale auto-merge queue can only ever
-    # fire when the latest run of this gate authorized the current state.
+    # Must outlive the slowest check in this repo (currently the e2e suite).
+    timeout-minutes: 35
+    # On free/private repos, branch protection is unavailable, so `gh pr
+    # merge --auto` has no required checks to wait for and could merge while
+    # the pipeline is still running. Instead this job waits for every other
+    # check to complete-and-succeed, then squash-merges directly.
     steps:
       - name: Evaluate merge eligibility
         env:
@@ -229,6 +237,7 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
+          SELF_JOB="Gate"
 
           base=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q '.baseRefName')
           case " $AUTO_MERGE_TARGETS " in
@@ -251,6 +260,33 @@ jobs:
             exit 1
           fi
 
-          gh pr merge "$PR" --repo "$REPO" --auto --squash --delete-branch \
-            || { echo "Failed to queue auto-merge (is 'allow auto-merge' enabled? see scripts/set-branch-protection.sh)"; exit 1; }
-          echo "Auto-merge queued: all checks green -> squash merge."
+          # Wait for all OTHER checks (pipeline, e2e, Vercel, ...) to finish.
+          deadline=2400
+          while true; do
+            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
+              [.statusCheckRollup[]
+                | select(.name != "Gate")
+                | select(.status != "COMPLETED")] | length')
+            [ "$not_done" -eq 0 ] && break
+            if [ "$deadline" -le 0 ]; then
+              echo "Timed out waiting for other checks; not merging."
+              exit 1
+            fi
+            sleep 20
+            deadline=$((deadline - 20))
+          done
+
+          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
+            [.statusCheckRollup[]
+              | select(.name != "Gate")
+              | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")]
+            | .[].name')
+          if [ -n "$failed" ]; then
+            echo "Pipeline checks failed; auto-merge not authorized:"
+            echo "$failed"
+            exit 1
+          fi
+
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch \
+            || { echo "Squash merge failed after the full pipeline was green."; exit 1; }
+          echo "Auto-merge complete: triage low-impact, both reviewers approved, full pipeline green."
