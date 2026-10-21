@@ -60,13 +60,15 @@ gh variable set REVIEW_STRONG_MODEL -b "opencode/minimax-m3.1-flash-free#high"
 
 ## How the Gate tests itself
 
-The Gate's rollup filters are fixture-tested the same way the rest of the repo
-is. `scripts/gate-jq.test.ts` runs both `statusCheckRollup` jq expressions
-against fixtures (modern CheckRuns *and* legacy commit statuses, infra
-failures, the Gate's own check excluded) and asserts the workflow YAML still
-contains the exact filter text — so a filter edit that silently diverges from
-tested behavior fails `bun run test`. It runs in CI via the root
-`test:scripts` script, which is wired into both `bun run test` and
+The Gate's check-polling filters are fixture-tested the same way the rest of
+the repo is. `scripts/gate-jq.test.ts` runs the four REST check-run and
+combined-status jq filters against fixtures (modern check runs *and* legacy
+commit statuses, infra failures, the Gate's own check excluded) and asserts
+the workflow YAML still contains the exact filter text — so a filter edit that
+silently diverges from tested behavior fails `bun run test`. The fixture cases
+shell out to `jq` (preinstalled on CI runners; where `jq` is missing the
+fixture tests skip and only the drift guard runs). The suite runs in CI via
+the root `test:scripts` script, which is wired into both `bun run test` and
 `bun run check`.
 
 ## Plan constraints (free + private repo)
