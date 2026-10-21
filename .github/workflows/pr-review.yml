@@ -285,7 +285,6 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
-          SELF_JOB="Gate"
 
           base=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q '.baseRefName')
           case " $AUTO_MERGE_TARGETS " in
@@ -326,17 +325,18 @@ jobs:
           # The deadline must land inside this job's timeout-minutes: 33 min of
           # polling + startup < 35 min, so the timeout branch below is reachable.
           # CheckRuns report .status (COMPLETED) while legacy commit statuses
-          # (StatusContext) report only .state; handle both shapes.
+          # (StatusContext) report only .state; handle both shapes. NOTE: gh's
+          # --jq takes a single expression (no --arg), hence the literal "Gate".
           deadline=1980
           while true; do
-            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q --arg gate "$SELF_JOB" '
+            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
               [.statusCheckRollup[]
-                | select(.name != $gate)
+                | select(.name != "Gate")
                 | select(
                     if .status != null then .status != "COMPLETED"
                     else (.state // "PENDING") == "PENDING"
                     end)]
-              | length') || { echo "Failed to read status rollup; not merging."; exit 1; }
+              | length') || { echo "Failed to read status rollup; not merging"; exit 1; }
             [ "$not_done" -eq 0 ] && break
             if [ "$deadline" -le 0 ]; then
               echo "Timed out waiting for other checks; not merging. Gate green (no merge performed)."
@@ -346,16 +346,16 @@ jobs:
             deadline=$((deadline - 20))
           done
 
-          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q --arg gate "$SELF_JOB" '
+          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
             [.statusCheckRollup[]
-              | select(.name != $gate)
+              | select(.name != "Gate")
               | select(
                   if .conclusion != null then
                     (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")
                   else
                     (.state == "FAILURE" or .state == "ERROR")
                   end)]
-            | .[].name') || { echo "Failed to read status rollup; not merging."; exit 1; }
+            | .[].name') || { echo "Failed to read status rollup; not merging"; exit 1; }
           if [ -n "$failed" ]; then
             echo "Pipeline checks failed; a human decides. Gate green (no merge performed):"
             echo "$failed"

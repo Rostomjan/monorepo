@@ -31,8 +31,9 @@ push -> PR -> Triage impact (deterministic, script only)
   to an `--auto` queue if GitHub refuses a mid-run merge (branch protection).
   **Green** = a clean decision (merged, or declined with the reason logged:
   `needs-human`, changes requested, failed pipeline, watch timeout, or expired
-  authorization). **Red** = the Gate machinery itself failed. Auto-merge target
-  branches: `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml`
+  authorization). **Red** = the Gate machinery itself failed (skipped/neutral
+  if a reviewer job failed, so the PR simply stays unmergeable). Auto-merge
+  target branches: `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml`
   (`develop main`).
 
 ## Reviewer agents
