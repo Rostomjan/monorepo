@@ -16,7 +16,8 @@ on:
     branches: ["main", "develop"]
 
 permissions:
-  contents: read
+  contents: write # Gate squash-merges (the merge endpoint writes a commit) and
+                  # deletes merged branches; agents themselves never touch git.
   checks: read # Gate reads statusCheckRollup (CheckRuns) — declaring any
                # permissions block replaces the default token scope, so the
                # check-run read must be granted explicitly.
