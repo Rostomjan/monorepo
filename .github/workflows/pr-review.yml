@@ -21,6 +21,8 @@ permissions:
   checks: read # Gate reads statusCheckRollup (CheckRuns) — declaring any
                # permissions block replaces the default token scope, so the
                # check-run read must be granted explicitly.
+  actions: read # gh's GraphQL rollup expansion also fetches the workflow runs
+                # behind check suites (checkSuite.workflowRun).
   issues: write # labels are issue resources: gh label create / add / remove
   pull-requests: write
 
