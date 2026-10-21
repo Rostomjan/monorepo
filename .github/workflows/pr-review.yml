@@ -288,6 +288,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           MERGEABLE: ${{ needs.triage.outputs.mergeable }}
+          GH_PROMPT_DISABLED: "1"
+          GH_NO_UPDATE_NOTIFIER: "1"
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
@@ -336,7 +338,11 @@ jobs:
           # land inside this job's timeout-minutes: 33 min of polling + startup
           # < 35 min, so the timeout branch below is reachable. gh -q takes a
           # single expression (no --arg): constants are inlined.
-          deadline=1980
+          # Wall-clock deadline via $SECONDS: the old counter subtracted only
+          # sleep time, ignoring each cycle's api/jq overhead, so a "33 min"
+          # budget actually spanned ~45 real minutes and the runner's
+          # timeout-minutes killed the job before the graceful branch fired.
+          start=$SECONDS
           while true; do
             head_sha=$(gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid) \
               || { echo "Failed to read PR head; not merging"; exit 1; }
@@ -360,12 +366,15 @@ jobs:
             statuses_pending=$(jq '[(.statuses // [])[] | select(.state == "PENDING")] | length' /tmp/statuses.json)
             [ "$((checks_pending + statuses_pending))" -eq 0 ] && break
 
-            if [ "$deadline" -le 0 ]; then
-              echo "Timed out waiting for other checks; not merging. Gate green (no merge performed)."
+            if [ $((SECONDS - start)) -ge 1920 ]; then
+              echo "Timed out waiting (32 min) for other checks; not merging. Gate green (no merge performed)."
+              echo "Still pending:" >&2
+              jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED") | .name] | join(", ")' /tmp/checks.json >&2
+              jq -r '[(.statuses // [])[] | select(.state == "PENDING") | .context] | join(", ")' /tmp/statuses.json >&2
               exit 0
             fi
+            echo "waiting on: $(jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED") | .name] | join(", ")' /tmp/checks.json) / $(jq -r '[(.statuses // [])[] | select(.state == "PENDING") | .context] | join(", ")' /tmp/statuses.json)"
             sleep 20
-            deadline=$((deadline - 20))
           done
 
           failed=$(jq -r '[(.check_runs // [])[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT" or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED") | .name] | join(", ")' /tmp/checks.json)
@@ -383,9 +392,11 @@ jobs:
             exit 0
           fi
 
-          if ! gh pr merge "$PR" --repo "$REPO" --squash --delete-branch 2>/tmp/merge.err; then
+          # timeout guards against gh hanging on an unexpected prompt; 124 =
+          # the wrapper's expiry, treated like any direct refusal.
+          if ! timeout 120 gh pr merge "$PR" --repo "$REPO" --squash --delete-branch 2>/tmp/merge.err; then
             echo "Direct merge refused; queueing auto-merge instead:" >&2
             cat /tmp/merge.err >&2
-            gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
+            timeout 120 gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
           fi
           echo "Auto-merge complete: triage low-impact, both reviewers approved, full pipeline green."
