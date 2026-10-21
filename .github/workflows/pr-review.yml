@@ -362,23 +362,23 @@ jobs:
             }
             echo "$status_json" > /tmp/statuses.json
 
-            checks_pending=$(jq '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED")] | length' /tmp/checks.json)
-            statuses_pending=$(jq '[(.statuses // [])[] | select(.state == "PENDING")] | length' /tmp/statuses.json)
+            checks_pending=$(jq '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed")] | length' /tmp/checks.json)
+            statuses_pending=$(jq '[(.statuses // [])[] | select(.state == "pending")] | length' /tmp/statuses.json)
             [ "$((checks_pending + statuses_pending))" -eq 0 ] && break
 
             if [ $((SECONDS - start)) -ge 1920 ]; then
               echo "Timed out waiting (32 min) for other checks; not merging. Gate green (no merge performed)."
               echo "Still pending:" >&2
-              jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED") | .name] | join(", ")' /tmp/checks.json >&2
-              jq -r '[(.statuses // [])[] | select(.state == "PENDING") | .context] | join(", ")' /tmp/statuses.json >&2
+              jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed") | .name] | join(", ")' /tmp/checks.json >&2
+              jq -r '[(.statuses // [])[] | select(.state == "pending") | .context] | join(", ")' /tmp/statuses.json >&2
               exit 0
             fi
-            echo "waiting on: $(jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED") | .name] | join(", ")' /tmp/checks.json) / $(jq -r '[(.statuses // [])[] | select(.state == "PENDING") | .context] | join(", ")' /tmp/statuses.json)"
+            echo "waiting on: $(jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed") | .name] | join(", ")' /tmp/checks.json) / $(jq -r '[(.statuses // [])[] | select(.state == "pending") | .context] | join(", ")' /tmp/statuses.json)"
             sleep 20
           done
 
-          failed=$(jq -r '[(.check_runs // [])[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT" or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED") | .name] | join(", ")' /tmp/checks.json)
-          failed="$failed $(jq -r '[(.statuses // [])[] | select(.state == "FAILURE" or .state == "ERROR") | .context] | join(", ")' /tmp/statuses.json)"
+          failed=$(jq -r '[(.check_runs // [])[] | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out" or .conclusion == "startup_failure" or .conclusion == "action_required") | .name] | join(", ")' /tmp/checks.json)
+          failed="$failed $(jq -r '[(.statuses // [])[] | select(.state == "failure" or .state == "error") | .context] | join(", ")' /tmp/statuses.json)"
           if [ -n "${failed// /}" ]; then
             echo "Pipeline checks failed; a human decides. Gate green (no merge performed):"
             echo "$failed"

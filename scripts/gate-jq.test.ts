@@ -7,6 +7,10 @@
  * tests (1) run the exact filter text against fixtures, (2) assert the
  * workflow file still contains that exact text, so a filter edit cannot
  * silently diverge from tested behavior.
+ *
+ * CASE MATTERS: REST uses lowercase status/conclusion/state values
+ * ("completed", "failure", "pending"), unlike GraphQL's SCREAMING_CASE. The
+ * fixtures below are shaped exactly like the real API responses.
  */
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -16,13 +20,13 @@ import { join } from "node:path";
 // Verbatim from .github/workflows/pr-review.yml (Gate job). Update HERE AND
 // THERE together. Whitespace is normalized during comparison.
 const PENDING_CHECKS_FILTER =
-  "[(.check_runs // [])[] | select(.name != \"Gate\") | select(.status != \"COMPLETED\")] | length";
+  "[(.check_runs // [])[] | select(.name != \"Gate\") | select(.status != \"completed\")] | length";
 const PENDING_STATUSES_FILTER =
-  "[(.statuses // [])[] | select(.state == \"PENDING\")] | length";
+  "[(.statuses // [])[] | select(.state == \"pending\")] | length";
 const FAILED_CHECKS_FILTER =
-  "[(.check_runs // [])[] | select(.conclusion == \"FAILURE\" or .conclusion == \"CANCELLED\" or .conclusion == \"TIMED_OUT\" or .conclusion == \"STARTUP_FAILURE\" or .conclusion == \"ACTION_REQUIRED\") | .name] | join(\", \")";
+  "[(.check_runs // [])[] | select(.conclusion == \"failure\" or .conclusion == \"cancelled\" or .conclusion == \"timed_out\" or .conclusion == \"startup_failure\" or .conclusion == \"action_required\") | .name] | join(\", \")";
 const FAILED_STATUSES_FILTER =
-  "[(.statuses // [])[] | select(.state == \"FAILURE\" or .state == \"ERROR\") | .context] | join(\", \")";
+  "[(.statuses // [])[] | select(.state == \"failure\" or .state == \"error\") | .context] | join(\", \")";
 
 function jq(expr: string, input: unknown): string {
   const file = fixtureFile();
@@ -50,39 +54,41 @@ process.on("exit", () => {
 type CheckRun = { name: string; status: string; conclusion: string | null };
 type LegacyStatus = { context: string; state: string };
 
-/** Modern GitHub Actions check runs (foreign apps' runs are absent: the
- * integration token cannot read them, which is exactly why the Gate polls
- * REST instead of the erroring statusCheckRollup GraphQL). */
+/** Modern GitHub Actions / external-app check runs, shaped like the REST
+ * response (foreign-app runs included: unlike the GraphQL rollup, REST
+ * returns what the token can read instead of erroring). */
 const CHECK_RUNS: { check_runs: CheckRun[] } = {
   check_runs: [
-    { name: "Lint, Types, Unit tests, Build", status: "IN_PROGRESS", conclusion: null },
-    { name: "Playwright (chromium)", status: "COMPLETED", conclusion: "SUCCESS" },
-    { name: "Ichiba e2e (chromium)", status: "COMPLETED", conclusion: "TIMED_OUT" },
-    { name: "infra-red", status: "COMPLETED", conclusion: "STARTUP_FAILURE" },
-    { name: "Gate", status: "IN_PROGRESS", conclusion: null }, // must be excluded everywhere
+    { name: "Lint, Types, Unit tests, Build", status: "in_progress", conclusion: null },
+    { name: "Playwright (chromium)", status: "completed", conclusion: "success" },
+    { name: "Ichiba e2e (chromium)", status: "completed", conclusion: "timed_out" },
+    { name: "infra-red", status: "completed", conclusion: "startup_failure" },
+    { name: "Vercel Preview Comments", status: "completed", conclusion: "success" },
+    { name: "Gate", status: "in_progress", conclusion: null }, // must be excluded everywhere
   ],
 };
 
-/** Legacy commit statuses (combined-status payload). */
+/** LEGACY combined-status payload (also REST lowercase). Unreadable for the
+ * integration token in practice -> the Gate tolerates `{}`. */
 const STATUSES: { state: string; statuses: LegacyStatus[] } = {
   state: "pending",
   statuses: [
-    { context: "vercel", state: "PENDING" },
-    { context: "legacy-green", state: "SUCCESS" },
-    { context: "legacy-red", state: "FAILURE" },
+    { context: "vercel", state: "pending" },
+    { context: "legacy-green", state: "success" },
+    { context: "legacy-red", state: "failure" },
   ],
 };
 
 const EMPTY: Record<string, never> = {};
 
 test.skipIf(!HAS_JQ)("pending counts exclude Gate and tolerate an empty payload", () => {
-  expect(jq(PENDING_CHECKS_FILTER, CHECK_RUNS)).toBe("1"); // Lint only
+  expect(jq(PENDING_CHECKS_FILTER, CHECK_RUNS)).toBe("1"); // all completed -> only Lint queued
   expect(jq(PENDING_STATUSES_FILTER, STATUSES)).toBe("1"); // vercel
   expect(jq(PENDING_CHECKS_FILTER, EMPTY)).toBe("0");
   expect(jq(PENDING_STATUSES_FILTER, EMPTY)).toBe("0");
 });
 
-test.skipIf(!HAS_JQ)("failed lists CheckRun infrastructure failures + legacy FAILURE/ERROR", () => {
+test.skipIf(!HAS_JQ)("failed lists CheckRun infrastructure failures + legacy failure/error", () => {
   expect(jq(FAILED_CHECKS_FILTER, CHECK_RUNS)).toBe("Ichiba e2e (chromium), infra-red");
   expect(jq(FAILED_STATUSES_FILTER, STATUSES)).toBe("legacy-red");
   expect(jq(FAILED_CHECKS_FILTER, EMPTY)).toBe("");
