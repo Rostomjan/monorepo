@@ -20,12 +20,19 @@ gh api -X PATCH "repos/$REPO" \
   -f allow_auto_merge=true \
   -f delete_branch_on_merge=true
 
-# Required checks = pipeline.yml jobs + PR gate jobs. Deploy jobs are excluded:
-# they trigger on push to main/develop, never on PRs, and a required check that
-# never reports would block merges forever.
+# Required checks = pipeline.yml jobs + PR gate triage/review jobs. Excluded:
+# - Deploy jobs: they trigger on push to main/develop, never on PRs, and a
+#   required check that never reports would block merges forever.
+# - Gate: it merges from inside itself while its own check is still pending,
+#   so a required self-check would deadlock its direct merge (and its --auto
+#   fallback deliberately relies on Gate NOT being required).
 # NOTE: keep context names in sync with job `name:` fields:
 #   .github/workflows/pipeline.yml
 #   .github/workflows/pr-review.yml
+# CAVEAT: with these review jobs required, a reviewer REQUEST_CHANGES only
+# attaches labels (the review jobs themselves stay green), so a human can
+# still merge after reading the review. Hard-blocking on reviewer verdicts
+# would require GitHub review approvals instead of status checks.
 CONTEXTS=$(cat <<'EOF'
 Lint, Types, Unit tests, Build
 Docker builds (api, chat)
@@ -36,7 +43,6 @@ Ichiba e2e (chromium)
 Triage impact
 Review - fast sweep
 Review - intent (strong)
-Gate
 EOF
 )
 

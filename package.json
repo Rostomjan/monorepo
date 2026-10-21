@@ -28,7 +28,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
-    "check": "turbo run lint type-check build && turbo run test --filter='!e2e'",
+    "check": "turbo run lint type-check build && turbo run test --filter='!e2e' && bun run test:scripts",
     "clean": "turbo run clean 2>/dev/null; rm -rf node_modules apps/*/node_modules packages/*/node_modules .turbo apps/*/.next apps/*/.expo",
     "deps:fix": "bunx syncpack fix && bunx syncpack format",
     "deps:lint": "bunx syncpack lint",
@@ -38,7 +38,8 @@
     "lint": "turbo lint",
     "new": "bun scripts/scaffold.ts",
     "prepare": "husky",
-    "test": "turbo test --filter='!e2e'",
+    "test": "bun test scripts && turbo test --filter='!e2e'",
+    "test:scripts": "bun test scripts",
     "test:e2e": "turbo test --filter=e2e",
     "type-check": "turbo type-check",
     "update": "bunx npm-check-updates -u --workspaces --root --reject eslint,eslint-config-next,eslint-plugin-react-hooks,storybook,@storybook/* && bun install",
