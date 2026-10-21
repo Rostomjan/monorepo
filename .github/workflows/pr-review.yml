@@ -4,8 +4,10 @@ name: PR Gate
 #
 # Every PR gets two fresh OpenCode sessions (fast + strong model, both from the
 # free `opencode` provider by default) plus a deterministic triage step. If
-# triage rates the PR low-impact and both agents approve, the gate queues an
-# auto-merge (squash). Anything else waits for a human.
+# triage rates the PR low-impact and both agents approve, the Gate waits for the
+# full pipeline and squash-merges (queueing instead where branch protection
+# blocks a mid-run merge). Everything else ends green with the decision; a
+# human decides. Red means the Gate machinery itself failed.
 #
 # Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`.
 
@@ -105,7 +107,12 @@ jobs:
       - name: Fetch diff
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+        run: |
+          gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+          gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" \
+            --json title,body \
+            --jq '"# PR title\n\n" + .title + "\n\n# PR description\n\n" + (.body // "none provided")' \
+            > /tmp/pr.intent
       - name: Install opencode
         # npm `opencode-ai@latest` is still V1, which rejects V2 config.
         # V2 comes from the official installer. GITHUB_PATH only takes effect
@@ -131,17 +138,16 @@ jobs:
           remove_label "review-fast:approved"
           remove_label "review-fast:changes"
 
-          # Only pass a credential when one is configured: an empty
-          # OPENCODE_API_KEY can be treated as an invalid token by providers.
-          if [ -n "${{ secrets.OPENCODE_API_KEY }}" ]; then
-            export OPENCODE_API_KEY="${{ secrets.OPENCODE_API_KEY }}"
-          fi
+          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
+          # invalid token by providers; only expose it when configured.
+          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
 
           set +e
           opencode run --format json --agent review-fast -m "$FAST_MODEL" \
             --title "pr-$PR-review-fast" \
             --file /tmp/pr.diff \
-            "You are reviewing a pull request in a monorepo. The attached file is the full diff. Follow your agent instructions exactly." \
+            --file /tmp/pr.intent \
+            "You are reviewing a pull request in a monorepo. The first attached file is the full diff; the second contains the PR title and description. Follow your agent instructions exactly." \
             > /tmp/review.jsonl 2>/tmp/review.err
           rc=$?
           set -e
@@ -155,7 +161,7 @@ jobs:
             exit 1
           fi
 
-          jq -r 'select(.type=="text") | .part.text' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
+          jq -r 'select(.type=="text") | (.part.text // .text // empty)' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
 
           if ! grep -q "VERDICT: " /tmp/review.md; then
             echo "Reviewer ran but produced no verdict" >&2
@@ -188,7 +194,12 @@ jobs:
       - name: Fetch diff
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+        run: |
+          gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
+          gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" \
+            --json title,body \
+            --jq '"# PR title\n\n" + .title + "\n\n# PR description\n\n" + (.body // "none provided")' \
+            > /tmp/pr.intent
       - name: Install opencode
         # npm `opencode-ai@latest` is still V1, which rejects V2 config.
         run: |
@@ -218,7 +229,8 @@ jobs:
           opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
             --title "pr-$PR-review-strong" \
             --file /tmp/pr.diff \
-            "You are reviewing a pull request in a monorepo. The attached file is the full diff. The PR description is the stated intent. Follow your agent instructions exactly." \
+            --file /tmp/pr.intent \
+            "You are reviewing a pull request in a monorepo. The first attached file is the full diff; the second contains the PR title and description, which is the stated intent. Follow your agent instructions exactly." \
             > /tmp/review.jsonl 2>/tmp/review.err
           rc=$?
           set -e
@@ -232,7 +244,7 @@ jobs:
             exit 1
           fi
 
-          jq -r 'select(.type=="text") | .part.text' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
+          jq -r 'select(.type=="text") | (.part.text // .text // empty)' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
 
           if ! grep -q "VERDICT: " /tmp/review.md; then
             echo "Reviewer ran but produced no verdict" >&2
@@ -259,10 +271,12 @@ jobs:
     runs-on: ubuntu-24.04
     # Must outlive the slowest check in this repo (currently the e2e suite).
     timeout-minutes: 35
-    # On free/private repos, branch protection is unavailable, so `gh pr
-    # merge --auto` has no required checks to wait for and could merge while
-    # the pipeline is still running. Instead this job waits for every other
-    # check to complete-and-succeed, then squash-merges directly.
+    # Everything that is *not* machinery failure ends green: merged, or declined
+    # with the reason. Red = the gate itself crashed. This also keeps the Gate
+    # compatible with branch protection: a pending self-check can never pass a
+    # mid-run direct merge, so the required-check list (see
+    # scripts/set-branch-protection.sh) deliberately excludes Gate, and the
+    # merge falls back to an `--auto` queue when GitHub refuses directly.
     steps:
       - name: Evaluate merge eligibility
         env:
@@ -276,51 +290,88 @@ jobs:
           base=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q '.baseRefName')
           case " $AUTO_MERGE_TARGETS " in
             *" $base "*) ;;
-            *) echo "Base branch '$base' is not in AUTO_MERGE_TARGETS; human merge required. Gate green for non-auto branches."
+            *) echo "Base branch '$base' is not in AUTO_MERGE_TARGETS; human decides. Gate green for non-auto branches."
                exit 0 ;;
           esac
 
           if [ "$MERGEABLE" != "true" ]; then
-            echo "Triage marked this PR needs-human; auto-merge not authorized."
-            exit 1
+            echo "Triage marked this PR needs-human (deny path / over-size diff); a human decides. Gate green."
+            exit 0
           fi
 
-          labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name')
-          missing=0
-          grep -qx "review-fast:approved" <<< "$labels" || { echo "Fast reviewer has not approved"; missing=1; }
-          grep -qx "review-strong:approved" <<< "$labels" || { echo "Strong reviewer has not approved"; missing=1; }
-          if [ "$missing" -ne 0 ]; then
-            echo "Reviewer approval missing; auto-merge not authorized."
-            exit 1
+          # Authorization = head unchanged since these reviews ran + live triage
+          # and reviewer-approval labels. Checked up front and re-checked right
+          # before merging: a push during the wait restarts reviews, and the new
+          # reviewer runs strip the approval labels first thing.
+          authorized() {
+            local labels
+            gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid \
+              | grep -qx "${{ github.event.pull_request.head.sha }}" \
+              || { echo "Head SHA changed since the reviews; verdicts stale."; return 1; }
+            labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name')
+            grep -qx "auto-merge" <<< "$labels" \
+              || { echo "Triage no longer authorizes auto-merge."; return 1; }
+            grep -qx "review-fast:approved" <<< "$labels" \
+              || { echo "Fast reviewer has not approved (anymore)."; return 1; }
+            grep -qx "review-strong:approved" <<< "$labels" \
+              || { echo "Strong reviewer has not approved (anymore)."; return 1; }
+          }
+
+          if ! authorized; then
+            echo "Auto-merge not authorized (reason above); Gate green for the human to decide."
+            exit 0
           fi
 
           # Wait for all OTHER checks (pipeline, e2e, Vercel, ...) to finish.
-          deadline=2400
+          # The deadline must land inside this job's timeout-minutes: 33 min of
+          # polling + startup < 35 min, so the timeout branch below is reachable.
+          # CheckRuns report .status (COMPLETED) while legacy commit statuses
+          # (StatusContext) report only .state; handle both shapes.
+          deadline=1980
           while true; do
-            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
+            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q --arg gate "$SELF_JOB" '
               [.statusCheckRollup[]
-                | select(.name != "Gate")
-                | select(.status != "COMPLETED")] | length')
+                | select(.name != $gate)
+                | select(
+                    if .status != null then .status != "COMPLETED"
+                    else (.state // "PENDING") == "PENDING"
+                    end)]
+              | length') || { echo "Failed to read status rollup; not merging."; exit 1; }
             [ "$not_done" -eq 0 ] && break
             if [ "$deadline" -le 0 ]; then
-              echo "Timed out waiting for other checks; not merging."
-              exit 1
+              echo "Timed out waiting for other checks; not merging. Gate green (no merge performed)."
+              exit 0
             fi
             sleep 20
             deadline=$((deadline - 20))
           done
 
-          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
+          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q --arg gate "$SELF_JOB" '
             [.statusCheckRollup[]
-              | select(.name != "Gate")
-              | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")]
-            | .[].name')
+              | select(.name != $gate)
+              | select(
+                  if .conclusion != null then
+                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")
+                  else
+                    (.state == "FAILURE" or .state == "ERROR")
+                  end)]
+            | .[].name') || { echo "Failed to read status rollup; not merging."; exit 1; }
           if [ -n "$failed" ]; then
-            echo "Pipeline checks failed; auto-merge not authorized:"
+            echo "Pipeline checks failed; a human decides. Gate green (no merge performed):"
             echo "$failed"
-            exit 1
+            exit 0
           fi
 
-          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch \
-            || { echo "Squash merge failed after the full pipeline was green."; exit 1; }
+          # Final re-check: the merge must carry approvals stamped for exactly
+          # this head and still attached.
+          if ! authorized; then
+            echo "Authorization expired while checks ran (new push or new verdicts); the fresh run re-decides. Gate green."
+            exit 0
+          fi
+
+          if ! gh pr merge "$PR" --repo "$REPO" --squash --delete-branch 2>/tmp/merge.err; then
+            echo "Direct merge refused; queueing auto-merge instead:" >&2
+            cat /tmp/merge.err >&2
+            gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
+          fi
           echo "Auto-merge complete: triage low-impact, both reviewers approved, full pipeline green."

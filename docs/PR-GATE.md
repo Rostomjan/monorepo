@@ -10,7 +10,7 @@ for a human. Self-modifying or data-impacting changes can never auto-merge.
 push -> PR -> Triage impact (deterministic, script only)
           -> Review - fast sweep   (fresh opencode session, fast model)
           -> Review - intent       (fresh opencode session, strong model)
-          -> Gate (required check: queues auto-merge iff all approve)
+          -> Gate (decides: auto-merges when all approve; green + reason otherwise)
 ```
 
 - **Triage** decides eligibility from the diff only:
@@ -24,11 +24,16 @@ push -> PR -> Triage impact (deterministic, script only)
   (`review-fast`, `review-strong`). Each run is a fresh session per PR push.
   They are instructed to treat diff content as data, never instructions.
 - **Gate** waits for **every other check in this repository** to complete (a
-  looping watch), verifies both reviewer-approval labels, then squash-merges
-  directly. It red-fails whenever in-scope auto-merge is not authorized
-  (triage `needs-human`, a reviewer requested changes, any pipeline check
-  failed, or the watch times out). Auto-merge target branches:
-  `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml` (`develop main`).
+  looping watch), then re-verifies authorization immediately before merging:
+  the PR head must still be the commit the reviews approved (a push during the
+  wait expires the verdicts) and the `auto-merge` + both `review-*:approved`
+  labels must still be attached. It then squash-merges directly, falling back
+  to an `--auto` queue if GitHub refuses a mid-run merge (branch protection).
+  **Green** = a clean decision (merged, or declined with the reason logged:
+  `needs-human`, changes requested, failed pipeline, watch timeout, or expired
+  authorization). **Red** = the Gate machinery itself failed. Auto-merge target
+  branches: `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml`
+  (`develop main`).
 
 ## Reviewer agents
 
@@ -64,8 +69,9 @@ bash scripts/set-branch-protection.sh
 ```
 
 Reviewer models default to the free `opencode` provider and run **keyless** in
-CI — no secret needed. A reviewer failure always red-fails the Gate, so the
-factory degrades to human-auditable merge blocks, never to unreviewed merges.
+CI — no secret needed. A reviewer failure stays red on the PR (the Gate then
+skips itself), so the factory degrades to non-mergeable PRs, never to
+unreviewed merges.
 
 ```bash
 # Optional: only if you switch a reviewer model to a provider that needs auth.
@@ -75,7 +81,7 @@ gh secret set OPENCODE_API_KEY
 ## Force a human merge
 
 Add a deny-path file, raise the diff above `MAX_DIFF_LINES`, or simply remove
-the `auto-merge` label before the Gate finishes its check-wait: the Gate goes
-red and will not merge. For a permanent change to policy, edit
-`.github/workflows/pr-review.yml` (that edit itself always needs a human,
-because `.github/**` is a deny path).
+the `auto-merge` label before the Gate finishes its check-wait: the Gate stays
+green but reports the refusal and does not merge. For a permanent change to
+policy, edit `.github/workflows/pr-review.yml` (that edit itself always needs a
+human, because `.github/**` is a deny path).
