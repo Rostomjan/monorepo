@@ -25,7 +25,8 @@ const FAILED_FILTER = `[.statusCheckRollup[]
               | select(.name != "Gate")
               | select(
                   if .conclusion != null then
-                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")
+                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT"
+                     or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED")
                   else
                     (.state == "FAILURE" or .state == "ERROR")
                   end)]
@@ -41,6 +42,10 @@ function jq(expr: string, input: unknown): string {
   }
   return proc.stdout.toString().trim();
 }
+
+// The rollup filters shell out to `jq`, which is preinstalled on CI runners
+// but not part of the Bun toolchain itself: skip (don't fail) when absent.
+const HAS_JQ = Bun.spawnSync({ cmd: ["jq", "--version"] }).exitCode === 0;
 
 const squash = (s: string) => s.replace(/\s+/g, "");
 
@@ -61,6 +66,7 @@ const MIXED: { statusCheckRollup: Check[] } = {
     { name: "vercel", state: "PENDING", conclusion: null }, // legacy status: not done
     { name: "legacy-green", state: "SUCCESS", conclusion: null }, // legacy status: done
     { name: "legacy-red", state: "FAILURE", conclusion: null }, // legacy status: failed
+    { name: "infra-red", status: "COMPLETED", conclusion: "STARTUP_FAILURE" }, // runner infra failure
     { name: "Ichiba e2e (chromium)", status: "COMPLETED", conclusion: "TIMED_OUT" },
     { name: "Gate", status: "IN_PROGRESS", conclusion: null }, // must be excluded everywhere
   ],
@@ -74,18 +80,25 @@ const ALL_DONE: { statusCheckRollup: Check[] } = {
   ],
 };
 
-test("rollup fixtures: not-done counts queued + legacy-pending, excludes Gate", () => {
-  expect(jq(NOT_DONE_FILTER, MIXED)).toBe("2"); // Lint(queued), vercel(legacy-pending)
-  expect(jq(NOT_DONE_FILTER, ALL_DONE)).toBe("0");
-});
+test.skipIf(!HAS_JQ)(
+  "rollup fixtures: not-done counts queued + legacy-pending, excludes Gate",
+  () => {
+    expect(jq(NOT_DONE_FILTER, MIXED)).toBe("2"); // Lint(queued), vercel(legacy-pending)
+    expect(jq(NOT_DONE_FILTER, ALL_DONE)).toBe("0");
+  },
+);
 
-test("rollup fixtures: failed selects CheckRun/cancelled/timeout + legacy FAILURE/ERROR", () => {
-  expect(jq(FAILED_FILTER, MIXED).split("\n").sort()).toEqual([
-    "Ichiba e2e (chromium)",
-    "legacy-red",
-  ]);
-  expect(jq(FAILED_FILTER, ALL_DONE)).toBe("");
-});
+test.skipIf(!HAS_JQ)(
+  "rollup fixtures: failed selects CheckRun failures/cancel/timeout + legacy FAILURE/ERROR",
+  () => {
+    expect(jq(FAILED_FILTER, MIXED).split("\n").sort()).toEqual([
+      "Ichiba e2e (chromium)",
+      "infra-red",
+      "legacy-red",
+    ]);
+    expect(jq(FAILED_FILTER, ALL_DONE)).toBe("");
+  },
+);
 
 test("workflow file still contains the tested filters verbatim (drift guard)", () => {
   const yml = readFileSync(

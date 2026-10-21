@@ -8,7 +8,7 @@ Build-time microfrontend monorepo (Turborepo + Bun). Independent `apps/*` deploy
 - `bun run dev` — all apps via turbo (persistent). Target one: `bun run dev --filter <name>`
 - `bun run check` — the gate: lint + type-check + build, then unit tests
 - `bun run lint` / `bun run type-check` / `bun run build`
-- `bun run test` — unit tests only (`bun test`, colocated `*.test.ts`); **e2e is excluded**
+- `bun run test` — unit tests (per-workspace via turbo, plus `scripts/` root tests); **e2e is excluded**
 - `bun run test:e2e` — Playwright in `apps/e2e` against `apps/chat`; needs browsers once: `bunx playwright install --with-deps` in `apps/e2e`
 - `bun run knip` — prune unused exports/deps after large changes
 - `bun run deps:lint` / `deps:fix` — syncpack version-consistency check / autofix

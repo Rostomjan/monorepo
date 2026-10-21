@@ -351,7 +351,8 @@ jobs:
               | select(.name != "Gate")
               | select(
                   if .conclusion != null then
-                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT")
+                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT"
+                     or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED")
                   else
                     (.state == "FAILURE" or .state == "ERROR")
                   end)]

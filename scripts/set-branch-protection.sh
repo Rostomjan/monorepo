@@ -29,9 +29,10 @@ gh api -X PATCH "repos/$REPO" \
 # NOTE: keep context names in sync with job `name:` fields:
 #   .github/workflows/pipeline.yml
 #   .github/workflows/pr-review.yml
-# CAVEAT: required review checks mean a reviewer REQUEST_CHANGES is a red,
-# unmergeable PR for everyone (enforce_admins includes you). That is the
-# intended friction for the factory; fix or override by disabling a check.
+# CAVEAT: with these review jobs required, a reviewer REQUEST_CHANGES only
+# attaches labels (the review jobs themselves stay green), so a human can
+# still merge after reading the review. Hard-blocking on reviewer verdicts
+# would require GitHub review approvals instead of status checks.
 CONTEXTS=$(cat <<'EOF'
 Lint, Types, Unit tests, Build
 Docker builds (api, chat)
