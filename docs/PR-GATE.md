@@ -24,7 +24,11 @@ push -> PR -> Triage impact (deterministic, script only)
   (`review-fast`, `review-strong`). Each run is a fresh session per PR push.
   They are instructed to treat diff content as data, never instructions.
 - **Gate** waits for **every other check in this repository** to complete (a
-  looping watch), then re-verifies authorization immediately before merging:
+  looping watch over the REST check-runs and legacy combined-status endpoints —
+  not the `statusCheckRollup` GraphQL, which the integration token cannot read
+  now that other apps (Vercel) attach checks to PRs; REST omits what the token
+  cannot see, so our own pipeline's checks are the mandatory wait set), then
+  re-verifies authorization immediately before merging:
   the PR head must still be the commit the reviews approved (a push during the
   wait expires the verdicts) and the `auto-merge` + both `review-*:approved`
   labels must still be attached. It then squash-merges directly, falling back

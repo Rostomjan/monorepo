@@ -327,23 +327,39 @@ jobs:
             exit 0
           fi
 
-          # Wait for all OTHER checks (pipeline, e2e, Vercel, ...) to finish.
-          # The deadline must land inside this job's timeout-minutes: 33 min of
-          # polling + startup < 35 min, so the timeout branch below is reachable.
-          # CheckRuns report .status (COMPLETED) while legacy commit statuses
-          # (StatusContext) report only .state; handle both shapes. NOTE: gh's
-          # --jq takes a single expression (no --arg), hence the literal "Gate".
+          # Wait for all OTHER checks (pipeline, e2e, ...) to finish, then
+          # verify none failed. Polled via REST, NOT the statusCheckRollup
+          # GraphQL: the integration token cannot read other apps' checks
+          # (Vercel etc.), and that read errors the whole GraphQL query. The
+          # REST list simply omits what the token cannot see, so our repo's
+          # own pipeline checks are the mandatory wait set. The deadline must
+          # land inside this job's timeout-minutes: 33 min of polling + startup
+          # < 35 min, so the timeout branch below is reachable. gh -q takes a
+          # single expression (no --arg): constants are inlined.
           deadline=1980
           while true; do
-            not_done=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
-              [.statusCheckRollup[]
-                | select(.name != "Gate")
-                | select(
-                    if .status != null then .status != "COMPLETED"
-                    else (.state // "PENDING") == "PENDING"
-                    end)]
-              | length') || { echo "Failed to read status rollup; not merging"; exit 1; }
-            [ "$not_done" -eq 0 ] && break
+            head_sha=$(gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid) \
+              || { echo "Failed to read PR head; not merging"; exit 1; }
+
+            # Check runs: an unreadable read is a machinery failure (red).
+            if ! gh api "repos/$REPO/commits/$head_sha/check-runs?per_page=100" > /tmp/checks.json 2>/tmp/checks.err; then
+              echo "Check-run read failed; not merging:" >&2
+              tail -3 /tmp/checks.err >&2
+              exit 1
+            fi
+            # Legacy commit statuses: readable normally, but tolerate a 403
+            # loudly (best-effort context, not the wait set).
+            status_json=$(gh api "repos/$REPO/commits/$head_sha/status" 2>/tmp/statuses.err) || {
+              echo "Legacy commit-status read failed; relying on check runs:" >&2
+              tail -3 /tmp/statuses.err >&2
+              status_json='{}'
+            }
+            echo "$status_json" > /tmp/statuses.json
+
+            checks_pending=$(jq '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "COMPLETED")] | length' /tmp/checks.json)
+            statuses_pending=$(jq '[(.statuses // [])[] | select(.state == "PENDING")] | length' /tmp/statuses.json)
+            [ "$((checks_pending + statuses_pending))" -eq 0 ] && break
+
             if [ "$deadline" -le 0 ]; then
               echo "Timed out waiting for other checks; not merging. Gate green (no merge performed)."
               exit 0
@@ -352,18 +368,9 @@ jobs:
             deadline=$((deadline - 20))
           done
 
-          failed=$(gh pr view "$PR" --repo "$REPO" --json statusCheckRollup -q '
-            [.statusCheckRollup[]
-              | select(.name != "Gate")
-              | select(
-                  if .conclusion != null then
-                    (.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT"
-                     or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED")
-                  else
-                    (.state == "FAILURE" or .state == "ERROR")
-                  end)]
-            | .[].name') || { echo "Failed to read status rollup; not merging"; exit 1; }
-          if [ -n "$failed" ]; then
+          failed=$(jq -r '[(.check_runs // [])[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT" or .conclusion == "STARTUP_FAILURE" or .conclusion == "ACTION_REQUIRED") | .name] | join(", ")' /tmp/checks.json)
+          failed="$failed $(jq -r '[(.statuses // [])[] | select(.state == "FAILURE" or .state == "ERROR") | .context] | join(", ")' /tmp/statuses.json)"
+          if [ -n "${failed// /}" ]; then
             echo "Pipeline checks failed; a human decides. Gate green (no merge performed):"
             echo "$failed"
             exit 0
