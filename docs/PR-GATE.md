@@ -35,6 +35,10 @@ push -> PR -> Triage impact (deterministic, script only)
   if a reviewer job failed, so the PR simply stays unmergeable). Auto-merge
   target branches: `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml`
   (`develop main`).
+- **Tiering:** docs-only PRs (`docs/**`, `*.md`, `*.mdx`) skip the pipeline
+  via `paths-ignore` — the rollup has no pipeline checks for them, so the Gate
+  merges right after both reviewers approve (minutes, not a full e2e cycle).
+  Code PRs get the entire suite.
 
 ## Reviewer agents
 

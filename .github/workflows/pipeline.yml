@@ -5,6 +5,14 @@ on:
     branches: ["main", "develop"]
   pull_request:
     branches: ["main", "develop"]
+    # Docs-only PRs skip this pipeline entirely: the PR gate (triage + two
+    # reviewer agents) owns low-risk diffs, so a docs change merges in
+    # minutes instead of waiting out docker + 3 Playwright browsers + e2e.
+    # Anything outside docs still gets the full suite.
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.mdx"
 
 # Cancel superseded runs on the same ref (PR pushes); never cancel main/develop deploys.
 concurrency:
