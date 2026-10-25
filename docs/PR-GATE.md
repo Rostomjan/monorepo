@@ -71,6 +71,13 @@ fixture tests skip and only the drift guard runs). The suite runs in CI via
 the root `test:scripts` script, which is wired into both `bun run test` and
 `bun run check`.
 
+One casing lesson is worth fixing in text: REST payload values are lowercase
+(`"completed"`, `"failure"`, `"pending"`, `"timed_out"`) — unlike GraphQL's
+SCREAMING_CASE. The filters and fixtures use the REST casing; a fixture that
+mirrored GraphQL's casing would pass the drift guard while disagreeing with
+the live API, which is exactly how the mismatch that motivated this section
+survived its first run.
+
 ## Plan constraints (free + private repo)
 
 GitHub branch protection ("required status checks", PR-only enforcement) is a
