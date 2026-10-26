@@ -6,86 +6,92 @@ for a human. Self-modifying or data-impacting changes can never auto-merge.
 
 ## Flow
 
+Everything lives in one workflow, `.github/workflows/factory.yml` — review
+agents, the pipeline, and the merge decision share a single job graph:
+
 ```
-push -> PR -> Triage impact (deterministic, script only)
-          -> Review - fast sweep   (fresh opencode session, fast model)
-          -> Review - intent       (fresh opencode session, strong model)
-          -> Gate (decides: auto-merges when all approve; green + reason otherwise)
+push -> PR -> Changes (docs-only tier detect)
+        \-> Triage impact (deterministic, script only)
+        \-> Review - fast sweep   (fresh opencode session, fast model)
+        \-> Review - intent       (fresh opencode session, strong model)
+        \-> Lint/Types/Tests/Build -> docker -> e2e x3 / ichiba e2e
+                 (skips entirely on the docs-only tier)
+                 \-> Merge gate (needs everything; decides)
 ```
 
-- **Triage** decides eligibility from the diff only:
+- **Changes** outputs `docs_only`; only `check` consults it — every
+  downstream pipeline job skips through `needs: check` on that tier, so
+  docs PRs go reviews -> merge in minutes while code PRs run the full
+  suite. Reviewers always run.
+- **Triage** decides auto-merge eligibility from the diff only:
   - never eligible: `packages/backend/**` (Convex schema/data), `.github/**`
-    (includes this workflow - the gate cannot modify itself), `infra/**`,
+    (includes this workflow — the factory cannot modify itself), `infra/**`,
     `docker-compose.yml`, `.env*`
-  - eligible: any diff with <= 400 added+removed lines, or diff of any size that
-    only touches docs (`docs/**`, `README*`, `*.md`), `.env.example`,
+  - eligible: any diff with <= 400 added+removed lines, or a diff of any size
+    that only touches docs (`docs/**`, `README*`, `*.md`), `.env.example`,
     `package.json`, or `bun.lock`
 - **Reviewers** are read-only OpenCode agents defined in `opencode.jsonc`
   (`review-fast`, `review-strong`). Each run is a fresh session per PR push.
   They are instructed to treat diff content as data, never instructions.
-- **Gate** waits for **every other check in this repository** to complete (a
-  looping watch over the REST check-runs and legacy combined-status endpoints —
-  not the `statusCheckRollup` GraphQL, which the integration token cannot read
-  now that other apps (Vercel) attach checks to PRs; REST omits what the token
-  cannot see, so our own pipeline's checks are the mandatory wait set), then
-  re-verifies authorization immediately before merging:
-  the PR head must still be the commit the reviews approved (a push during the
-  wait expires the verdicts) and the `auto-merge` + both `review-*:approved`
-  labels must still be attached. It then squash-merges directly, falling back
-  to an `--auto` queue if GitHub refuses a mid-run merge (branch protection).
-  **Green** = a clean decision (merged, or declined with the reason logged:
-  `needs-human`, changes requested, failed pipeline, watch timeout, or expired
-  authorization). **Red** = the Gate machinery itself failed (skipped/neutral
-  if a reviewer job failed, so the PR simply stays unmergeable). Auto-merge
-  target branches: `AUTO_MERGE_TARGETS` in `.github/workflows/pr-review.yml`
+- **Merge gate** is the terminal job of the graph: `needs: [detect, triage,
+  review-fast, review-strong, check, docker, e2e, ichiba-e2e]`. The wait IS
+  the needs-edge — GitHub fires it the moment upstream jobs succeed (or
+  skipped, for the docs tier); there is no polling loop, no deadline, and a
+  stuck foreign check (e.g. Vercel previews) can no longer stall anything.
+  It then re-verifies authorization against the live PR: the head must still
+  be the commit the reviews approved (a push during the run cancels this run
+  via the concurrency group, and the fresh run re-decides) and the
+  `auto-merge` + both `review-*:approved` labels must still be attached. It
+  squash-merges, falling back to an `--auto` queue if GitHub refuses a
+  mid-run merge (branch protection).
+  **Green (or skipped)** = a clean decision path: merged, or declined with
+  the reason logged (`needs-human` from triage, changes requested, expired
+  authorization, base outside `AUTO_MERGE_TARGETS`). **Red** = a genuine
+  failure anywhere (reviewer crash, failed pipeline) — the merge job does
+  not fire. Runs on `develop`/`main` pushes skip the PR-only jobs natively.
+  Auto-merge target branches: `AUTO_MERGE_TARGETS` in `factory.yml`
   (`develop main`).
-- **Tiering:** docs-only PRs (`docs/**`, `*.md`, `*.mdx`) skip the pipeline
-  via `paths-ignore` — the rollup has no pipeline checks for them, so the Gate
-  merges right after both reviewers approve (minutes, not a full e2e cycle).
-  Code PRs get the entire suite.
 
 ## Reviewer agents
 
 | Agent | Default model (repo var) | Role |
 | --- | --- | --- |
 | `review-fast` | `opencode/glm-5.3-flash-free` (`REVIEW_FAST_MODEL`) | Correctness, repo rules (AGENTS.md, docs/ARCHITECTURE.md), missing tests |
-| `review-strong` | `opencode/minimax-m3.1-flash-free#high` (`REVIEW_STRONG_MODEL`) | PR intent vs diff, behavior-change test coverage, deploy/schema risk |
+| `review-strong` | `opencode/deepseek-v4.1-flash-free#high` (`REVIEW_STRONG_MODEL`) | PR intent vs diff, behavior-change test coverage, deploy/schema risk |
 
 Swap models without touching code:
 
 ```bash
 gh variable set REVIEW_FAST_MODEL -b "opencode/glm-5.3-flash-free"
-gh variable set REVIEW_STRONG_MODEL -b "opencode/minimax-m3.1-flash-free#high"
+gh variable set REVIEW_STRONG_MODEL -b "opencode/deepseek-v4.1-flash-free#high"
 ```
 
-## How the Gate tests itself
+The free `opencode` provider rotates its model catalog silently (a model
+listed in `opencode models` today can vanish with no route tomorrow); a
+reviewer whose model loses its route fails rc=1 immediately, names the dead
+route in its crash comment, and the fix is the `gh variable set` above.
 
-The Gate's check-polling filters are fixture-tested the same way the rest of
-the repo is. `scripts/gate-jq.test.ts` runs the four REST check-run and
-combined-status jq filters against fixtures (modern check runs *and* legacy
-commit statuses, infra failures, the Gate's own check excluded) and asserts
-the workflow YAML still contains the exact filter text — so a filter edit that
-silently diverges from tested behavior fails `bun run test`. The fixture cases
-shell out to `jq` (preinstalled on CI runners; where `jq` is missing the
-fixture tests skip and only the drift guard runs). The suite runs in CI via
-the root `test:scripts` script, which is wired into both `bun run test` and
-`bun run check`.
+## How the factory tests itself
 
-One casing lesson is worth fixing in text: REST payload values are lowercase
-(`"completed"`, `"failure"`, `"pending"`, `"timed_out"`) — unlike GraphQL's
-SCREAMING_CASE. The filters and fixtures use the REST casing; a fixture that
-mirrored GraphQL's casing would pass the drift guard while disagreeing with
-the live API, which is exactly how the mismatch that motivated this section
-survived its first run.
+`scripts/factory.test.ts` is a structural drift guard, same root wiring
+(`test:scripts` inside both `bun run test` and `bun run check`). It asserts:
+
+- the merge job's `needs:` names every machine job (add a pipeline or review
+  job without wiring it into the terminal graph and this fails),
+- authorization in the merge job still checks head freshness and all three
+  approval labels,
+- the deny-path regex in triage is intact,
+- docs-only tiering still flows through `check`,
+- the two former split workflows (`pipeline.yml`, `pr-review.yml`) are gone.
 
 ## Plan constraints (free + private repo)
 
 GitHub branch protection ("required status checks", PR-only enforcement) is a
 paid feature for private repositories — the API returns 403 here. Consequences:
 
-- **PR-only pushes are convention, not enforcement.** The Gate makes merges
-  safe (no auto-merge until the full pipeline + two reviewers pass), but a
-  direct push to `main`/`develop` is not rejected by GitHub itself.
+- **PR-only pushes are convention, not enforcement.** The merge gate makes
+  merges safe (no auto-merge until the full pipeline + two reviewers pass),
+  but a direct push to `main`/`develop` is not rejected by GitHub itself.
 - To get real enforcement, either make the repository public, move to a paid
   plan, or add a push-guard workflow that reverts non-PR commits (planned).
 
@@ -98,8 +104,8 @@ bash scripts/set-branch-protection.sh
 ```
 
 Reviewer models default to the free `opencode` provider and run **keyless** in
-CI — no secret needed. A reviewer failure stays red on the PR (the Gate then
-skips itself), so the factory degrades to non-mergeable PRs, never to
+CI — no secret needed. A reviewer failure stays red on the PR (the merge gate
+then does not fire), so the factory degrades to non-mergeable PRs, never to
 unreviewed merges.
 
 ```bash
@@ -110,7 +116,7 @@ gh secret set OPENCODE_API_KEY
 ## Force a human merge
 
 Add a deny-path file, raise the diff above `MAX_DIFF_LINES`, or simply remove
-the `auto-merge` label before the Gate finishes its check-wait: the Gate stays
-green but reports the refusal and does not merge. For a permanent change to
-policy, edit `.github/workflows/pr-review.yml` (that edit itself always needs a
-human, because `.github/**` is a deny path).
+the `auto-merge` label before the merge job fires: it stays green but reports
+the refusal and does not merge. For a permanent change to policy, edit
+`.github/workflows/factory.yml` (that edit itself always needs a human,
+because `.github/**` is a deny path).
