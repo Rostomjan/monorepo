@@ -34,3 +34,10 @@ bun run deps:fix       # autofix version drift
 - Manual: `bun run update:check` to preview, `bun run update` to apply, `bun install`, `bun run check`.
 - Keep `react`, `next`, `typescript`, `eslint`, `tailwindcss` aligned: `bun run deps:lint`, fix with `bun run deps:fix`.
 - Prune dead code after big changes: `bun run knip`.
+
+## PR gate
+
+All pushes land via PR. Two read-only OpenCode reviewer agents (fast + strong
+model, fresh session per push) plus deterministic triage approve low-impact PRs
+and auto-merge them; the rest waits for a human. Policy and setup:
+`docs/PR-GATE.md`.
