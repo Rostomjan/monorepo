@@ -1,47 +1,89 @@
-name: PR Gate
+name: Factory
 
-# REVIEW AGENTS + AUTO-MERGE GATE
+# THE FACTORY: one workflow, one job graph.
 #
-# Every PR gets two fresh OpenCode sessions (fast + strong model, both from the
-# free `opencode` provider by default) plus a deterministic triage step. If
-# triage rates the PR low-impact and both agents approve, the Gate waits for the
-# full pipeline and squash-merges (queueing instead where branch protection
-# blocks a mid-run merge). Everything else ends green with the decision; a
-# human decides. Red means the Gate machinery itself failed.
+# PR path:  changes -> triage -> two reviewer agents ----\
+#                 \-> full pipeline (lint/build/docker/e2e) -> merge gate
+#           Low-impact PRs squash-merge themselves when everything upstream
+#           is green and authorization still holds; everything else ends
+#           green with the decision, and a human decides. Red = machinery
+#           failure (reviewer crash, unreadable state), not "reviewer said no".
+#
+# Push path (main/develop): same pipeline jobs + the deploy jobs; review,
+#   triage and merge are PR-only jobs and skip.
+#
+# Tiering is job-level, not `paths-ignore`: the `detect` job outputs
+# `docs_only`, `check` conditionally skips, and every pipeline job that
+# `needs: check` skips with it — natively, through the job graph. Reviewers
+# still run on docs-only diffs (their approval is the gate there).
+#
+# Why the old Gate's poll loop is gone: the merge job uses `needs:` edges as
+# the wait. GitHub fires it the instant upstream jobs conclude — no polling
+# cadence, no wall-clock deadline, and a stuck foreign check (Vercel) can no
+# longer stall the gate, because only THIS workflow's jobs are in the wait
+# set. Foreign preview deployments are advisory and never block a merge.
 #
 # Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`.
 
 on:
+  push:
+    branches: ["main", "develop"]
   pull_request:
     branches: ["main", "develop"]
 
 permissions:
-  contents: write # Gate squash-merges (the merge endpoint writes a commit) and
-                  # deletes merged branches; agents themselves never touch git.
-  checks: read # Gate reads statusCheckRollup (CheckRuns) — declaring any
-               # permissions block replaces the default token scope, so the
-               # check-run read must be granted explicitly.
-  actions: read # gh's GraphQL rollup expansion also fetches the workflow runs
-                # behind check suites (checkSuite.workflowRun).
-  issues: write # labels are issue resources: gh label create / add / remove
-  pull-requests: write
+  # Workflow token scope is REPLACED by this block, not unioned: only what
+  # the jobs below use. No checks/actions reads — the needs-graph replaces
+  # the old cross-workflow status reads.
+  contents: write      # merge gate squash-merges and deletes merged branches
+  issues: write        # labels are issue resources (triage + reviewer stamps)
+  pull-requests: write # diffs, comments, merge
 
 concurrency:
-  group: pr-gate-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs; never cancel main/develop deploys.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  BUN_VERSION: "1.4.3"
   # Swap reviewer models via repo variables without touching this file.
   FAST_MODEL: ${{ vars.REVIEW_FAST_MODEL || 'opencode/glm-5.3-flash-free' }}
   STRONG_MODEL: ${{ vars.REVIEW_STRONG_MODEL || 'opencode/deepseek-v4.1-flash-free#high' }}
-  # Branches the gate may auto-merge into. Remove "main" to keep prod merges human.
+  # Branches the merge gate may auto-merge into. Remove "main" to keep prod
+  # merges human.
   AUTO_MERGE_TARGETS: "develop main"
   # Diff size under which the gate may auto-merge (additions + deletions).
   MAX_DIFF_LINES: "400"
 
 jobs:
+  detect:
+    name: Changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.detect.outputs.docs_only }}
+    steps:
+      - name: Detect tier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        id: detect
+        run: |
+          REPO="${{ github.repository }}"
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
+          # Same doc-scope the pipeline used to encode in paths-ignore:
+          # docs/** plus *.md/*.mdx anywhere.
+          docs_only=$(jq -r '[.files[].path] | length == 0 or all(test("^(docs/|.*\\.(md|mdx)$)")) | tostring' <<< "$data")
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "Docs-only tier: $docs_only"
+
   triage:
     name: Triage impact
+    needs: detect
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -58,8 +100,6 @@ jobs:
           create_label() { gh api -X POST "repos/$REPO/labels" -f name="$1" -f color="$2" -f description="$3" > /dev/null 2>&1 || true; }
           remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
-          # Idempotent creates via REST across gh versions (issues-label adds
-          # auto-create missing labels too; this is the belt to its suspenders).
           create_label "auto-merge" "0e8a16" "Triage: low impact, agent-approved"
           create_label "needs-human" "dedede" "Triage: human review required"
           create_label "review-fast:approved" "0e8a16" "Fast reviewer approved"
@@ -103,7 +143,8 @@ jobs:
 
   review-fast:
     name: Review - fast sweep
-    needs: triage
+    needs: detect
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -136,8 +177,6 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
-          # gh's `gh pr label` subcommand is absent on some runner images; use the
-          # issues REST API directly. Labels named like "review-fast:changes".
           add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
           remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
@@ -201,7 +240,8 @@ jobs:
 
   review-strong:
     name: Review - intent (strong)
-    needs: triage
+    needs: detect
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -292,18 +332,245 @@ jobs:
             gh pr comment "$PR" --body-file /tmp/review.md || true
           fi
 
-  gate:
-    name: Gate
-    needs: [triage, review-fast, review-strong]
+  check:
+    name: Lint, Types, Unit tests, Build
+    needs: detect
+    # Docs-only PRs stop the heavy tier here; every downstream pipeline job
+    # skips through the needs-graph, and the merge gate treats "skipped"
+    # pipeline as green for that tier.
+    if: needs.detect.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
-    # Must outlive the slowest check in this repo (currently the e2e suite).
-    timeout-minutes: 35
-    # Everything that is *not* machinery failure ends green: merged, or declined
-    # with the reason. Red = the gate itself crashed. This also keeps the Gate
-    # compatible with branch protection: a pending self-check can never pass a
-    # mid-run direct merge, so the required-check list (see
-    # scripts/set-branch-protection.sh) deliberately excludes Gate, and the
-    # merge falls back to an `--auto` queue when GitHub refuses directly.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - uses: actions/cache@v6
+        with:
+          path: node_modules/.cache/turbo
+          key: ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-
+            ${{ runner.os }}-turbo-
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run type-check
+      - run: bun run test
+      - name: Build (with Sentry sourcemaps when token exists)
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: bun run build
+      - run: bun run deps:lint
+      - run: bun run knip
+
+  docker:
+    name: Docker builds (api, chat)
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -f apps/api/Dockerfile -t api:ci .
+      - run: docker build -f apps/chat/Dockerfile -t chat:ci .
+
+  deploy-dev:
+    name: Deploy to Development
+    needs: check
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: Production – monorepo-chat
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
+      - name: Deploy Convex (Dev)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV || secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          cd packages/backend
+          bunx convex deploy --cmd 'bun run build'
+
+  e2e:
+    name: Playwright (${{ matrix.browser }})
+    needs: [check, deploy-dev]
+    # Run if check passed. If on develop, wait for deploy-dev.
+    if: |
+      always() &&
+      (needs.check.result == 'success') &&
+      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright Browsers
+        run: bunx playwright install --with-deps ${{ matrix.browser }}
+        working-directory: apps/e2e
+      - name: Run Playwright tests (${{ matrix.browser }})
+        env:
+          # If develop, we could point to the Dev Vercel URL if we had it.
+          # For now, we'll use the localhost webserver but it will hit the Dev Convex backend if configured.
+          BASE_URL: http://localhost:3000
+        run: bunx playwright test --project=${{ matrix.browser }}
+        working-directory: apps/e2e
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: apps/e2e/playwright-report/
+          retention-days: 30
+
+  ichiba-e2e:
+    name: Ichiba e2e (chromium)
+    needs: [check]
+    if: |
+      always() &&
+      (needs.check.result == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ichiba
+          POSTGRES_PASSWORD: ichiba
+          POSTGRES_DB: ichiba
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ichiba -d ichiba"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: apps/e2e
+      - name: Migrate + seed catalog
+        run: bun run db:migrate && bun run db:seed
+        working-directory: apps/ichiba
+        env:
+          DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+      - name: Check Clerk test keys
+        # The ichiba dev server throws on every request without Clerk keys,
+        # which surfaces as a 3-minute webServer timeout. Fail fast instead.
+        run: |
+          if [ -z "${{ secrets.CLERK_PUBLISHABLE_KEY }}" ] || [ -z "${{ secrets.CLERK_SECRET_KEY }}" ]; then
+            echo "Ichiba e2e needs CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY repo secrets (Clerk test-mode keys from https://dashboard.clerk.com/~/api-keys)."
+            exit 1
+          fi
+      - name: Run ichiba Playwright flow
+        env:
+          DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+        run: bun run test:ichiba
+        working-directory: apps/e2e
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-ichiba
+          path: apps/e2e/playwright-report/
+          retention-days: 30
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: e2e
+    # Run on push to main OR on push to develop after successful E2E (Promotion)
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') &&
+      needs.e2e.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: Production – monorepo-chat
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
+      - name: Deploy Convex (Prod)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD || secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          cd packages/backend
+          bunx convex deploy --cmd 'bun run build'
+
+  merge:
+    name: Merge gate
+    # Exactly one merge path: this job. It fires when the scheduler can (all
+    # needs success or skipped for the PR's tier). Authorizes against live PR
+    # state, then squashes. NEVER add this job's check to the required-checks
+    # list (scripts/set-branch-protection.sh): it merges from inside itself,
+    # so a required self-check would deadlock, and the --auto fallback
+    # deliberately relies on this job not being required.
+    needs: [detect, triage, review-fast, review-strong, check, docker, e2e, ichiba-e2e]
+    if: |
+      github.event_name == 'pull_request' &&
+      !cancelled() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Evaluate merge eligibility
         env:
@@ -327,10 +594,17 @@ jobs:
             exit 0
           fi
 
+          # Skipped pipeline jobs mean the docs-only tier: the pipeline was
+          # deliberately not run, which is green for that tier. A pipeline job
+          # that RAN and failed makes this job not fire at all (needs graph).
+          case "${{ needs.check.result }}${{ needs.docker.result }}${{ needs.e2e.result }}${{ needs.ichiba-e2e.result }}" in
+            *failure*|*cancelled*) echo "Unexpected failed upstream (should have been filtered by needs); not merging."; exit 1 ;;
+          esac
+          echo "Upstream outcomes: check=${{ needs.check.result }} docker=${{ needs.docker.result }} e2e=${{ needs.e2e.result }} ichiba=${{ needs.ichiba-e2e.result }}"
+
           # Authorization = head unchanged since these reviews ran + live triage
-          # and reviewer-approval labels. Checked up front and re-checked right
-          # before merging: a push during the wait restarts reviews, and the new
-          # reviewer runs strip the approval labels first thing.
+          # and reviewer-approval labels. A push during the checks cancels this
+          # run via the concurrency group and the new run re-decides.
           authorized() {
             local labels
             gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid \
@@ -350,69 +624,6 @@ jobs:
             exit 0
           fi
 
-          # Wait for all OTHER checks (pipeline, e2e, ...) to finish, then
-          # verify none failed. Polled via REST, NOT the statusCheckRollup
-          # GraphQL: the integration token cannot read other apps' checks
-          # (Vercel etc.), and that read errors the whole GraphQL query. The
-          # REST list simply omits what the token cannot see, so our repo's
-          # own pipeline checks are the mandatory wait set. The deadline must
-          # land inside this job's timeout-minutes: 33 min of polling + startup
-          # < 35 min, so the timeout branch below is reachable. gh -q takes a
-          # single expression (no --arg): constants are inlined.
-          # Wall-clock deadline via $SECONDS: the old counter subtracted only
-          # sleep time, ignoring each cycle's api/jq overhead, so a "33 min"
-          # budget actually spanned ~45 real minutes and the runner's
-          # timeout-minutes killed the job before the graceful branch fired.
-          start=$SECONDS
-          while true; do
-            head_sha=$(gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid) \
-              || { echo "Failed to read PR head; not merging"; exit 1; }
-
-            # Check runs: an unreadable read is a machinery failure (red).
-            if ! gh api "repos/$REPO/commits/$head_sha/check-runs?per_page=100" > /tmp/checks.json 2>/tmp/checks.err; then
-              echo "Check-run read failed; not merging:" >&2
-              tail -3 /tmp/checks.err >&2
-              exit 1
-            fi
-            # Legacy commit statuses: readable normally, but tolerate a 403
-            # loudly (best-effort context, not the wait set).
-            status_json=$(gh api "repos/$REPO/commits/$head_sha/status" 2>/tmp/statuses.err) || {
-              echo "Legacy commit-status read failed; relying on check runs:" >&2
-              tail -3 /tmp/statuses.err >&2
-              status_json='{}'
-            }
-            echo "$status_json" > /tmp/statuses.json
-
-            checks_pending=$(jq '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed")] | length' /tmp/checks.json)
-            statuses_pending=$(jq '[(.statuses // [])[] | select(.state == "pending")] | length' /tmp/statuses.json)
-            [ "$((checks_pending + statuses_pending))" -eq 0 ] && break
-
-            if [ $((SECONDS - start)) -ge 1920 ]; then
-              echo "Timed out waiting (32 min) for other checks; not merging. Gate green (no merge performed)."
-              echo "Still pending:" >&2
-              jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed") | .name] | join(", ")' /tmp/checks.json >&2
-              jq -r '[(.statuses // [])[] | select(.state == "pending") | .context] | join(", ")' /tmp/statuses.json >&2
-              exit 0
-            fi
-            echo "waiting on: $(jq -r '[(.check_runs // [])[] | select(.name != "Gate") | select(.status != "completed") | .name] | join(", ")' /tmp/checks.json) / $(jq -r '[(.statuses // [])[] | select(.state == "pending") | .context] | join(", ")' /tmp/statuses.json)"
-            sleep 20
-          done
-
-          failed=$(jq -r '[(.check_runs // [])[] | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out" or .conclusion == "startup_failure" or .conclusion == "action_required") | .name] | join(", ")' /tmp/checks.json)
-          failed="$failed $(jq -r '[(.statuses // [])[] | select(.state == "failure" or .state == "error") | .context] | join(", ")' /tmp/statuses.json)"
-          if [ -n "${failed// /}" ]; then
-            echo "Pipeline checks failed; a human decides. Gate green (no merge performed):"
-            echo "$failed"
-            exit 0
-          fi
-
-          # Final re-check: the merge must carry approvals stamped for exactly
-          # this head and still attached.
-          if ! authorized; then
-            echo "Authorization expired while checks ran (new push or new verdicts); the fresh run re-decides. Gate green."
-            exit 0
-          fi
-
           # timeout guards against gh hanging on an unexpected prompt; 124 =
           # the wrapper's expiry, treated like any direct refusal.
           if ! timeout 120 gh pr merge "$PR" --repo "$REPO" --squash --delete-branch 2>/tmp/merge.err; then
@@ -420,4 +631,4 @@ jobs:
             cat /tmp/merge.err >&2
             timeout 120 gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
           fi
-          echo "Auto-merge complete: triage low-impact, both reviewers approved, full pipeline green."
+          echo "Auto-merge complete: triage low-impact, both reviewers approved, pipeline tier green (docs-only PRs skip it by design)."
