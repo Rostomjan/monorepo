@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "dependencies": {
     "@repo/typescript-config": "workspace:*",
-    "convex": "^1.47.0"
+    "convex": "^1.48.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
-    "@types/bun": "^1.4.3",
+    "@types/bun": "^1.4.4",
     "@types/node": "26.6.5",
     "eslint": "^8.57.0",
     "typescript": "7.0.2"
