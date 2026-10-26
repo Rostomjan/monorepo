@@ -33,7 +33,7 @@ concurrency:
 env:
   # Swap reviewer models via repo variables without touching this file.
   FAST_MODEL: ${{ vars.REVIEW_FAST_MODEL || 'opencode/glm-5.3-flash-free' }}
-  STRONG_MODEL: ${{ vars.REVIEW_STRONG_MODEL || 'opencode/minimax-m3.1-flash-free#high' }}
+  STRONG_MODEL: ${{ vars.REVIEW_STRONG_MODEL || 'opencode/deepseek-v4.1-flash-free#high' }}
   # Branches the gate may auto-merge into. Remove "main" to keep prod merges human.
   AUTO_MERGE_TARGETS: "develop main"
   # Diff size under which the gate may auto-merge (additions + deletions).
@@ -159,11 +159,22 @@ jobs:
           set -e
 
           if [ "$rc" -ne 0 ]; then
-            echo "opencode run failed (rc=$rc); last stderr lines:" >&2
-            tail -15 /tmp/review.err >&2 || true
-            gh pr comment "$PR" \
-              --body "**Fast reviewer crashed** (rc=$rc) on ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body "$(tail -20 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+            # With --format json, opencode writes provider/CLI errors to
+            # stdout as a {"type":"error"} JSONL line and often leaves
+            # stderr EMPTY (free-tier route outages look exactly like
+            # this). Diagnose from both, never post a blank body.
+            detail=$(tail -15 /tmp/review.err 2>/dev/null || true)
+            errline=$(jq -r 'select(.type=="error") | (.error.message // .message // empty)' /tmp/review.jsonl 2>/dev/null || true)
+            report="rc=$rc | stderr: ${detail:-<none>} | error line: ${errline:-<none>}"
+            echo "opencode run failed: $report" >&2
+            {
+              echo "**Fast reviewer crashed** on ${{ github.event.pull_request.head.sha }}"
+              echo ""
+              echo '```'
+              echo "$report"
+              echo '```'
+            } > /tmp/crash.md
+            gh pr comment "$PR" --body-file /tmp/crash.md || true
             exit 1
           fi
 
@@ -242,11 +253,21 @@ jobs:
           set -e
 
           if [ "$rc" -ne 0 ]; then
-            echo "opencode run failed (rc=$rc); last stderr lines:" >&2
-            tail -15 /tmp/review.err >&2 || true
-            gh pr comment "$PR" \
-              --body "**Strong reviewer crashed** (rc=$rc) on ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body "$(tail -20 /tmp/review.err 2>/dev/null || echo 'no stderr')" || true
+            # Same diagnosis logic as the fast reviewer: both stderr (CLI
+            # failures) and the stdout {"type":"error"} line (provider
+            # outages). Body-file prevents a blank-body cascade.
+            detail=$(tail -15 /tmp/review.err 2>/dev/null || true)
+            errline=$(jq -r 'select(.type=="error") | (.error.message // .message // empty)' /tmp/review.jsonl 2>/dev/null || true)
+            report="rc=$rc | stderr: ${detail:-<none>} | error line: ${errline:-<none>}"
+            echo "opencode run failed: $report" >&2
+            {
+              echo "**Strong reviewer crashed** on ${{ github.event.pull_request.head.sha }}"
+              echo ""
+              echo '```'
+              echo "$report"
+              echo '```'
+            } > /tmp/crash.md
+            gh pr comment "$PR" --body-file /tmp/crash.md || true
             exit 1
           fi
 
