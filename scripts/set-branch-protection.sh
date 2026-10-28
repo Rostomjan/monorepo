@@ -20,15 +20,15 @@ gh api -X PATCH "repos/$REPO" \
   -f allow_auto_merge=true \
   -f delete_branch_on_merge=true
 
-# Required checks = factory.yml's pipeline + triage/review jobs. Excluded:
-# - Pipeline jobs that skip on docs-only PRs would block docs merges... they
-#   are still required here ONLY for code PRs; the merge gate does not rely
-#   on branch protection to hold docs PRs (see factory.yml merge job).
-# - Deploy jobs: they trigger on push to main/develop, never on PRs, and a
-#   required check that never reports would block merges forever.
-# - Merge gate: it merges from inside itself, so a required self-check would
-#   deadlock its direct merge (and its --auto fallback deliberately relies
-#   on Merge gate NOT being required).
+# Required checks = only jobs that RUN ON EVERY PR. Exclusion rules:
+# - Affected-selected jobs (Docker builds, Playwright x3, Ichiba e2e) MUST
+#   NOT be required: they skip for diffs outside their tier, and a required
+#   check that never reports blocks the merge forever. Tier selection is
+#   defined in scripts/tier-select.ts; the merge gate treats skipped as
+#   green for that tier.
+# - Deploy jobs: push-only, never report on PRs - same blocking trap.
+# - Merge gate: merges from inside itself; a required self-check deadlocks
+#   its direct merge (the --auto fallback relies on it NOT being required).
 # NOTE: keep context names in sync with job `name:` fields:
 #   .github/workflows/factory.yml
 # CAVEAT: with these review jobs required, a reviewer REQUEST_CHANGES only
@@ -37,14 +37,10 @@ gh api -X PATCH "repos/$REPO" \
 # would require GitHub review approvals instead of status checks.
 CONTEXTS=$(cat <<'EOF'
 Lint, Types, Unit tests, Build
-Docker builds (api, chat)
-Playwright (chromium)
-Playwright (firefox)
-Playwright (webkit)
-Ichiba e2e (chromium)
 Triage impact
 Review - fast sweep
 Review - intent (strong)
+Changes
 EOF
 )
 

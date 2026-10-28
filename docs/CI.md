@@ -32,6 +32,9 @@ Untouched surfaces skip the need for their job (e.g. a `kotoba`-only PR runs
 only the lint/type/test/build tier). Pushes to `develop`/`main` bypass the
 selectors and always run the full suite before deploys. If a tier wrongly
 skips, widen the app list in `scripts/tier-select.ts` — never in the YAML.
+`.github/**`-only diffs are check-only by design (machine-reviewed); empty
+diffs run `check` and nothing heavy; everything unmapped runs the heaviest
+tier rather than silently skipping.
 
 ## Turbo remote cache
 

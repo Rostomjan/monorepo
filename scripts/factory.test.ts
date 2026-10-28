@@ -10,6 +10,7 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { computeTiers, type Tiers } from "./tier-select";
 
 const yml = readFileSync(
   join(import.meta.dir, "..", ".github", "workflows", "factory.yml"),
@@ -39,8 +40,12 @@ test("merge gate only fires on green-or-skipped upstreams, PRs only", () => {
 });
 
 test("authorization still enforces head freshness + all three approvals", () => {
-  expectContains('--json headRefOid -q .headRefOid');
-  for (const label of ["auto-merge", "review-fast:approved", "review-strong:approved"]) {
+  expectContains("--json headRefOid -q .headRefOid");
+  for (const label of [
+    "auto-merge",
+    "review-fast:approved",
+    "review-strong:approved",
+  ]) {
     expectContains(`grep -qx "${label}"`);
   }
 });
@@ -60,11 +65,18 @@ test("tier selection is centralized in scripts/tier-select.ts (wired in detect)"
 
 test("affected selectors gate the expensive jobs, pushes bypass them", () => {
   for (const out of ["docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
-    expectContains(`github.event_name == 'push' || needs.detect.outputs.${out} == 'true'`);
+    expectContains(
+      `github.event_name == 'push' || needs.detect.outputs.${out} == 'true'`,
+    );
   }
   // Detect always emits the selectors, even on pushes (so stale outputs
   // can never disable a deploy path).
-  for (const out of ["docs_only", "docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
+  for (const out of [
+    "docs_only",
+    "docker_needed",
+    "chat_e2e_needed",
+    "ichiba_e2e_needed",
+  ]) {
     expectContains(`echo "$out=false" >> "$GITHUB_OUTPUT"`);
   }
 });
@@ -73,7 +85,12 @@ test("detect's tier selectors are declared as job outputs (wiring guard)", () =>
   // GitHub only exposes step outputs that the job's outputs: map declares;
   // an undeclared selector would read as empty and silently skip its tier
   // for every PR.
-  for (const out of ["docs_only", "docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
+  for (const out of [
+    "docs_only",
+    "docker_needed",
+    "chat_e2e_needed",
+    "ichiba_e2e_needed",
+  ]) {
     expectContains(out + ": ${{ steps.detect.outputs." + out + " }}");
   }
 });
@@ -97,15 +114,15 @@ test("the two split workflows are gone", () => {
 
 // ---- tier-selection behavior (the same code path the detect job runs) ----
 
-import { computeTiers, type Tiers } from "./tier-select";
-
 const f = (path: string): { path?: string } => ({ path });
 const docsFlag = (t: Tiers) => t.docs_only;
 
 test("tier table: docs-only skips the pipeline tier entirely", () => {
   const t = computeTiers([f("docs/api.md"), f("README.md")]);
   expect(docsFlag(t)).toBe(true);
-  expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(false);
+  expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(
+    false,
+  );
 });
 
 test("tier table: app changes select exactly their tiers", () => {
@@ -130,7 +147,9 @@ test("tier table: any packages/* change enables every tier (future packages too)
     "scripts/scaffold.ts",
   ]) {
     const t = computeTiers([f(p)]);
-    expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(true);
+    expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(
+      true,
+    );
   }
 });
 
@@ -147,6 +166,22 @@ test("tier table: .github-only changes skip every expensive tier", () => {
   expect(t.docker_needed).toBe(false);
   expect(t.chat_e2e_needed).toBe(false);
   expect(t.ichiba_e2e_needed).toBe(false);
+});
+
+test("tier table: unknown files fall back to the heaviest tier", () => {
+  for (const p of ["docker-compose.yml", "some-random-root-file"]) {
+    const t = computeTiers([f(p)]);
+    expect(t.docker_needed).toBe(true);
+    expect(t.chat_e2e_needed).toBe(true);
+    expect(t.ichiba_e2e_needed).toBe(true);
+  }
+});
+
+test("tier table: apps/e2e changes run both e2e suites", () => {
+  const t = computeTiers([f("apps/e2e/tests/chat.spec.ts")]);
+  expect(t.chat_e2e_needed).toBe(true);
+  expect(t.ichiba_e2e_needed).toBe(true);
+  expect(t.docker_needed).toBe(false);
 });
 
 test("tier table: empty diff disables everything", () => {
