@@ -70,15 +70,27 @@ jobs:
         run: |
           REPO="${{ github.repository }}"
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            # Pushes (develop/main) always run the full graph.
+            for out in docs_only docker_needed chat_e2e_needed ichiba_e2e_needed; do
+              echo "$out=false" >> "$GITHUB_OUTPUT"
+            done
             exit 0
           fi
           data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
+
           # Same doc-scope the pipeline used to encode in paths-ignore:
           # docs/** plus *.md/*.mdx anywhere.
           docs_only=$(jq -r '[.files[].path] | length == 0 or all(test("^(docs/|.*\\.(md|mdx)$)")) | tostring' <<< "$data")
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
-          echo "Docs-only tier: $docs_only"
+
+          # Affected-graph tiering: each expensive job runs only when its
+          # apps/configs are in the diff. Root configs and the lockfile
+          # affect everything. Conservative: unknown app? -> in the selector.
+          sel() { jq -r --arg re "$1" '[.files[].path] | length > 0 and any(test($re)) | tostring' <<< "$data"; }
+          echo "docker_needed=$(sel '^(apps/(api|chat)|packages/backend)/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
+          echo "chat_e2e_needed=$(sel '^(apps/(chat|kanji|e2e)|packages/(ui|tokens|tailwind-config|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
+          echo "ichiba_e2e_needed=$(sel '^(apps/(ichiba|e2e)|packages/(ui|tokens|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
+          echo "Tiers: docs_only=$docs_only docker=$docker_needed chat_e2e=$chat_e2e_needed ichiba=$ichiba_e2e_needed"
 
   triage:
     name: Triage impact
@@ -359,6 +371,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-
             ${{ runner.os }}-turbo-
+      - name: Turbo remote cache (optional)
+        # Set the TURBO_TOKEN secret (Vercel) to share the cache between
+        # local runs, CI, and agent machines; falls back to the local cache
+        # above when unset.
+        env:
+          _TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          _TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+        run: |
+          if [ -z "$_TURBO_TOKEN" ]; then
+            echo "TURBO_TOKEN unset; turbo uses the local runners cache only."
+          else
+            echo "TURBO_TOKEN=$_TURBO_TOKEN" >> "$GITHUB_ENV"
+            echo "TURBO_TEAM=$_TURBO_TEAM" >> "$GITHUB_ENV"
+          fi
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run type-check
@@ -372,7 +398,10 @@ jobs:
 
   docker:
     name: Docker builds (api, chat)
-    needs: check
+    needs: [detect, check]
+    # PRs: only when api/chat surface or shared config changed; pushes
+    # always validate the containers before deploy.
+    if: github.event_name == 'push' || needs.detect.outputs.docker_needed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -408,12 +437,14 @@ jobs:
 
   e2e:
     name: Playwright (${{ matrix.browser }})
-    needs: [check, deploy-dev]
-    # Run if check passed. If on develop, wait for deploy-dev.
+    needs: [detect, check, deploy-dev]
+    # Run if check passed. If on develop, wait for deploy-dev. On PRs, only
+    # when the chat/kanji surfaces (or shared config) are in the diff.
     if: |
       always() &&
       (needs.check.result == 'success') &&
-      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
+      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success') &&
+      (github.event_name == 'push' || needs.detect.outputs.chat_e2e_needed == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -457,10 +488,12 @@ jobs:
 
   ichiba-e2e:
     name: Ichiba e2e (chromium)
-    needs: [check]
+    needs: [detect, check]
+    # On PRs, only when the ichiba surface (or shared config) is in the diff.
     if: |
       always() &&
-      (needs.check.result == 'success')
+      (needs.check.result == 'success') &&
+      (github.event_name == 'push' || needs.detect.outputs.ichiba_e2e_needed == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:

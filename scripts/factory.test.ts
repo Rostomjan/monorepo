@@ -60,6 +60,23 @@ test("docs-only tiering lives in the job graph (detect -> check skip)", () => {
   expectContains("if: needs.detect.outputs.docs_only != 'true'");
 });
 
+test("affected selectors gate the expensive jobs, pushes bypass them", () => {
+  for (const out of ["docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
+    expectContains(`github.event_name == 'push' || needs.detect.outputs.${out} == 'true'`);
+  }
+  // Detect always emits the selectors, even on pushes (so stale outputs
+  // can never disable a deploy path).
+  for (const out of ["docs_only", "docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
+    expectContains(`echo "$out=false" >> "$GITHUB_OUTPUT"`);
+  }
+});
+
+test("turbo remote cache is optional and secrets-safe", () => {
+  expectContains("_TURBO_TOKEN");
+  expectContains('if [ -z "$_TURBO_TOKEN" ]');
+  expectContains('echo "TURBO_TOKEN=$_TURBO_TOKEN" >> "$GITHUB_ENV"');
+});
+
 test("merge path is squash + branch delete, with the --auto fallback", () => {
   expectContains("--squash --delete-branch");
   expectContains("--squash --auto --delete-branch");
