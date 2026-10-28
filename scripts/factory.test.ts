@@ -71,6 +71,15 @@ test("affected selectors gate the expensive jobs, pushes bypass them", () => {
   }
 });
 
+test("detect's tier selectors are declared as job outputs (wiring guard)", () => {
+  // GitHub only exposes step outputs that the job's outputs: map declares;
+  // an undeclared selector would read as empty and silently skip its tier
+  // for every PR.
+  for (const out of ["docs_only", "docker_needed", "chat_e2e_needed", "ichiba_e2e_needed"]) {
+    expectContains(out + ": ${{ steps.detect.outputs." + out + " }}");
+  }
+});
+
 test("turbo remote cache is optional and secrets-safe", () => {
   expectContains("_TURBO_TOKEN");
   expectContains('if [ -z "$_TURBO_TOKEN" ]');

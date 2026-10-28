@@ -62,6 +62,9 @@ jobs:
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.detect.outputs.docs_only }}
+      docker_needed: ${{ steps.detect.outputs.docker_needed }}
+      chat_e2e_needed: ${{ steps.detect.outputs.chat_e2e_needed }}
+      ichiba_e2e_needed: ${{ steps.detect.outputs.ichiba_e2e_needed }}
     steps:
       - name: Detect tier
         env:
@@ -87,7 +90,7 @@ jobs:
           # apps/configs are in the diff. Root configs and the lockfile
           # affect everything. Conservative: unknown app? -> in the selector.
           sel() { jq -r --arg re "$1" '[.files[].path] | length > 0 and any(test($re)) | tostring' <<< "$data"; }
-          echo "docker_needed=$(sel '^(apps/(api|chat)|packages/backend)/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
+          echo "docker_needed=$(sel '^(apps/(api|chat)|packages/(backend|ui|tokens|tailwind-config))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
           echo "chat_e2e_needed=$(sel '^(apps/(chat|kanji|e2e)|packages/(ui|tokens|tailwind-config|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
           echo "ichiba_e2e_needed=$(sel '^(apps/(ichiba|e2e)|packages/(ui|tokens|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
           echo "Tiers: docs_only=$docs_only docker=$docker_needed chat_e2e=$chat_e2e_needed ichiba=$ichiba_e2e_needed"

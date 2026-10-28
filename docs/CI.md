@@ -20,7 +20,7 @@ push -> same graph minus PR-only jobs (triage/reviews/merge) -> deploys
 
 | Job | Runs when the diff touches |
 | --- | --- |
-| Docker builds (api, chat) | `apps/api`, `apps/chat`, `packages/backend`, root configs/lockfile |
+| Docker builds (api, chat) | `apps/api`, `apps/chat`, `packages/backend`, shared `packages/*` (ui/tokens/tailwind-config), root configs/lockfile |
 | Playwright ×3 (chat, kanji) | `apps/chat`, `apps/kanji`, `apps/e2e`, shared UI packages, backend, root configs/lockfile |
 | Ichiba e2e | `apps/ichiba`, `apps/e2e`, shared UI packages, backend, root configs/lockfile |
 
