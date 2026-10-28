@@ -66,6 +66,10 @@ jobs:
       chat_e2e_needed: ${{ steps.detect.outputs.chat_e2e_needed }}
       ichiba_e2e_needed: ${{ steps.detect.outputs.ichiba_e2e_needed }}
     steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
       - name: Detect tier
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,21 +83,13 @@ jobs:
             done
             exit 0
           fi
-          data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
-
-          # Same doc-scope the pipeline used to encode in paths-ignore:
-          # docs/** plus *.md/*.mdx anywhere.
-          docs_only=$(jq -r '[.files[].path] | length == 0 or all(test("^(docs/|.*\\.(md|mdx)$)")) | tostring' <<< "$data")
-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
-
-          # Affected-graph tiering: each expensive job runs only when its
-          # apps/configs are in the diff. Root configs and the lockfile
-          # affect everything. Conservative: unknown app? -> in the selector.
-          sel() { jq -r --arg re "$1" '[.files[].path] | length > 0 and any(test($re)) | tostring' <<< "$data"; }
-          echo "docker_needed=$(sel '^(apps/(api|chat)|packages/(backend|ui|tokens|tailwind-config))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
-          echo "chat_e2e_needed=$(sel '^(apps/(chat|kanji|e2e)|packages/(ui|tokens|tailwind-config|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
-          echo "ichiba_e2e_needed=$(sel '^(apps/(ichiba|e2e)|packages/(ui|tokens|backend))/|^bun\.lock$|^package\.json$|^turbo\.json$')" >> "$GITHUB_OUTPUT"
-          echo "Tiers: docs_only=$docs_only docker=$docker_needed chat_e2e=$chat_e2e_needed ichiba=$ichiba_e2e_needed"
+          # scripts/tier-select.ts is the single source of truth for tier
+          # selection; behavior-tested in scripts/factory.test.ts.
+          tiers=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files | bun scripts/tier-select.ts)
+          echo "Tiers: $tiers"
+          for out in docs_only docker_needed chat_e2e_needed ichiba_e2e_needed; do
+            echo "$out=$(jq -r ".$out" <<< "$tiers")" >> "$GITHUB_OUTPUT"
+          done
 
   triage:
     name: Triage impact
@@ -382,8 +378,8 @@ jobs:
           _TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           _TURBO_TEAM: ${{ vars.TURBO_TEAM }}
         run: |
-          if [ -z "$_TURBO_TOKEN" ]; then
-            echo "TURBO_TOKEN unset; turbo uses the local runners cache only."
+          if [ -z "$_TURBO_TOKEN" ] || [ -z "$_TURBO_TEAM" ]; then
+            echo "TURBO_TOKEN/TURBO_TEAM not fully configured; turbo uses the local cache only."
           else
             echo "TURBO_TOKEN=$_TURBO_TOKEN" >> "$GITHUB_ENV"
             echo "TURBO_TEAM=$_TURBO_TEAM" >> "$GITHUB_ENV"

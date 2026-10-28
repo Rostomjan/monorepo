@@ -51,12 +51,10 @@ test("deny paths keep their human gate in triage", () => {
   );
 });
 
-test("docs-only tiering lives in the job graph (detect -> check skip)", () => {
-  expectContains(
-    "[.files[].path] | length == 0 or all(test(\"^(docs/|.*\\\\.(md|mdx)$)\")) | tostring",
-  );
-  // The one job that listens to the tier; everything downstream skips via
-  // needs: check.
+test("tier selection is centralized in scripts/tier-select.ts (wired in detect)", () => {
+  expectContains("bun scripts/tier-select.ts");
+  // The one job that listens to the docs tier; everything downstream skips
+  // via needs: check.
   expectContains("if: needs.detect.outputs.docs_only != 'true'");
 });
 
@@ -95,4 +93,63 @@ test("the two split workflows are gone", () => {
   const wfDir = join(import.meta.dir, "..", ".github", "workflows");
   expect(existsSync(join(wfDir, "pipeline.yml"))).toBe(false);
   expect(existsSync(join(wfDir, "pr-review.yml"))).toBe(false);
+});
+
+// ---- tier-selection behavior (the same code path the detect job runs) ----
+
+import { computeTiers, type Tiers } from "./tier-select";
+
+const f = (path: string): { path?: string } => ({ path });
+const docsFlag = (t: Tiers) => t.docs_only;
+
+test("tier table: docs-only skips the pipeline tier entirely", () => {
+  const t = computeTiers([f("docs/api.md"), f("README.md")]);
+  expect(docsFlag(t)).toBe(true);
+  expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(false);
+});
+
+test("tier table: app changes select exactly their tiers", () => {
+  const ichiba = computeTiers([f("apps/ichiba/src/cli.ts")]);
+  expect(docsFlag(ichiba)).toBe(false);
+  expect(ichiba.ichiba_e2e_needed).toBe(true);
+  expect(ichiba.docker_needed).toBe(false);
+  expect(ichiba.chat_e2e_needed).toBe(false);
+
+  const kanji = computeTiers([f("apps/kanji/src/page.tsx")]);
+  expect(kanji.chat_e2e_needed).toBe(true);
+  expect(kanji.docker_needed).toBe(false);
+  expect(kanji.ichiba_e2e_needed).toBe(false);
+});
+
+test("tier table: any packages/* change enables every tier (future packages too)", () => {
+  for (const p of [
+    "packages/tailwind-config/base.css", // ichiba actually imports this
+    "packages/never-seen-before/index.ts", // a package added after this test
+    "packages/backend/schema.ts",
+    "bun.lock",
+    "scripts/scaffold.ts",
+  ]) {
+    const t = computeTiers([f(p)]);
+    expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(true);
+  }
+});
+
+test("tier table: api change rebuilds containers + chat e2e, leaves ichiba alone", () => {
+  const t = computeTiers([f("apps/api/src/handler.ts")]);
+  expect(t.docker_needed).toBe(true);
+  expect(t.chat_e2e_needed).toBe(true);
+  expect(t.ichiba_e2e_needed).toBe(false);
+});
+
+test("tier table: .github-only changes skip every expensive tier", () => {
+  const t = computeTiers([f(".github/workflows/factory.yml")]);
+  expect(t.docs_only).toBe(false);
+  expect(t.docker_needed).toBe(false);
+  expect(t.chat_e2e_needed).toBe(false);
+  expect(t.ichiba_e2e_needed).toBe(false);
+});
+
+test("tier table: empty diff disables everything", () => {
+  const t = computeTiers([]);
+  expect(Object.values(t).every((v) => v === false)).toBe(true);
 });
