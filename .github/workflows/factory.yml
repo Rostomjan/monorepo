@@ -23,7 +23,8 @@ name: Factory
 # longer stall the gate, because only THIS workflow's jobs are in the wait
 # set. Foreign preview deployments are advisory and never block a merge.
 #
-# Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`.
+# Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`;
+# re-run it whenever the job graph or required-check set changes.
 
 on:
   push:
@@ -62,7 +63,14 @@ jobs:
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.detect.outputs.docs_only }}
+      docker_needed: ${{ steps.detect.outputs.docker_needed }}
+      chat_e2e_needed: ${{ steps.detect.outputs.chat_e2e_needed }}
+      ichiba_e2e_needed: ${{ steps.detect.outputs.ichiba_e2e_needed }}
     steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
       - name: Detect tier
         env:
           GH_TOKEN: ${{ github.token }}
@@ -70,15 +78,61 @@ jobs:
         run: |
           REPO="${{ github.repository }}"
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            # Pushes (develop/main) always run the full graph.
+            for out in docs_only docker_needed chat_e2e_needed ichiba_e2e_needed; do
+              echo "$out=false" >> "$GITHUB_OUTPUT"
+            done
             exit 0
           fi
+          # scripts/tier-select.ts is the single source of truth for tier
+          # selection; behavior-tested in scripts/factory.test.ts. It runs
+          # from a TRUSTED ref, never from the PR head: scripts/** is not a
+          # triage deny path, so a PR could otherwise edit its own selectors
+          # to skip its own gates (self-selection hole).
           data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
-          # Same doc-scope the pipeline used to encode in paths-ignore:
-          # docs/** plus *.md/*.mdx anywhere.
-          docs_only=$(jq -r '[.files[].path] | length == 0 or all(test("^(docs/|.*\\.(md|mdx)$)")) | tostring' <<< "$data")
-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
-          echo "Docs-only tier: $docs_only"
+          # Explicit destination refspecs: actions/checkout on pull_request
+          # leaves single-branch fetch config, so a bare "git fetch origin
+          # main develop" would only update FETCH_HEAD and refs/remotes/
+          # origin/main would never exist. Fetch each trusted ref into its
+          # remote-tracking slot and log what landed (CI-verifiable).
+          git fetch --no-tags --depth 1 origin +main:refs/remotes/origin/main > /dev/null 2>&1 || true
+          git fetch --no-tags --depth 1 origin +develop:refs/remotes/origin/develop > /dev/null 2>&1 || true
+          for r in main develop; do
+            if git show-ref --verify -q refs/remotes/origin/"$r"; then
+              echo "fetched origin/$r @ $(git rev-parse --short origin/"$r")"
+            else
+              echo "origin/$r: not fetched"
+            fi
+          done
+          # Execute OUTSIDE the PR checkout, from a fresh dir with an
+          # isolated HOME: Bun auto-loads bunfig.toml from the cwd and
+          # ~/.bunfig.toml otherwise, and a PR-supplied bunfig preload
+          # would run arbitrary code inside detect (which holds GH_TOKEN
+          # and $GITHUB_OUTPUT). The copied module has no relative imports,
+          # so nothing else resolves from the checkout either.
+          stepdir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/tiersel.XXXXXX")
+          sel="$stepdir/tier-select.ts"
+          src=""
+          if git show origin/main:scripts/tier-select.ts > "$sel" 2>/dev/null; then
+            src="origin/main"
+          elif git show origin/develop:scripts/tier-select.ts > "$sel" 2>/dev/null; then
+            src="origin/develop"
+          else
+            # Bootstrap window (module not yet on any squash-merged ref):
+            # fail toward MORE validation - run the full graph - rather
+            # than trust the PR's own copy.
+            echo "WARNING: tier-select.ts not on main/develop; running the FULL graph."
+          fi
+          if [ -n "$src" ]; then
+            echo "Tier selector source: $src (trusted ref)"
+            tiers=$(printf '%s' "$data" | (cd "$stepdir" && HOME="$stepdir" bun "$sel"))
+          else
+            tiers='{"docs_only":false,"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true}'
+          fi
+          echo "Tiers: $tiers"
+          for out in docs_only docker_needed chat_e2e_needed ichiba_e2e_needed; do
+            echo "$out=$(jq -r ".$out" <<< "$tiers")" >> "$GITHUB_OUTPUT"
+          done
 
   triage:
     name: Triage impact
@@ -359,6 +413,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-
             ${{ runner.os }}-turbo-
+      - name: Turbo remote cache (optional)
+        # Set the TURBO_TOKEN secret (Vercel) to share the cache between
+        # local runs, CI, and agent machines; falls back to the local cache
+        # above when unset.
+        env:
+          _TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          _TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+        run: |
+          if [ -z "$_TURBO_TOKEN" ] || [ -z "$_TURBO_TEAM" ]; then
+            echo "TURBO_TOKEN/TURBO_TEAM not fully configured; turbo uses the local cache only."
+          else
+            echo "TURBO_TOKEN=$_TURBO_TOKEN" >> "$GITHUB_ENV"
+            echo "TURBO_TEAM=$_TURBO_TEAM" >> "$GITHUB_ENV"
+          fi
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run type-check
@@ -372,7 +440,10 @@ jobs:
 
   docker:
     name: Docker builds (api, chat)
-    needs: check
+    needs: [detect, check]
+    # PRs: only when api/chat surface or shared config changed; pushes
+    # always validate the containers before deploy.
+    if: github.event_name == 'push' || needs.detect.outputs.docker_needed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -408,12 +479,14 @@ jobs:
 
   e2e:
     name: Playwright (${{ matrix.browser }})
-    needs: [check, deploy-dev]
-    # Run if check passed. If on develop, wait for deploy-dev.
+    needs: [detect, check, deploy-dev]
+    # Run if check passed. If on develop, wait for deploy-dev. On PRs, only
+    # when the chat/kanji surfaces (or shared config) are in the diff.
     if: |
       always() &&
       (needs.check.result == 'success') &&
-      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success')
+      (github.ref != 'refs/heads/develop' || needs.deploy-dev.result == 'success') &&
+      (github.event_name == 'push' || needs.detect.outputs.chat_e2e_needed == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -457,10 +530,12 @@ jobs:
 
   ichiba-e2e:
     name: Ichiba e2e (chromium)
-    needs: [check]
+    needs: [detect, check]
+    # On PRs, only when the ichiba surface (or shared config) is in the diff.
     if: |
       always() &&
-      (needs.check.result == 'success')
+      (needs.check.result == 'success') &&
+      (github.event_name == 'push' || needs.detect.outputs.ichiba_e2e_needed == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:

@@ -14,15 +14,19 @@ push -> PR -> Changes (docs-only tier detect)
         \-> Triage impact (deterministic, script only)
         \-> Review - fast sweep   (fresh opencode session, fast model)
         \-> Review - intent       (fresh opencode session, strong model)
-        \-> Lint/Types/Tests/Build -> docker -> e2e x3 / ichiba e2e
-                 (skips entirely on the docs-only tier)
-                 \-> Merge gate (needs everything; decides)
+        \-> Lint/Types/Tests/Build ┬-> docker (api, chat)          ┐
+                                   ├-> e2e x3 (chat/kanji suite)   ├-> Merge gate
+                                   └-> ichiba e2e (postgres svc)   ┘
+                 (tiers select which of docker/e2e/ichiba run; the
+                  docs-only tier and no-heavy apps skip all of them;
+                  the gate decides machine-merge or human)
 ```
 
-- **Changes** outputs `docs_only`; only `check` consults it — every
-  downstream pipeline job skips through `needs: check` on that tier, so
-  docs PRs go reviews -> merge in minutes while code PRs run the full
-  suite. Reviewers always run.
+- **Changes** outputs the tier flags: `docs_only` gates `check`, which
+  every downstream pipeline job skips through; `docker_needed`,
+  `chat_e2e_needed`, `ichiba_e2e_needed` select the affected-graph jobs.
+  Selection always runs from a squash-merged ref, so a PR cannot reroute
+  its own gates. Reviewers always run.
 - **Triage** decides auto-merge eligibility from the diff only:
   - never eligible: `packages/backend/**` (Convex schema/data), `.github/**`
     (includes this workflow — the factory cannot modify itself), `infra/**`,
@@ -102,6 +106,13 @@ The script below works if either of the first two options applies:
 # included, linear history. Fails with 403 on free+private.
 bash scripts/set-branch-protection.sh
 ```
+
+Operator step to track: the required-check set inside the script changes
+whenever the Factory's job graph changes — re-run it after merging such a
+PR (e.g. the affected-tiers PR makes `Changes` required and drops
+Docker/Playwright/Ichiba, since affected-selected jobs skip and a required
+check that never reports blocks merges forever). Until enforcement is
+possible on this plan this is latent, not live.
 
 Reviewer models default to the free `opencode` provider and run **keyless** in
 CI — no secret needed. A reviewer failure stays red on the PR (the merge gate
