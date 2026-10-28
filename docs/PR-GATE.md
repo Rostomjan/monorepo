@@ -103,6 +103,13 @@ The script below works if either of the first two options applies:
 bash scripts/set-branch-protection.sh
 ```
 
+Operator step to track: the required-check set inside the script changes
+whenever the Factory's job graph changes — re-run it after merging such a
+PR (e.g. the affected-tiers PR makes `Changes` required and drops
+Docker/Playwright/Ichiba, since affected-selected jobs skip and a required
+check that never reports blocks merges forever). Until enforcement is
+possible on this plan this is latent, not live.
+
 Reviewer models default to the free `opencode` provider and run **keyless** in
 CI — no secret needed. A reviewer failure stays red on the PR (the merge gate
 then does not fire), so the factory degrades to non-mergeable PRs, never to

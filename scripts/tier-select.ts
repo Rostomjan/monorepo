@@ -63,38 +63,35 @@ export function computeTiers(files: { path?: string }[]): Tiers {
   }
 
   const shared = paths.some((p) => SHARED_OR_ROOT.test(p));
-
-  // Known surfaces: app code that maps to a specific tier, apps with no
-  // expensive tier at all, and .github/** which is validated by the machine
-  // review machinery itself + the check tier.
   const appTiers = {
     docker: paths.some((p) => /^(apps\/(api|chat))\//.test(p)),
     chat_e2e: paths.some((p) => /^(apps\/(chat|kanji|api|e2e))\//.test(p)),
     ichiba: paths.some((p) => /^(apps\/(ichiba|e2e))\//.test(p)),
   };
-  // Single-workload apps the lint/type/test/build tier fully covers (no
-  // containers, no e2e); keep them OUT of the "unknown" fallback by naming
-  // them explicitly. New apps join here or the appTiers map — never fall
-  // through silently either way.
-  const noHeavyApp = paths.some((p) => /^(apps\/(kotoba|docs))\//.test(p));
-  const githubOnly = paths.every((p) => /^\.github\//.test(p));
 
-  // Unknown files (templates/, root configs outside package.json/turbo.json,
-  // anything unmapped) must not silently skip validation: run the heaviest
-  // tier as the safe default.
-  const unknown =
-    !shared &&
-    !noHeavyApp &&
-    !githubOnly &&
-    !appTiers.docker &&
-    !appTiers.chat_e2e &&
-    !appTiers.ichiba;
+  // Known surfaces, per path: app code (apps/kotoba and apps/docs are the
+  // designated NO-heavy set — the check tier covers them fully), .github/**
+  // (machine-validated check-only surface), shared packages/scripts/root
+  // configs, and docs.
+  const known = (p: string) =>
+    SHARED_OR_ROOT.test(p) ||
+    /^(apps\/(api|chat|kanji|ichiba|kotoba|docs|e2e))\//.test(p) ||
+    /^\.github\//.test(p) ||
+    /^docs\//.test(p) ||
+    /\.(md|mdx)$/.test(p);
+
+  // ANY path that maps to no known surface (templates/, unmapped root
+  // files like tsconfig.base.json) forces the heaviest tier for the WHOLE
+  // diff so nothing silently skips validation — including when the diff
+  // also touches a known surface (per-path, never diff-level: a diff-level
+  // "unknown" flag would let one known path mask an unmapped rider).
+  const unknownExists = paths.some((p) => !known(p));
 
   return {
     docs_only,
-    docker_needed: shared || appTiers.docker || unknown,
-    chat_e2e_needed: shared || appTiers.chat_e2e || unknown,
-    ichiba_e2e_needed: shared || appTiers.ichiba || unknown,
+    docker_needed: shared || appTiers.docker || unknownExists,
+    chat_e2e_needed: shared || appTiers.chat_e2e || unknownExists,
+    ichiba_e2e_needed: shared || appTiers.ichiba || unknownExists,
   };
 }
 

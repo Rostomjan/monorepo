@@ -208,6 +208,20 @@ test("tier table: mixing a no-heavy app with a tiered app runs that tier", () =>
   expect(t.ichiba_e2e_needed).toBe(false);
 });
 
+test("tier table: unknown file mixed with known surfaces forces every heavy tier", () => {
+  // Per-path classification: one known path must NEVER mask an unmapped
+  // rider (the diff-level-unknown trap the strong reviewer caught).
+  const t = computeTiers([f("apps/kotoba/src/x.ts"), f("tsconfig.base.json")]);
+  expect(t.docker_needed).toBe(true);
+  expect(t.chat_e2e_needed).toBe(true);
+  expect(t.ichiba_e2e_needed).toBe(true);
+
+  const t2 = computeTiers([f("apps/chat/src/a.ts"), f("templates/web/p.njk")]);
+  expect(t2.docker_needed).toBe(true);
+  expect(t2.chat_e2e_needed).toBe(true);
+  expect(t2.ichiba_e2e_needed).toBe(true);
+});
+
 test("gate integrity: tier selection never runs from the PR head", () => {
   // The detect job must execute the selector from a squash-merged ref so a
   // PR cannot edit its own gates out (scripts/** is not a deny path).

@@ -23,7 +23,8 @@ name: Factory
 # longer stall the gate, because only THIS workflow's jobs are in the wait
 # set. Foreign preview deployments are advisory and never block a merge.
 #
-# Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`.
+# Setup: docs/PR-GATE.md. One-time: `bash scripts/set-branch-protection.sh`;
+# re-run it whenever the job graph or required-check set changes.
 
 on:
   push:
@@ -89,7 +90,20 @@ jobs:
           # triage deny path, so a PR could otherwise edit its own selectors
           # to skip its own gates (self-selection hole).
           data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
-          git fetch --no-tags --depth 1 origin main develop > /dev/null 2>&1 || true
+          # Explicit destination refspecs: actions/checkout on pull_request
+          # leaves single-branch fetch config, so a bare "git fetch origin
+          # main develop" would only update FETCH_HEAD and refs/remotes/
+          # origin/main would never exist. Fetch each trusted ref into its
+          # remote-tracking slot and log what landed (CI-verifiable).
+          git fetch --no-tags --depth 1 origin +main:refs/remotes/origin/main > /dev/null 2>&1 || true
+          git fetch --no-tags --depth 1 origin +develop:refs/remotes/origin/develop > /dev/null 2>&1 || true
+          for r in main develop; do
+            if git show-ref --verify -q refs/remotes/origin/"$r"; then
+              echo "fetched origin/$r @ $(git rev-parse --short origin/"$r")"
+            else
+              echo "origin/$r: not fetched"
+            fi
+          done
           # BSD mktemp rejects suffix templates; PID-naming is portable and
           # collision-free per runner.
           sel="${RUNNER_TEMP:-/tmp}/tier-select-$$.ts"
