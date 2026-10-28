@@ -84,8 +84,32 @@ jobs:
             exit 0
           fi
           # scripts/tier-select.ts is the single source of truth for tier
-          # selection; behavior-tested in scripts/factory.test.ts.
-          tiers=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files | bun scripts/tier-select.ts)
+          # selection; behavior-tested in scripts/factory.test.ts. It runs
+          # from a TRUSTED ref, never from the PR head: scripts/** is not a
+          # triage deny path, so a PR could otherwise edit its own selectors
+          # to skip its own gates (self-selection hole).
+          data=$(gh pr view "${{ github.event.pull_request.number }}" --repo "$REPO" --json files)
+          git fetch --no-tags --depth 1 origin main develop > /dev/null 2>&1 || true
+          # BSD mktemp rejects suffix templates; PID-naming is portable and
+          # collision-free per runner.
+          sel="${RUNNER_TEMP:-/tmp}/tier-select-$$.ts"
+          src=""
+          if git show origin/main:scripts/tier-select.ts > "$sel" 2>/dev/null; then
+            src="origin/main"
+          elif git show origin/develop:scripts/tier-select.ts > "$sel" 2>/dev/null; then
+            src="origin/develop"
+          else
+            # Bootstrap window (module not yet on any squash-merged ref):
+            # fail toward MORE validation - run the full graph - rather
+            # than trust the PR's own copy.
+            echo "WARNING: tier-select.ts not on main/develop; running the FULL graph."
+          fi
+          if [ -n "$src" ]; then
+            echo "Tier selector source: $src (trusted ref)"
+            tiers=$(printf '%s' "$data" | bun "$sel")
+          else
+            tiers='{"docs_only":false,"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true}'
+          fi
           echo "Tiers: $tiers"
           for out in docs_only docker_needed chat_e2e_needed ichiba_e2e_needed; do
             echo "$out=$(jq -r ".$out" <<< "$tiers")" >> "$GITHUB_OUTPUT"

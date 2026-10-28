@@ -25,12 +25,19 @@ expensive tier, so adding a new shared package needs no selector edits:
 | Job | Apps that select it |
 | --- | --- |
 | Docker builds (api, chat) | `apps/api`, `apps/chat` (testable via docker) |
-| Playwright ×3 (chat, kanji) | `apps/chat`, `apps/kanji`, `apps/api` |
-| Ichiba e2e | `apps/ichiba` |
+| Playwright ×3 (chat, kanji) | `apps/chat`, `apps/kanji`, `apps/api`, `apps/e2e` |
+| Ichiba e2e | `apps/ichiba`, `apps/e2e` |
+| — (no heavy tier) | `apps/kotoba`, `apps/docs`: the lint/type/test/build tier covers them fully |
 
 Untouched surfaces skip the need for their job (e.g. a `kotoba`-only PR runs
-only the lint/type/test/build tier). Pushes to `develop`/`main` bypass the
-selectors and always run the full suite before deploys. If a tier wrongly
+only the lint/type/test/build tier). The selector always executes
+`scripts/tier-select.ts` from a squash-merged ref (`origin/main`, falling
+back to `origin/develop` until the next promotion; the full graph before
+the module first lands) — never the PR head, so a PR cannot reroute its
+own gates by editing the selectors. Pushes to `develop`/`main` bypass the
+selectors and run the entire suite; note `deploy-prod` itself gates only
+on the e2e legs (docker/ichiba failures don't block promotion — a possible
+follow-up to tighten). If a tier wrongly
 skips, widen the app list in `scripts/tier-select.ts` — never in the YAML.
 `.github/**`-only diffs are check-only by design (machine-reviewed); empty
 diffs run `check` and nothing heavy; everything unmapped runs the heaviest
@@ -51,7 +58,10 @@ gh variable set TURBO_TEAM
 
 The goal is speed, not correctness: green checks mean the work re-ran or
 hit cache — cache restoration never relaxes validation (turbo hashes task
-inputs; a changed input re-runs).
+inputs; a changed input re-runs). Accepted risk: `TURBO_TOKEN` is exported
+inside pipeline jobs, so PR code running under `bun run check` could read
+it; the token is scoped to cache read/write only (no repo content access).
+Rotate it from Vercel's settings when needed.
 
 ## Reviewers
 

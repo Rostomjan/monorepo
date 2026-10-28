@@ -57,7 +57,10 @@ test("deny paths keep their human gate in triage", () => {
 });
 
 test("tier selection is centralized in scripts/tier-select.ts (wired in detect)", () => {
-  expectContains("bun scripts/tier-select.ts");
+  // Detect pipes the PR file list into a COPY of the module fetched from a
+  // trusted ref (never the PR head); the trusted-ref guards themselves live
+  // in the gate-integrity test below.
+  expectContains('bun "$sel"');
   // The one job that listens to the docs tier; everything downstream skips
   // via needs: check.
   expectContains("if: needs.detect.outputs.docs_only != 'true'");
@@ -182,6 +185,40 @@ test("tier table: apps/e2e changes run both e2e suites", () => {
   expect(t.chat_e2e_needed).toBe(true);
   expect(t.ichiba_e2e_needed).toBe(true);
   expect(t.docker_needed).toBe(false);
+});
+
+test("tier table: kotoba/docs-only PRs run no heavy tier", () => {
+  for (const p of [
+    "apps/kotoba/src/App.tsx",
+    "apps/docs/app/page.tsx",
+    "apps/docs/lib/nav.ts",
+  ]) {
+    const t = computeTiers([f(p)]);
+    expect(t.docs_only).toBe(false);
+    expect(t.docker_needed).toBe(false);
+    expect(t.chat_e2e_needed).toBe(false);
+    expect(t.ichiba_e2e_needed).toBe(false);
+  }
+});
+
+test("tier table: mixing a no-heavy app with a tiered app runs that tier", () => {
+  const t = computeTiers([f("apps/kotoba/src/a.ts"), f("apps/chat/src/b.ts")]);
+  expect(t.chat_e2e_needed).toBe(true);
+  expect(t.docker_needed).toBe(true);
+  expect(t.ichiba_e2e_needed).toBe(false);
+});
+
+test("gate integrity: tier selection never runs from the PR head", () => {
+  // The detect job must execute the selector from a squash-merged ref so a
+  // PR cannot edit its own gates out (scripts/** is not a deny path).
+  expectContains("git show origin/main:scripts/tier-select.ts");
+  expectContains("git show origin/develop:scripts/tier-select.ts");
+  expect(squash(yml)).not.toContain(squash("bun scripts/tier-select.ts"));
+  // And when no trusted copy exists yet: fail toward MORE validation.
+  expectContains(
+    '"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true',
+  );
+  expectContains("running the FULL graph");
 });
 
 test("tier table: empty diff disables everything", () => {

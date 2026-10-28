@@ -12,13 +12,21 @@
  *   makes adding a new shared package require no selector edits. scripts/
  *   and root configs/lockfiles are shared the same way.
  * - Known app code selects its tier explicitly (apps/e2e selects both e2e
- *   tiers).
+ *   tiers). apps/kotoba and apps/docs are the explicit NO-heavy set: the
+ *   lint/type/test/build tier covers them fully, and they stay out of the
+ *   "unknown" fallback by being named here.
  * - .github/** is the deliberate check-only surface (machine-validated by
  *   its own review machinery, verified by the check tier).
  * - ANY other unknown path (templates/, unmapped root files) falls back to
  *   the heaviest tier so nothing silently skips validation.
  * - Empty diff: skipped heavy tiers, check still runs (docs_only=false --
  *   identical to a pushed empty change).
+ *
+ * Trusted execution (self-edit defense): the detect job never runs THIS
+ * file from the PR head — it runs origin/main's copy (origin/develop's
+ * during the pre-promotion window; the workflow's run-everything fallback
+ * before that). HEAD edits here only affect the copy the reviewers judge,
+ * not gate selection, until they land on a squash-merged ref.
  */
 export type Tiers = {
   docs_only: boolean;
@@ -56,13 +64,19 @@ export function computeTiers(files: { path?: string }[]): Tiers {
 
   const shared = paths.some((p) => SHARED_OR_ROOT.test(p));
 
-  // Known surfaces: app code that maps to a specific tier, and .github/**
-  // which is validated by the machine-review machinery itself + check.
+  // Known surfaces: app code that maps to a specific tier, apps with no
+  // expensive tier at all, and .github/** which is validated by the machine
+  // review machinery itself + the check tier.
   const appTiers = {
     docker: paths.some((p) => /^(apps\/(api|chat))\//.test(p)),
     chat_e2e: paths.some((p) => /^(apps\/(chat|kanji|api|e2e))\//.test(p)),
     ichiba: paths.some((p) => /^(apps\/(ichiba|e2e))\//.test(p)),
   };
+  // Single-workload apps the lint/type/test/build tier fully covers (no
+  // containers, no e2e); keep them OUT of the "unknown" fallback by naming
+  // them explicitly. New apps join here or the appTiers map — never fall
+  // through silently either way.
+  const noHeavyApp = paths.some((p) => /^(apps\/(kotoba|docs))\//.test(p));
   const githubOnly = paths.every((p) => /^\.github\//.test(p));
 
   // Unknown files (templates/, root configs outside package.json/turbo.json,
@@ -70,6 +84,7 @@ export function computeTiers(files: { path?: string }[]): Tiers {
   // tier as the safe default.
   const unknown =
     !shared &&
+    !noHeavyApp &&
     !githubOnly &&
     !appTiers.docker &&
     !appTiers.chat_e2e &&
