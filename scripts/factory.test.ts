@@ -228,11 +228,12 @@ test("gate integrity: tier selection never runs from the PR head", () => {
   expectContains("git show origin/main:scripts/tier-select.ts");
   expectContains("git show origin/develop:scripts/tier-select.ts");
   expect(squash(yml)).not.toContain(squash("bun scripts/tier-select.ts"));
-  expect(squash(yml)).not.toContain(squash('bun "$sel"'));
   // And the execution context must be isolated from the PR checkout: Bun
   // auto-loads bunfig.toml (cwd) and ~/.bunfig.toml (HOME); a PR-supplied
-  // preload would otherwise run PR code inside detect.
-  expectContains('HOME="$stepdir" bun tier-select.ts');
+  // preload would otherwise run PR code inside detect. $sel is an absolute
+  // temp-path arg (bare "bun tier-select.ts" would read as an unlisted
+  // binary to knip).
+  expectContains('HOME="$stepdir" bun "$sel"');
   expectContains("mktemp -d");
   expectContains(
     '"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true',

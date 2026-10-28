@@ -125,7 +125,7 @@ jobs:
           fi
           if [ -n "$src" ]; then
             echo "Tier selector source: $src (trusted ref)"
-            tiers=$(printf '%s' "$data" | (cd "$stepdir" && HOME="$stepdir" bun tier-select.ts))
+            tiers=$(printf '%s' "$data" | (cd "$stepdir" && HOME="$stepdir" bun "$sel"))
           else
             tiers='{"docs_only":false,"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true}'
           fi
