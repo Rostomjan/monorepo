@@ -7,9 +7,9 @@ workflow is one job graph; humans click only for deny paths.
 ## Graph
 
 ```
-PR  -> Changes -> Triage ┐                ┌-> Lint/Types/Tests/Build -> docker -> e2e x3 -> \
-       (docs-only, tiers)├-> Review fast ─┤-> Ichiba e2e (postgres svc) -------------------> Merge gate
-                         └-> Review strong┘                                                 /
+PR  -> Changes -> Triage ┐                ┌-> Lint/Types/Tests/Build ┬-> docker    -> \
+       (docs-only, tiers)├-> Review fast ─┤     (tiers select)       ├-> e2e x3   -> Merge gate
+                         └-> Review strong┘                          └-> Ichiba e2e-> /
 push -> same graph minus PR-only jobs (triage/reviews/merge) -> deploys
 ```
 

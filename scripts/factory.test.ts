@@ -58,9 +58,9 @@ test("deny paths keep their human gate in triage", () => {
 
 test("tier selection is centralized in scripts/tier-select.ts (wired in detect)", () => {
   // Detect pipes the PR file list into a COPY of the module fetched from a
-  // trusted ref (never the PR head); the trusted-ref guards themselves live
-  // in the gate-integrity test below.
-  expectContains('bun "$sel"');
+  // trusted ref and executed outside the PR checkout; both properties are
+  // guarded in the gate-integrity test below.
+  expectContains('sel="$stepdir/tier-select.ts"');
   // The one job that listens to the docs tier; everything downstream skips
   // via needs: check.
   expectContains("if: needs.detect.outputs.docs_only != 'true'");
@@ -123,9 +123,9 @@ const docsFlag = (t: Tiers) => t.docs_only;
 test("tier table: docs-only skips the pipeline tier entirely", () => {
   const t = computeTiers([f("docs/api.md"), f("README.md")]);
   expect(docsFlag(t)).toBe(true);
-  expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(
-    false,
-  );
+  expect(t.docker_needed).toBe(false);
+  expect(t.chat_e2e_needed).toBe(false);
+  expect(t.ichiba_e2e_needed).toBe(false);
 });
 
 test("tier table: app changes select exactly their tiers", () => {
@@ -150,9 +150,9 @@ test("tier table: any packages/* change enables every tier (future packages too)
     "scripts/scaffold.ts",
   ]) {
     const t = computeTiers([f(p)]);
-    expect(t.docker_needed && t.chat_e2e_needed && t.ichiba_e2e_needed).toBe(
-      true,
-    );
+    expect(t.docker_needed).toBe(true);
+    expect(t.chat_e2e_needed).toBe(true);
+    expect(t.ichiba_e2e_needed).toBe(true);
   }
 });
 
@@ -228,7 +228,12 @@ test("gate integrity: tier selection never runs from the PR head", () => {
   expectContains("git show origin/main:scripts/tier-select.ts");
   expectContains("git show origin/develop:scripts/tier-select.ts");
   expect(squash(yml)).not.toContain(squash("bun scripts/tier-select.ts"));
-  // And when no trusted copy exists yet: fail toward MORE validation.
+  expect(squash(yml)).not.toContain(squash('bun "$sel"'));
+  // And the execution context must be isolated from the PR checkout: Bun
+  // auto-loads bunfig.toml (cwd) and ~/.bunfig.toml (HOME); a PR-supplied
+  // preload would otherwise run PR code inside detect.
+  expectContains('HOME="$stepdir" bun tier-select.ts');
+  expectContains("mktemp -d");
   expectContains(
     '"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true',
   );

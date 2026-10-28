@@ -104,9 +104,14 @@ jobs:
               echo "origin/$r: not fetched"
             fi
           done
-          # BSD mktemp rejects suffix templates; PID-naming is portable and
-          # collision-free per runner.
-          sel="${RUNNER_TEMP:-/tmp}/tier-select-$$.ts"
+          # Execute OUTSIDE the PR checkout, from a fresh dir with an
+          # isolated HOME: Bun auto-loads bunfig.toml from the cwd and
+          # ~/.bunfig.toml otherwise, and a PR-supplied bunfig preload
+          # would run arbitrary code inside detect (which holds GH_TOKEN
+          # and $GITHUB_OUTPUT). The copied module has no relative imports,
+          # so nothing else resolves from the checkout either.
+          stepdir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/tiersel.XXXXXX")
+          sel="$stepdir/tier-select.ts"
           src=""
           if git show origin/main:scripts/tier-select.ts > "$sel" 2>/dev/null; then
             src="origin/main"
@@ -120,7 +125,7 @@ jobs:
           fi
           if [ -n "$src" ]; then
             echo "Tier selector source: $src (trusted ref)"
-            tiers=$(printf '%s' "$data" | bun "$sel")
+            tiers=$(printf '%s' "$data" | (cd "$stepdir" && HOME="$stepdir" bun tier-select.ts))
           else
             tiers='{"docs_only":false,"docker_needed":true,"chat_e2e_needed":true,"ichiba_e2e_needed":true}'
           fi
