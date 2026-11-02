@@ -25,6 +25,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
       - run: bun install
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/ichiba-py/uv.lock
+      - run: uv sync --frozen
+        working-directory: apps/ichiba-py
       - name: Check for updates
         run: bun run update:check
       - name: Apply updates

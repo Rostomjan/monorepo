@@ -360,6 +360,14 @@ jobs:
             ${{ runner.os }}-turbo-${{ hashFiles('bun.lock') }}-
             ${{ runner.os }}-turbo-
       - run: bun install --frozen-lockfile
+      # apps/ichiba-py: Python workspace (uv-governed). Without DATABASE_URL
+      # its DB-backed tests self-skip; pure parity tests always run.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/ichiba-py/uv.lock
+      - run: uv sync --frozen
+        working-directory: apps/ichiba-py
       - run: bun run lint
       - run: bun run type-check
       - run: bun run test
@@ -495,12 +503,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
       - run: bun install --frozen-lockfile
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/ichiba-py/uv.lock
+      - run: uv sync --frozen
+        working-directory: apps/ichiba-py
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
         working-directory: apps/e2e
       - name: Migrate + seed catalog
         run: bun run db:migrate && bun run db:seed
         working-directory: apps/ichiba
+        env:
+          DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+      - name: Python backend contract tests (same Postgres)
+        run: uv run pytest
+        working-directory: apps/ichiba-py
         env:
           DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
       - name: Check Clerk test keys
