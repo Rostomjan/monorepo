@@ -175,18 +175,25 @@ jobs:
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
           "$HOME/.opencode/bin/opencode" --version
-      - name: Authenticate opencode console
+      - name: Authenticate opencode
         env:
+          OPENCODE_CREDENTIAL: ${{ secrets.OPENCODE_CREDENTIAL }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
-          # The v2 CLI ignores the OPENCODE_API_KEY environment variable; the
-          # credential store is its only non-interactive auth path ("auth
-          # login" needs a browser). Bootstrap the store with a brief `serve`
-          # (no model traffic), then insert the Console API key as a `key`
-          # credential. No secret = reviewers stay keyless on the shared
-          # anonymous free tier, which fails closed when its quota is out.
-          if [ -z "$OPENCODE_API_KEY" ]; then
-            echo "OPENCODE_API_KEY not set - reviewers run keyless on the anonymous free tier"
+          # The v2 CLI ignores the OPENCODE_API_KEY env var for provider
+          # auth, and even the stored API-key credential maps onto the
+          # "OpenCode Go" connection, which fails free models with
+          # FreeUsageLimitError. What works is the device-OAuth connection -
+          # the exact shape of a locally-authenticated credential-store row.
+          # OPENCODE_CREDENTIAL = raw {"type":"oauth",...} JSON exported
+          # from a working store row; OPENCODE_API_KEY = Console key
+          # fallback (valid gating, wrong identity for free models). No
+          # secrets = reviewers stay keyless on the shared anonymous free
+          # tier, which fails closed when its quota is out. `serve`
+          # bootstraps the store with no model traffic, then the row is
+          # inserted via sqlite. Never echo a credential value.
+          if [ -z "$OPENCODE_CREDENTIAL" ] && [ -z "$OPENCODE_API_KEY" ]; then
+            echo "No opencode credentials configured - reviewers run keyless on the anonymous free tier"
             exit 0
           fi
           opencode serve --port 49555 >/dev/null 2>&1 &
@@ -201,25 +208,21 @@ jobs:
           import json, os, sqlite3, time
           db = os.path.join(os.environ["HOME"], ".local/share/opencode/opencode.db")
           now = int(time.time() * 1000)
+          raw = os.environ.get("OPENCODE_CREDENTIAL")
+          if raw:
+              value, label = json.loads(raw), "OAuth"
+          else:
+              value, label = {"type": "key", "key": os.environ["OPENCODE_API_KEY"]}, "API key"
           con = sqlite3.connect(db)
           con.execute(
               "INSERT INTO credential (id, integration_id, label, value, active, time_created, time_updated)"
               " VALUES (?,?,?,?,?,?,?)",
-              ("cred_ci_" + str(now), "opencode", "API key",
-               json.dumps({"type": "key", "key": os.environ["OPENCODE_API_KEY"]}), 1, now, now),
+              ("cred_ci_" + str(now), "opencode", label, json.dumps(value), 1, now, now),
           )
           con.commit()
-          print("opencode console credential installed")
+          print("credential installed:", label)
           PY
-          # Diagnostic: does the key itself authenticate at the inference
-          # gateway? 200 = key good (any CLI failure is ours); 401 = bad key
-          # (regenerate at the Console). Output never contains the secret.
-          code=$(curl -s -o /tmp/ocmodels.json -w "%{http_code}" \
-            -H "Authorization: Bearer $OPENCODE_API_KEY" \
-            https://opencode.ai/inference/v1/models)
-          echo "inference /models with the Console key -> HTTP $code"
-          [ "$code" != "200" ] && head -c 400 /tmp/ocmodels.json || true
-          opencode auth list 2>&1 | head -5
+          opencode auth list 2>&1 | sed -E 's/[A-Za-z0-9_-]{30,}/***/g' | head -6
       - name: Run fast reviewer
         env:
           # Deliberately NO OPENCODE_API_KEY here: the env var maps the key
@@ -315,15 +318,15 @@ jobs:
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
           "$HOME/.opencode/bin/opencode" --version
-      - name: Authenticate opencode console
+      - name: Authenticate opencode
         env:
+          OPENCODE_CREDENTIAL: ${{ secrets.OPENCODE_CREDENTIAL }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
-          # Identical to the fast reviewer's auth step: v2 ignores the env
-          # var, so the Console API key goes straight into the credential
-          # store. Unset secret = keyless anonymous free tier.
-          if [ -z "$OPENCODE_API_KEY" ]; then
-            echo "OPENCODE_API_KEY not set - reviewers run keyless on the anonymous free tier"
+          # Identical to the fast reviewer's auth step; see the full story
+          # there (env var ignored by the CLI, OAuth credential preferred).
+          if [ -z "$OPENCODE_CREDENTIAL" ] && [ -z "$OPENCODE_API_KEY" ]; then
+            echo "No opencode credentials configured - reviewers run keyless on the anonymous free tier"
             exit 0
           fi
           opencode serve --port 49555 >/dev/null 2>&1 &
@@ -338,25 +341,21 @@ jobs:
           import json, os, sqlite3, time
           db = os.path.join(os.environ["HOME"], ".local/share/opencode/opencode.db")
           now = int(time.time() * 1000)
+          raw = os.environ.get("OPENCODE_CREDENTIAL")
+          if raw:
+              value, label = json.loads(raw), "OAuth"
+          else:
+              value, label = {"type": "key", "key": os.environ["OPENCODE_API_KEY"]}, "API key"
           con = sqlite3.connect(db)
           con.execute(
               "INSERT INTO credential (id, integration_id, label, value, active, time_created, time_updated)"
               " VALUES (?,?,?,?,?,?,?)",
-              ("cred_ci_" + str(now), "opencode", "API key",
-               json.dumps({"type": "key", "key": os.environ["OPENCODE_API_KEY"]}), 1, now, now),
+              ("cred_ci_" + str(now), "opencode", label, json.dumps(value), 1, now, now),
           )
           con.commit()
-          print("opencode console credential installed")
+          print("credential installed:", label)
           PY
-          # Diagnostic: does the key itself authenticate at the inference
-          # gateway? 200 = key good (any CLI failure is ours); 401 = bad key
-          # (regenerate at the Console). Output never contains the secret.
-          code=$(curl -s -o /tmp/ocmodels.json -w "%{http_code}" \
-            -H "Authorization: Bearer $OPENCODE_API_KEY" \
-            https://opencode.ai/inference/v1/models)
-          echo "inference /models with the Console key -> HTTP $code"
-          [ "$code" != "200" ] && head -c 400 /tmp/ocmodels.json || true
-          opencode auth list 2>&1 | head -5
+          opencode auth list 2>&1 | sed -E 's/[A-Za-z0-9_-]{30,}/***/g' | head -6
       - name: Run strong reviewer
         env:
           # Same as the fast reviewer: no OPENCODE_API_KEY env - it would

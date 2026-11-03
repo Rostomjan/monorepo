@@ -111,18 +111,32 @@ The script below works if either of the first two options applies:
 bash scripts/set-branch-protection.sh
 ```
 
-Reviewer models default to the free `opencode` provider. Set the
-`OPENCODE_API_KEY` secret (an OpenCode Console API key) so reviewers
-authenticate to an account: without it they run keyless on the shared
-anonymous free tier, whose quota GitHub Actions runner IPs regularly burn
-through — the reviews then fail red until the quota clears. Caveat: the v2
-CLI ignores that env var, so the reviewer jobs insert the key directly into
-the CLI credential store before running. A reviewer failure stays red on the
-PR (the merge gate then does not fire), so the factory degrades to
+Reviewer models default to the free `opencode` provider. CI identifies them
+through the `OPENCODE_CREDENTIAL` secret — the raw `{"type":"oauth",...}` JSON
+of a device-credentialed store row, installed straight into the CLI's
+credential store before the review runs (the v2 CLI ignores provider key env
+vars). A Console API key (`OPENCODE_API_KEY`) works as a fallback identity,
+but free models keep rejecting it with `FreeUsageLimitError` even when the
+same account's OAuth connection passes — treat the OAuth credential as the
+primary. Without any secret, reviewers run keyless on the shared anonymous
+free tier, whose quota GitHub Actions runner IPs regularly burn through —
+the reviews then fail red until it clears. A reviewer failure stays red on
+the PR (the merge gate then does not fire), so the factory degrades to
 non-mergeable PRs, never to unreviewed merges.
 
 ```bash
-gh secret set OPENCODE_API_KEY
+# On a machine with a working (locally-authenticated) opencode:
+python3 - <<'PY'
+import json, os, sqlite3
+db = os.path.expanduser("~/.local/share/opencode/opencode.db")
+cred = sqlite3.connect(db).execute(
+    "SELECT value FROM credential WHERE integration_id='opencode'").fetchone()[0]
+assert json.loads(cred).get("type") == "oauth"
+with open(os.path.expanduser("~/opencode-credential.json"), "w") as f:
+    f.write(cred)
+PY
+gh secret set OPENCODE_CREDENTIAL < ~/opencode-credential.json  # pipe; never printed
+rm ~/opencode-credential.json
 ```
 
 ## Force a human merge
