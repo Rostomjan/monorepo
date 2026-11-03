@@ -222,9 +222,11 @@ jobs:
           opencode auth list 2>&1 | head -5
       - name: Run fast reviewer
         env:
-          # Default models on the `opencode` free provider need no credential.
-          # Set the secret only if a reviewer model requires auth.
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          # Deliberately NO OPENCODE_API_KEY here: the env var maps the key
+          # onto the "OpenCode Go" integration, shadowing the stored Console
+          # credential the auth step installed, and the Go-mode identity
+          # fails free models with "Free usage limit reached". Unsetting it
+          # makes the CLI consult the credential store.
           GH_TOKEN: ${{ github.token }}
         run: |
           PR="${{ github.event.pull_request.number }}"
@@ -235,9 +237,7 @@ jobs:
           remove_label "review-fast:approved"
           remove_label "review-fast:changes"
 
-          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
-          # invalid token by providers; only expose it when configured.
-          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
+          unset OPENCODE_API_KEY
 
           set +e
           opencode run --format json --agent review-fast -m "$FAST_MODEL" \
@@ -359,9 +359,8 @@ jobs:
           opencode auth list 2>&1 | head -5
       - name: Run strong reviewer
         env:
-          # Default models on the `opencode` free provider need no credential.
-          # Set the secret only if a reviewer model requires auth.
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          # Same as the fast reviewer: no OPENCODE_API_KEY env - it would
+          # shadow the credential-store Console key.
           GH_TOKEN: ${{ github.token }}
         run: |
           PR="${{ github.event.pull_request.number }}"
@@ -372,9 +371,7 @@ jobs:
           remove_label "review-strong:approved"
           remove_label "review-strong:changes"
 
-          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
-          # invalid token by providers; only expose it when configured.
-          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
+          unset OPENCODE_API_KEY
 
           set +e
           opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
