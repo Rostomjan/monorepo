@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "dependencies": {
     "@rushstack/eslint-patch": "^1.16.1",
-    "@typescript-eslint/eslint-plugin": "^8.72.0",
-    "@typescript-eslint/parser": "^8.72.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "eslint-config-next": "15.0.4",
     "eslint-config-prettier": "10.1.8",
     "eslint-config-turbo": "^2.11.10",
