@@ -211,6 +211,15 @@ jobs:
           con.commit()
           print("opencode console credential installed")
           PY
+          # Diagnostic: does the key itself authenticate at the inference
+          # gateway? 200 = key good (any CLI failure is ours); 401 = bad key
+          # (regenerate at the Console). Output never contains the secret.
+          code=$(curl -s -o /tmp/ocmodels.json -w "%{http_code}" \
+            -H "Authorization: Bearer $OPENCODE_API_KEY" \
+            https://opencode.ai/inference/v1/models)
+          echo "inference /models with the Console key -> HTTP $code"
+          [ "$code" != "200" ] && head -c 400 /tmp/ocmodels.json || true
+          opencode auth list 2>&1 | head -5
       - name: Run fast reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
@@ -339,6 +348,15 @@ jobs:
           con.commit()
           print("opencode console credential installed")
           PY
+          # Diagnostic: does the key itself authenticate at the inference
+          # gateway? 200 = key good (any CLI failure is ours); 401 = bad key
+          # (regenerate at the Console). Output never contains the secret.
+          code=$(curl -s -o /tmp/ocmodels.json -w "%{http_code}" \
+            -H "Authorization: Bearer $OPENCODE_API_KEY" \
+            https://opencode.ai/inference/v1/models)
+          echo "inference /models with the Console key -> HTTP $code"
+          [ "$code" != "200" ] && head -c 400 /tmp/ocmodels.json || true
+          opencode auth list 2>&1 | head -5
       - name: Run strong reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
