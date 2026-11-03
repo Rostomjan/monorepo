@@ -111,13 +111,17 @@ The script below works if either of the first two options applies:
 bash scripts/set-branch-protection.sh
 ```
 
-Reviewer models default to the free `opencode` provider and run **keyless** in
-CI — no secret needed. A reviewer failure stays red on the PR (the merge gate
-then does not fire), so the factory degrades to non-mergeable PRs, never to
-unreviewed merges.
+Reviewer models default to the free `opencode` provider. Set the
+`OPENCODE_API_KEY` secret (an OpenCode Console API key) so reviewers
+authenticate to an account: without it they run keyless on the shared
+anonymous free tier, whose quota GitHub Actions runner IPs regularly burn
+through — the reviews then fail red until the quota clears. Caveat: the v2
+CLI ignores that env var, so the reviewer jobs insert the key directly into
+the CLI credential store before running. A reviewer failure stays red on the
+PR (the merge gate then does not fire), so the factory degrades to
+non-mergeable PRs, never to unreviewed merges.
 
 ```bash
-# Optional: only if you switch a reviewer model to a provider that needs auth.
 gh secret set OPENCODE_API_KEY
 ```
 

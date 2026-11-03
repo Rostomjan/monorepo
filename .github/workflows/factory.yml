@@ -175,6 +175,42 @@ jobs:
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
           "$HOME/.opencode/bin/opencode" --version
+      - name: Authenticate opencode console
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: |
+          # The v2 CLI ignores the OPENCODE_API_KEY environment variable; the
+          # credential store is its only non-interactive auth path ("auth
+          # login" needs a browser). Bootstrap the store with a brief `serve`
+          # (no model traffic), then insert the Console API key as a `key`
+          # credential. No secret = reviewers stay keyless on the shared
+          # anonymous free tier, which fails closed when its quota is out.
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            echo "OPENCODE_API_KEY not set - reviewers run keyless on the anonymous free tier"
+            exit 0
+          fi
+          opencode serve --port 49555 >/dev/null 2>&1 &
+          serve_pid=$!
+          for _ in $(seq 1 15); do
+            [ -f "$HOME/.local/share/opencode/opencode.db" ] && break
+            sleep 1
+          done
+          sleep 1
+          kill "$serve_pid" 2>/dev/null || true
+          python3 - <<'PY'
+          import json, os, sqlite3, time
+          db = os.path.join(os.environ["HOME"], ".local/share/opencode/opencode.db")
+          now = int(time.time() * 1000)
+          con = sqlite3.connect(db)
+          con.execute(
+              "INSERT INTO credential (id, integration_id, label, value, active, time_created, time_updated)"
+              " VALUES (?,?,?,?,?,?,?)",
+              ("cred_ci_" + str(now), "opencode", "API key",
+               json.dumps({"type": "key", "key": os.environ["OPENCODE_API_KEY"]}), 1, now, now),
+          )
+          con.commit()
+          print("opencode console credential installed")
+          PY
       - name: Run fast reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
@@ -270,6 +306,39 @@ jobs:
           curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
           echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
           "$HOME/.opencode/bin/opencode" --version
+      - name: Authenticate opencode console
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: |
+          # Identical to the fast reviewer's auth step: v2 ignores the env
+          # var, so the Console API key goes straight into the credential
+          # store. Unset secret = keyless anonymous free tier.
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            echo "OPENCODE_API_KEY not set - reviewers run keyless on the anonymous free tier"
+            exit 0
+          fi
+          opencode serve --port 49555 >/dev/null 2>&1 &
+          serve_pid=$!
+          for _ in $(seq 1 15); do
+            [ -f "$HOME/.local/share/opencode/opencode.db" ] && break
+            sleep 1
+          done
+          sleep 1
+          kill "$serve_pid" 2>/dev/null || true
+          python3 - <<'PY'
+          import json, os, sqlite3, time
+          db = os.path.join(os.environ["HOME"], ".local/share/opencode/opencode.db")
+          now = int(time.time() * 1000)
+          con = sqlite3.connect(db)
+          con.execute(
+              "INSERT INTO credential (id, integration_id, label, value, active, time_created, time_updated)"
+              " VALUES (?,?,?,?,?,?,?)",
+              ("cred_ci_" + str(now), "opencode", "API key",
+               json.dumps({"type": "key", "key": os.environ["OPENCODE_API_KEY"]}), 1, now, now),
+          )
+          con.commit()
+          print("opencode console credential installed")
+          PY
       - name: Run strong reviewer
         env:
           # Default models on the `opencode` free provider need no credential.
