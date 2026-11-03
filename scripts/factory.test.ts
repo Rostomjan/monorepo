@@ -49,6 +49,19 @@ test("deny paths keep their human gate in triage", () => {
   expectContains(
     "deny_regex='^(packages/backend/|\\.github/|infra/|docker-compose\\.yml$|\\.env)'",
   );
+  // The backend deny path is hard, except for dependency manifests/lockfiles:
+  // a version bump cannot reach the Convex schema.
+  expectContains(
+    "deny_exception_regex='^packages/backend/(package\\.json|bun\\.lock|uv\\.lock)$'",
+  );
+});
+
+test("large-diff allowance recognizes dep files at any depth", () => {
+  // Workspace manifests (apps/*/package.json) are dep-only files, not just the
+  // root package.json — otherwise wide dep chains trip MAX_DIFF_LINES.
+  expectContains(
+    "docs_regex='^(docs/|README|\\.env\\.example|(.*/)?package\\.json$|(.*/)?bun\\.lock$)'",
+  );
 });
 
 test("docs-only tiering lives in the job graph (detect -> check skip)", () => {

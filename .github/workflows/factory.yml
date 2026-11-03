@@ -112,8 +112,13 @@ jobs:
 
           mergeable=true
           deny_regex='^(packages/backend/|\.github/|infra/|docker-compose\.yml$|\.env)'
+          # Dependency manifests/lockfiles under packages/backend are version
+          # bumps only — they cannot reach the Convex schema, so the backend
+          # deny path exempts them.
+          deny_exception_regex='^packages/backend/(package\.json|bun\.lock|uv\.lock)$'
           for path in $(echo "$data" | jq -r '.files[].path'); do
-            if echo "$path" | grep -qE "$deny_regex"; then
+            if echo "$path" | grep -qE "$deny_regex" \
+              && ! echo "$path" | grep -qE "$deny_exception_regex"; then
               echo "Deny path touched: $path"
               mergeable=false
             fi
@@ -121,7 +126,9 @@ jobs:
 
           # Bigger diffs are only low-impact if they are entirely docs/config/deps.
           if [ "$lines" -gt "${{ env.MAX_DIFF_LINES }}" ]; then
-            docs_regex='^(docs/|README|\.env\.example|package\.json$|bun\.lock$)'
+            # `(^|.*/)` so workspace manifests (apps/*/package.json) count as
+            # dep-only files, not just the root one.
+            docs_regex='^(docs/|README|\.env\.example|(.*/)?package\.json$|(.*/)?bun\.lock$)'
             for path in $(echo "$data" | jq -r '.files[].path'); do
               if ! echo "$path" | grep -qE "$docs_regex"; then
                 echo "Large diff (${lines} lines) touches non-docs file: $path"

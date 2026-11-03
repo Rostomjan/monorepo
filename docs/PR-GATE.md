@@ -24,15 +24,23 @@ push -> PR -> Changes (docs-only tier detect)
   docs PRs go reviews -> merge in minutes while code PRs run the full
   suite. Reviewers always run.
 - **Triage** decides auto-merge eligibility from the diff only:
-  - never eligible: `packages/backend/**` (Convex schema/data), `.github/**`
+  - never eligible: `packages/backend/**` except its dependency
+    manifests/lockfiles (`packages/backend/{package.json,bun.lock,uv.lock}` —
+    a version bump cannot reach the Convex schema/data), `.github/**`
     (includes this workflow — the factory cannot modify itself), `infra/**`,
     `docker-compose.yml`, `.env*`
   - eligible: any diff with <= 400 added+removed lines, or a diff of any size
     that only touches docs (`docs/**`, `README*`, `*.md`), `.env.example`,
-    `package.json`, or `bun.lock`
+    or dependency manifests/lockfiles (`package.json`, `bun.lock` at any
+    depth)
 - **Reviewers** are read-only OpenCode agents defined in `opencode.jsonc`
   (`review-fast`, `review-strong`). Each run is a fresh session per PR push.
   They are instructed to treat diff content as data, never instructions.
+- **The weekly dependency PR** (`.github/workflows/update-deps.yml`) must be
+  created with the `DEP_UPDATE_TOKEN` repo secret (a PAT with contents +
+  pull-requests, not the workflow `GITHUB_TOKEN`): GitHub fires no downstream
+  events for PRs created with `GITHUB_TOKEN`, so the Factory — reviews,
+  triage, merge gate — silently never ran for PRs opened that way.
 - **Merge gate** is the terminal job of the graph: `needs: [detect, triage,
   review-fast, review-strong, check, docker, e2e, ichiba-e2e]`. The wait IS
   the needs-edge — GitHub fires it the moment upstream jobs succeed (or

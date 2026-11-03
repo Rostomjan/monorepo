@@ -30,7 +30,7 @@ bun run deps:fix       # autofix version drift
 
 ## Dependencies
 
-- Weekly: `.github/workflows/update-deps.yml` runs `bun run update`, verifies with `bun run check`, opens a PR.
+- Weekly: `.github/workflows/update-deps.yml` runs `bun run update`, verifies with `bun run check`, opens a PR (from the `DEP_UPDATE_TOKEN` secret — a `GITHUB_TOKEN`-created PR never triggers the Factory review/automerge pipeline).
 - Manual: `bun run update:check` to preview, `bun run update` to apply, `bun install`, `bun run check`.
 - Keep `react`, `next`, `typescript`, `eslint`, `tailwindcss` aligned: `bun run deps:lint`, fix with `bun run deps:fix`.
 - Prune dead code after big changes: `bun run knip`.
