@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # One-time (idempotent) setup for the PR gate. Requires gh with admin access.
 #
-#   gh secret set OPENCODE_API_KEY          # credential for the `opencode` provider
 #   bash scripts/set-branch-protection.sh
 #
 # Enforces: PRs only for main/develop (admins included), linear history, no
@@ -20,7 +19,7 @@ gh api -X PATCH "repos/$REPO" \
   -f allow_auto_merge=true \
   -f delete_branch_on_merge=true
 
-# Required checks = factory.yml's pipeline + triage/review jobs. Excluded:
+# Required checks = factory.yml's pipeline + triage job. Excluded:
 # - Pipeline jobs that skip on docs-only PRs would block docs merges... they
 #   are still required here ONLY for code PRs; the merge gate does not rely
 #   on branch protection to hold docs PRs (see factory.yml merge job).
@@ -31,10 +30,6 @@ gh api -X PATCH "repos/$REPO" \
 #   on Merge gate NOT being required).
 # NOTE: keep context names in sync with job `name:` fields:
 #   .github/workflows/factory.yml
-# CAVEAT: with these review jobs required, a reviewer REQUEST_CHANGES only
-# attaches labels (the review jobs themselves stay green), so a human can
-# still merge after reading the review. Hard-blocking on reviewer verdicts
-# would require GitHub review approvals instead of status checks.
 CONTEXTS=$(cat <<'EOF'
 Lint, Types, Unit tests, Build
 Docker builds (api, chat)
@@ -43,8 +38,6 @@ Playwright (firefox)
 Playwright (webkit)
 Ichiba e2e (chromium)
 Triage impact
-Review - fast sweep
-Review - intent (strong)
 EOF
 )
 

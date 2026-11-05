@@ -2,20 +2,20 @@ name: Factory
 
 # THE FACTORY: one workflow, one job graph.
 #
-# PR path:  changes -> triage -> two reviewer agents ----\
+# PR path:  changes -> triage ----\
 #                 \-> full pipeline (lint/build/docker/e2e) -> merge gate
-#           Low-impact PRs squash-merge themselves when everything upstream
-#           is green and authorization still holds; everything else ends
-#           green with the decision, and a human decides. Red = machinery
-#           failure (reviewer crash, unreadable state), not "reviewer said no".
+#           PR review happens out-of-band via CodeRabbit (GitHub App), not in
+#           this graph. Low-impact PRs squash-merge themselves when everything
+#           upstream is green and authorization still holds; everything else
+#           ends green with the decision, and a human decides. Red = machinery
+#           failure (unreadable state, failed pipeline), never "review said no".
 #
-# Push path (main/develop): same pipeline jobs + the deploy jobs; review,
-#   triage and merge are PR-only jobs and skip.
+# Push path (main/develop): same pipeline jobs + the deploy jobs; triage and
+#   merge are PR-only jobs and skip.
 #
 # Tiering is job-level, not `paths-ignore`: the `detect` job outputs
 # `docs_only`, `check` conditionally skips, and every pipeline job that
-# `needs: check` skips with it — natively, through the job graph. Reviewers
-# still run on docs-only diffs (their approval is the gate there).
+# `needs: check` skips with it — natively, through the job graph.
 #
 # Why the old Gate's poll loop is gone: the merge job uses `needs:` edges as
 # the wait. GitHub fires it the instant upstream jobs conclude — no polling
@@ -36,7 +36,7 @@ permissions:
   # the jobs below use. No checks/actions reads — the needs-graph replaces
   # the old cross-workflow status reads.
   contents: write      # merge gate squash-merges and deletes merged branches
-  issues: write        # labels are issue resources (triage + reviewer stamps)
+  issues: write        # labels are issue resources (triage stamps)
   pull-requests: write # diffs, comments, merge
 
 concurrency:
@@ -46,9 +46,6 @@ concurrency:
 
 env:
   BUN_VERSION: "1.4.3"
-  # Swap reviewer models via repo variables without touching this file.
-  FAST_MODEL: ${{ vars.REVIEW_FAST_MODEL || 'opencode/glm-5.3-flash-free' }}
-  STRONG_MODEL: ${{ vars.REVIEW_STRONG_MODEL || 'opencode/deepseek-v4.1-flash-free#high' }}
   # Branches the merge gate may auto-merge into. Remove "main" to keep prod
   # merges human.
   AUTO_MERGE_TARGETS: "develop main"
@@ -100,20 +97,21 @@ jobs:
           create_label() { gh api -X POST "repos/$REPO/labels" -f name="$1" -f color="$2" -f description="$3" > /dev/null 2>&1 || true; }
           remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
 
-          create_label "auto-merge" "0e8a16" "Triage: low impact, agent-approved"
+          create_label "auto-merge" "0e8a16" "Triage: low impact, auto-merge candidate"
           create_label "needs-human" "dedede" "Triage: human review required"
-          create_label "review-fast:approved" "0e8a16" "Fast reviewer approved"
-          create_label "review-fast:changes" "d93f0b" "Fast reviewer requested changes"
-          create_label "review-strong:approved" "0e8a16" "Strong reviewer approved"
-          create_label "review-strong:changes" "d93f0b" "Strong reviewer requested changes"
 
           data=$(gh pr view "$PR" --repo "$REPO" --json files,additions,deletions)
           lines=$(($(echo "$data" | jq -r '.additions') + $(echo "$data" | jq -r '.deletions')))
 
           mergeable=true
           deny_regex='^(packages/backend/|\.github/|infra/|docker-compose\.yml$|\.env)'
+          # Dependency manifests/lockfiles under packages/backend are version
+          # bumps only — they cannot reach the Convex schema, so the backend
+          # deny path exempts them.
+          deny_exception_regex='^packages/backend/(package\.json|bun\.lock|uv\.lock)$'
           for path in $(echo "$data" | jq -r '.files[].path'); do
-            if echo "$path" | grep -qE "$deny_regex"; then
+            if echo "$path" | grep -qE "$deny_regex" \
+              && ! echo "$path" | grep -qE "$deny_exception_regex"; then
               echo "Deny path touched: $path"
               mergeable=false
             fi
@@ -121,7 +119,9 @@ jobs:
 
           # Bigger diffs are only low-impact if they are entirely docs/config/deps.
           if [ "$lines" -gt "${{ env.MAX_DIFF_LINES }}" ]; then
-            docs_regex='^(docs/|README|\.env\.example|package\.json$|bun\.lock$)'
+            # `(^|.*/)` so workspace manifests (apps/*/package.json) count as
+            # dep-only files, not just the root one.
+            docs_regex='^(docs/|README|\.env\.example|(.*/)?package\.json$|(.*/)?bun\.lock$|(.*/)?uv\.lock$)'
             for path in $(echo "$data" | jq -r '.files[].path'); do
               if ! echo "$path" | grep -qE "$docs_regex"; then
                 echo "Large diff (${lines} lines) touches non-docs file: $path"
@@ -140,197 +140,6 @@ jobs:
 
           echo "mergeable=$mergeable" >> "$GITHUB_OUTPUT"
           echo "Triage verdict: $mergeable (${lines} changed lines)"
-
-  review-fast:
-    name: Review - fast sweep
-    needs: detect
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - name: Fetch diff
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
-          gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" \
-            --json title,body \
-            --jq '"# PR title\n\n" + .title + "\n\n# PR description\n\n" + (.body // "none provided")' \
-            > /tmp/pr.intent
-      - name: Install opencode
-        # npm `opencode-ai@latest` is still V1, which rejects V2 config.
-        # V2 comes from the official installer. GITHUB_PATH only takes effect
-        # in the NEXT step, so assert via the explicit binary path here.
-        run: |
-          curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
-          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
-          "$HOME/.opencode/bin/opencode" --version
-      - name: Run fast reviewer
-        env:
-          # Default models on the `opencode` free provider need no credential.
-          # Set the secret only if a reviewer model requires auth.
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          PR="${{ github.event.pull_request.number }}"
-          REPO="${{ github.repository }}"
-          add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
-          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
-
-          remove_label "review-fast:approved"
-          remove_label "review-fast:changes"
-
-          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
-          # invalid token by providers; only expose it when configured.
-          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
-
-          set +e
-          opencode run --format json --agent review-fast -m "$FAST_MODEL" \
-            --title "pr-$PR-review-fast" \
-            --file /tmp/pr.diff \
-            --file /tmp/pr.intent \
-            "You are reviewing a pull request in a monorepo. The first attached file is the full diff; the second contains the PR title and description. Follow your agent instructions exactly." \
-            > /tmp/review.jsonl 2>/tmp/review.err
-          rc=$?
-          set -e
-
-          if [ "$rc" -ne 0 ]; then
-            # With --format json, opencode writes provider/CLI errors to
-            # stdout as a {"type":"error"} JSONL line and often leaves
-            # stderr EMPTY (free-tier route outages look exactly like
-            # this). Diagnose from both, never post a blank body.
-            detail=$(tail -15 /tmp/review.err 2>/dev/null || true)
-            errline=$(jq -r 'select(.type=="error") | (.error.message // .message // empty)' /tmp/review.jsonl 2>/dev/null || true)
-            report="rc=$rc | stderr: ${detail:-<none>} | error line: ${errline:-<none>}"
-            echo "opencode run failed: $report" >&2
-            {
-              echo "**Fast reviewer crashed** on ${{ github.event.pull_request.head.sha }}"
-              echo ""
-              echo '```'
-              echo "$report"
-              echo '```'
-            } > /tmp/crash.md
-            gh pr comment "$PR" --body-file /tmp/crash.md || true
-            exit 1
-          fi
-
-          jq -r 'select(.type=="text") | (.part.text // .text // empty)' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
-
-          if ! grep -q "VERDICT: " /tmp/review.md; then
-            echo "Reviewer ran but produced no verdict" >&2
-            gh pr comment "$PR" \
-              --body "**Fast reviewer returned no verdict** on ${{ github.event.pull_request.head.sha }}. Final message:" || true
-            gh pr comment "$PR" --body "$(tail -40 /tmp/review.md 2>/dev/null || echo 'empty')" || true
-            exit 1
-          fi
-
-          if grep -q "VERDICT: APPROVED" /tmp/review.md; then
-            add_label "review-fast:approved"
-            remove_label "review-fast:changes" || true
-          else
-            add_label "review-fast:changes"
-            remove_label "review-fast:approved" || true
-            gh pr comment "$PR" \
-              --body "**Fast reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body-file /tmp/review.md || true
-          fi
-
-  review-strong:
-    name: Review - intent (strong)
-    needs: detect
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - name: Fetch diff
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" > /tmp/pr.diff
-          gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" \
-            --json title,body \
-            --jq '"# PR title\n\n" + .title + "\n\n# PR description\n\n" + (.body // "none provided")' \
-            > /tmp/pr.intent
-      - name: Install opencode
-        # npm `opencode-ai@latest` is still V1, which rejects V2 config.
-        run: |
-          curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
-          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
-          "$HOME/.opencode/bin/opencode" --version
-      - name: Run strong reviewer
-        env:
-          # Default models on the `opencode` free provider need no credential.
-          # Set the secret only if a reviewer model requires auth.
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          PR="${{ github.event.pull_request.number }}"
-          REPO="${{ github.repository }}"
-          add_label()    { gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" > /dev/null; }
-          remove_label() { gh api -X DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" > /dev/null 2>&1 || true; }
-
-          remove_label "review-strong:approved"
-          remove_label "review-strong:changes"
-
-          # An empty OPENCODE_API_KEY (secret unset) can be treated as an
-          # invalid token by providers; only expose it when configured.
-          if [ -z "$OPENCODE_API_KEY" ]; then unset OPENCODE_API_KEY; fi
-
-          set +e
-          opencode run --format json --agent review-strong -m "$STRONG_MODEL" \
-            --title "pr-$PR-review-strong" \
-            --file /tmp/pr.diff \
-            --file /tmp/pr.intent \
-            "You are reviewing a pull request in a monorepo. The first attached file is the full diff; the second contains the PR title and description, which is the stated intent. Follow your agent instructions exactly." \
-            > /tmp/review.jsonl 2>/tmp/review.err
-          rc=$?
-          set -e
-
-          if [ "$rc" -ne 0 ]; then
-            # Same diagnosis logic as the fast reviewer: both stderr (CLI
-            # failures) and the stdout {"type":"error"} line (provider
-            # outages). Body-file prevents a blank-body cascade.
-            detail=$(tail -15 /tmp/review.err 2>/dev/null || true)
-            errline=$(jq -r 'select(.type=="error") | (.error.message // .message // empty)' /tmp/review.jsonl 2>/dev/null || true)
-            report="rc=$rc | stderr: ${detail:-<none>} | error line: ${errline:-<none>}"
-            echo "opencode run failed: $report" >&2
-            {
-              echo "**Strong reviewer crashed** on ${{ github.event.pull_request.head.sha }}"
-              echo ""
-              echo '```'
-              echo "$report"
-              echo '```'
-            } > /tmp/crash.md
-            gh pr comment "$PR" --body-file /tmp/crash.md || true
-            exit 1
-          fi
-
-          jq -r 'select(.type=="text") | (.part.text // .text // empty)' /tmp/review.jsonl > /tmp/review.md 2>/dev/null || true
-
-          if ! grep -q "VERDICT: " /tmp/review.md; then
-            echo "Reviewer ran but produced no verdict" >&2
-            gh pr comment "$PR" \
-              --body "**Strong reviewer returned no verdict** on ${{ github.event.pull_request.head.sha }}. Final message:" || true
-            gh pr comment "$PR" --body "$(tail -40 /tmp/review.md 2>/dev/null || echo 'empty')" || true
-            exit 1
-          fi
-
-          if grep -q "VERDICT: APPROVED" /tmp/review.md; then
-            add_label "review-strong:approved"
-            remove_label "review-strong:changes" || true
-          else
-            add_label "review-strong:changes"
-            remove_label "review-strong:approved" || true
-            gh pr comment "$PR" \
-              --body "**Strong reviewer requested changes** on commit ${{ github.event.pull_request.head.sha }}:" || true
-            gh pr comment "$PR" --body-file /tmp/review.md || true
-          fi
 
   check:
     name: Lint, Types, Unit tests, Build
@@ -582,7 +391,7 @@ jobs:
     # list (scripts/set-branch-protection.sh): it merges from inside itself,
     # so a required self-check would deadlock, and the --auto fallback
     # deliberately relies on this job not being required.
-    needs: [detect, triage, review-fast, review-strong, check, docker, e2e, ichiba-e2e]
+    needs: [detect, triage, check, docker, e2e, ichiba-e2e]
     if: |
       github.event_name == 'pull_request' &&
       !cancelled() &&
@@ -621,21 +430,18 @@ jobs:
           esac
           echo "Upstream outcomes: check=${{ needs.check.result }} docker=${{ needs.docker.result }} e2e=${{ needs.e2e.result }} ichiba=${{ needs.ichiba-e2e.result }}"
 
-          # Authorization = head unchanged since these reviews ran + live triage
-          # and reviewer-approval labels. A push during the checks cancels this
-          # run via the concurrency group and the new run re-decides.
+          # Authorization = head unchanged since triage ran + live triage label.
+          # PR review itself happens out-of-band (CodeRabbit); a push during
+          # the checks cancels this run via the concurrency group and the new
+          # run re-decides.
           authorized() {
             local labels
             gh pr view "$PR" --repo "$REPO" --json headRefOid -q .headRefOid \
               | grep -qx "${{ github.event.pull_request.head.sha }}" \
-              || { echo "Head SHA changed since the reviews; verdicts stale."; return 1; }
+              || { echo "Head SHA changed since triage; verdict stale."; return 1; }
             labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name')
             grep -qx "auto-merge" <<< "$labels" \
               || { echo "Triage no longer authorizes auto-merge."; return 1; }
-            grep -qx "review-fast:approved" <<< "$labels" \
-              || { echo "Fast reviewer has not approved (anymore)."; return 1; }
-            grep -qx "review-strong:approved" <<< "$labels" \
-              || { echo "Strong reviewer has not approved (anymore)."; return 1; }
           }
 
           if ! authorized; then
@@ -650,4 +456,4 @@ jobs:
             cat /tmp/merge.err >&2
             timeout 120 gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
           fi
-          echo "Auto-merge complete: triage low-impact, both reviewers approved, pipeline tier green (docs-only PRs skip it by design)."
+          echo "Auto-merge complete: triage low-impact, pipeline tier green (docs-only PRs skip it by design)."

@@ -30,14 +30,13 @@ bun run deps:fix       # autofix version drift
 
 ## Dependencies
 
-- Weekly: `.github/workflows/update-deps.yml` runs `bun run update`, verifies with `bun run check`, opens a PR.
+- Weekly: `.github/workflows/update-deps.yml` runs `bun run update`, verifies with `bun run check`, opens a PR (from the `DEP_UPDATE_TOKEN` secret — a `GITHUB_TOKEN`-created PR never triggers the Factory review/automerge pipeline).
 - Manual: `bun run update:check` to preview, `bun run update` to apply, `bun install`, `bun run check`.
 - Keep `react`, `next`, `typescript`, `eslint`, `tailwindcss` aligned: `bun run deps:lint`, fix with `bun run deps:fix`.
 - Prune dead code after big changes: `bun run knip`.
 
 ## PR gate
 
-All pushes land via PR. Two read-only OpenCode reviewer agents (fast + strong
-model, fresh session per push) plus deterministic triage approve low-impact PRs
-and auto-merge them; the rest waits for a human. Policy and setup:
-`docs/PR-GATE.md`.
+All pushes land via PR. Deterministic triage (deny paths, diff size) plus the
+pipeline decide auto-merge; CodeRabbit reviews PRs out-of-band on GitHub. The
+rest waits for a human. Policy and setup: `docs/PR-GATE.md`.

@@ -9,11 +9,30 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  # PRs created with the workflow's GITHUB_TOKEN fire no downstream events
+  # (GitHub skips them), so the Factory merge gate never runs and
+  # the PR is shipped unreviewed to a human. The PR must be created with a
+  # real token (PAT or GitHub App) so the `pull_request` event fires. GitHub
+  # expressions treat an unset/empty secret as "", hence the || fallback.
+  DEP_UPDATE_TOKEN: ${{ secrets.DEP_UPDATE_TOKEN || github.token }}
+
 jobs:
   update:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
+      - name: Fail loudly if the PR-creation token is not configured
+        env:
+          PR_TOKEN_SECRET: ${{ secrets.DEP_UPDATE_TOKEN }}
+        run: |
+          # PRs created with the workflow's GITHUB_TOKEN fire no downstream
+          # events, so the Factory (reviews + merge gate) never runs and the
+          # dep PR silently sits unmerged. Require a real token up front.
+          if [ -z "$PR_TOKEN_SECRET" ]; then
+            echo "::error::DEP_UPDATE_TOKEN secret is not set. PRs created with the workflow GITHUB_TOKEN never trigger the Factory workflow; set a PAT (contents + pull-requests) as the DEP_UPDATE_TOKEN repo secret."
+            exit 1
+          fi
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
@@ -43,6 +62,7 @@ jobs:
         if: always()
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ env.DEP_UPDATE_TOKEN }}
           commit-message: "chore: weekly dependency updates"
           title: "chore: weekly dependency updates"
           body: |
