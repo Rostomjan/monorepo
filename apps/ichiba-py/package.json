@@ -1,0 +1,15 @@
+{
+  "name": "ichiba-py",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run python manage.py runserver 0.0.0.0:3021",
+    "start": "uv run gunicorn --bind 0.0.0.0:${PORT:-3021} config.wsgi:application",
+    "build": "uv run python manage.py check",
+    "lint": "uv run ruff check .",
+    "type-check": "uv run mypy .",
+    "test": "uv run pytest",
+    "clean": "rm -rf .venv .pytest_cache .mypy_cache .ruff_cache",
+    "sync": "uv sync"
+  }
+}

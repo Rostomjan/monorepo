@@ -18,6 +18,7 @@ Build-time microfrontend monorepo (Turborepo + Bun). Independent `apps/*` deploy
 - Apps never import from each other. Cross-app code goes in `packages/*` and is consumed as `@repo/*` (pinned `workspace:*`).
 - `packages/ui` — presentational React components only; app-specific logic stays in the app.
 - `packages/backend` — Convex functions + schema, **not an app**. Convex auto-deploys from here on `develop` (dev) and `main` (prod).
+- `apps/ichiba-py` — the Python (Django + DRF) twin of ichiba's TS backend. Same API contract, same Postgres, drizzle owns the schema (Django models are unmanaged). Python workspace is **uv-governed** (`uv.lock` committed, `pyproject.toml`); its `package.json` only bridges task names into turbo. Contract changes must land in both backends — see `docs/DUAL_BACKEND.md`.
 - New project: `bun run new <web|api|mobile|package> <name>`, then `bun install`. Templates in `templates/`, generator `scripts/scaffold.ts`.
 - `apps/docs` is the "copy me for a new site" reference (port 3002). Note: it uses a top-level `app/` dir for pages, unlike `apps/chat` which uses `src/app/`.
 

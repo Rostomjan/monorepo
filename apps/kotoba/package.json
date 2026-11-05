@@ -4,7 +4,7 @@
   "dependencies": {
     "@sentry/nextjs": "^11",
     "dexie": "^4.4.7",
-    "next": "16.4.3",
+    "next": "16.4.4",
     "papaparse": "^5.7.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
@@ -15,7 +15,7 @@
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "@types/bun": "^1.4.4",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@types/papaparse": "^5.5.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

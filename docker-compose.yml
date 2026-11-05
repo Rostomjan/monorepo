@@ -104,6 +104,26 @@ services:
       retries: 5
       start_period: 60s
 
+  # ---- ichiba-twin (opt-in): `docker compose --profile python up ichiba-py` ----
+  # The Python twin of ichiba's TS backend (docs/DUAL_BACKEND.md). Same
+  # database, same /api/* contract, port 3021 so you can run both at once
+  # and diff responses:
+  #   uv run scripts/contract.py http://localhost:3021   # from apps/ichiba-py
+  #   uv run scripts/contract.py http://localhost:3003
+  ichiba-py:
+    build:
+      context: .
+      dockerfile: apps/ichiba-py/Dockerfile
+    profiles: ["python"]
+    ports:
+      - "3021:3021"
+    environment:
+      PORT: 3021
+      DATABASE_URL: postgresql://ichiba:ichiba@db:5432/ichiba
+    depends_on:
+      db:
+        condition: service_healthy
+
   gateway:
     image: nginx:1.27-alpine
     profiles: ["scale-lab"]

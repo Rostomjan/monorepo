@@ -7,14 +7,17 @@ workflow is one job graph; humans click only for deny paths.
 ## Graph
 
 ```
-PR  -> Changes -> Triage ┐                ┌-> Lint/Types/Tests/Build ┬-> docker    -> \
-       (docs-only, tiers)├-> Review fast ─┤     (tiers select)       ├-> e2e x3   -> Merge gate
-                         └-> Review strong┘                          └-> Ichiba e2e-> /
-push -> same graph minus PR-only jobs (triage/reviews/merge) -> deploys
+PR  -> Changes -> Triage ┐         ┌-> Lint/Types/Tests/Build ┬-> docker    -> \
+       (docs-only, tiers)│         │     (tiers select)       ├-> e2e x3   -> Merge gate
+                         └─────────┘                          └-> Ichiba e2e-> /
+push -> same graph minus PR-only jobs (triage/merge) -> deploys
+
+CodeRabbit reviews each PR independently, on GitHub (out-of-band; see
+docs/PR-GATE.md).
 ```
 
 - Docs-only PRs (`.md`/`docs/**` only): everything between detect and merge
-  skips through the job graph; reviewers still run.
+  skips through the job graph.
 ## Affected tiers
 
 Selection lives in `scripts/tier-select.ts` (single source; table-tested in
@@ -39,7 +42,8 @@ selectors and run the entire suite; note `deploy-prod` itself gates only
 on the e2e legs (docker/ichiba failures don't block promotion — a possible
 follow-up to tighten). If a tier wrongly
 skips, widen the app list in `scripts/tier-select.ts` — never in the YAML.
-`.github/**`-only diffs are check-only by design (machine-reviewed); empty
+`.github/**`-only diffs are check-only by design (triage denies auto-merge
+so a human merges them); empty
 diffs run `check` and nothing heavy; everything unmapped runs the heaviest
 tier rather than silently skipping.
 
@@ -63,14 +67,13 @@ inside pipeline jobs, so PR code running under `bun run check` could read
 it; the token is scoped to cache read/write only (no repo content access).
 Rotate it from Vercel's settings when needed.
 
-## Reviewers
+## PR review
 
-OpenCode agents (`opencode.jsonc`: `review-fast`, `review-strong`) run on
-free provider models keyless; swap via repo variables
-(`REVIEW_FAST_MODEL` / `REVIEW_STRONG_MODEL`). Their verdict lands as
-labels (`review-*:approved|changes`); the merge gate requires fresh
-approvals from both on the exact head being merged. A reviewer job that
-*crashes* is machinery failure (red) — the merge gate does not run.
+Review happens out-of-band via CodeRabbit (GitHub App): it comments on each
+PR on GitHub, independently of this workflow. Its findings are advisory —
+nothing in the graph waits on it. Auto-merge eligibility is deterministic
+triage + the green pipeline; deny paths (`packages/backend/**`, `.github/**`,
+`infra/**`, …) and oversized diffs wait for a human, who reads the review.
 
 ## Maintenance rules
 
