@@ -37,7 +37,6 @@ bun run deps:fix       # autofix version drift
 
 ## PR gate
 
-All pushes land via PR. Two read-only OpenCode reviewer agents (fast + strong
-model, fresh session per push) plus deterministic triage approve low-impact PRs
-and auto-merge them; the rest waits for a human. Policy and setup:
-`docs/PR-GATE.md`.
+All pushes land via PR. Deterministic triage (deny paths, diff size) plus the
+pipeline decide auto-merge; CodeRabbit reviews PRs out-of-band on GitHub. The
+rest waits for a human. Policy and setup: `docs/PR-GATE.md`.

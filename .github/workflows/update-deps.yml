@@ -11,7 +11,7 @@ permissions:
 
 env:
   # PRs created with the workflow's GITHUB_TOKEN fire no downstream events
-  # (GitHub skips them), so the Factory reviewers + merge gate never run and
+  # (GitHub skips them), so the Factory merge gate never runs and
   # the PR is shipped unreviewed to a human. The PR must be created with a
   # real token (PAT or GitHub App) so the `pull_request` event fires. GitHub
   # expressions treat an unset/empty secret as "", hence the || fallback.
