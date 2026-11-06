@@ -14,9 +14,11 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.23",
+    "@flags-sdk/vercel": "^1.6.0",
     "@repo/ui": "workspace:*",
     "@sentry/nextjs": "^11",
     "drizzle-orm": "^0.45.4",
+    "flags": "^4.4.0",
     "next": "16.4.4",
     "postgres": "^4.0.0",
     "react": "19.3.1",
