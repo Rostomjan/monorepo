@@ -19,9 +19,9 @@
     "@types/react-dom": "19.3.0",
     "eslint": "^8.57.0",
     "storybook": "8.5.8",
-    "tailwindcss": "4.3.3",
+    "tailwindcss": "4.3.5",
     "typescript": "7.0.2",
-    "vite": "8.3.5"
+    "vite": "8.3.7"
   },
   "exports": {
     ".": "./src/index.tsx"
