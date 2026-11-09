@@ -1,5 +1,7 @@
 import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { currentCatalogBackend } from "./backend";
+import { remoteListShops, remoteQueryProducts } from "./catalog-remote";
 import { dbRead } from "./db/client";
 import { products, shops } from "./db/schema";
 
@@ -90,8 +92,19 @@ export async function getProducts(ids: string[]): Promise<Map<string, Product>> 
 }
 
 export async function listShops(): Promise<Shop[]> {
+  if ((await currentCatalogBackend()) === "python") {
+    try {
+      return await cachedRemoteShops();
+    } catch (err) {
+      console.error("python catalog read failed; falling back to the drizzle path", err);
+    }
+  }
   return cachedShops();
 }
+
+const cachedRemoteShops = unstable_cache(() => remoteListShops(), ["ichiba-shops", "python"], {
+  revalidate: 60,
+});
 
 // LIKE metacharacters in user input must not become wildcards.
 function likePattern(q: string): string {
@@ -112,8 +125,10 @@ function matchCondition(q: string) {
 }
 
 // queryProducts is the single source for listing semantics (filter + sort
-// + paginate + per-shop counts).
-
+// + paginate + per-shop counts) AS a function of the backend selector:
+// whichever implementation runs, the contract tests lock both to the same
+// statuses, shapes and error strings. Cache keys are per-backend, so a
+// flag flip mid-flight can never mix cached results computed by the two.
 export interface ProductQuery {
   q?: string;
   shopId?: string;
@@ -140,8 +155,26 @@ function sortOrder(sort: string | undefined, q: string) {
 export async function queryProducts(opts: ProductQuery): Promise<ProductQueryResult> {
   const q = (opts.q ?? "").trim();
   const perPage = Math.min(Math.max(opts.perPage ?? 12, 1), 60);
+  if ((await currentCatalogBackend()) === "python") {
+    try {
+      return await cachedQueryRemote(q, opts.shopId ?? "", opts.sort ?? "featured", Math.max(opts.page ?? 1, 1), perPage);
+    } catch (err) {
+      console.error("python catalog read failed; falling back to the drizzle path", err);
+    }
+  }
   return cachedQuery(q, opts.shopId ?? "", opts.sort ?? "featured", Math.max(opts.page ?? 1, 1), perPage);
 }
+
+// The python twin's listing read, cached under a distinct key with the same
+// 60s staleness contract as the drizzle path. A transient failure of the
+// python service (down, slow, 500) uncaches nothing — retry/fallback lands
+// on the drizzle path, which computes the identical result from the DB.
+const cachedQueryRemote = unstable_cache(
+  async (q: string, shopId: string, sort: string, page: number, perPage: number): Promise<ProductQueryResult> =>
+    remoteQueryProducts({ q, shopId: shopId || undefined, sort, page, perPage }),
+  ["ichiba-query", "python"],
+  { revalidate: 60 },
+);
 
 // Listing results cache 60s: same staleness contract as the entity caches
 // (checkout re-validates stock atomically, so this can never oversell).

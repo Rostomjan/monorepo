@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "dependencies": {
     "@repo/ui": "workspace:*",
-    "next": "16.4.4",
+    "next": "16.4.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
@@ -11,13 +11,13 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/tailwind-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@tailwindcss/postcss": "4.3.3",
+    "@tailwindcss/postcss": "4.3.5",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "15.0.4",
-    "tailwindcss": "4.3.3",
+    "tailwindcss": "4.3.5",
     "typescript": "7.0.2"
   },
   "private": true,

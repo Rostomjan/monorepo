@@ -1,0 +1,72 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/configuration
+#
+# Review here is out-of-band and advisory: nothing in the Factory graph
+# (.github/workflows/factory.yml) waits on CodeRabbit, and its status does
+# not gate merges. See docs/PR-GATE.md. Deny paths (packages/backend/**,
+# .github/**, infra/**, docker-compose.yml, .env*) always wait for a human,
+# regardless of what CodeRabbit says.
+
+language: en-US
+
+reviews:
+  profile: chill # balanced feedback; this is a private build-time repo
+  poem: false
+
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+
+  # Machine-generated dependency manifests and upstream data. The pipeline
+  # already validates whatever they affect (bun install --frozen-lockfile,
+  # db tests); reviewers only burn context on them.
+  path_filters:
+    - "!bun.lock"
+    - "!*.lockb"
+    - "!**/*.lockb"
+    - "!apps/ichiba-py/uv.lock"
+    - "!package-lock.json"
+    - "!**/package-lock.json"
+    - "!apps/kanji/content/upstream/**"
+    - "!**/.next/**"
+
+  path_instructions:
+    - path: "packages/backend/**"
+      instructions: |
+        Convex backend: the schema here reaches production data. Flag any
+        change that could alter or drop existing documents, indexes, or
+        auth state without a safeguard; backward-compatibility of exported
+        function arguments matters because apps deploy independently.
+    - path: "apps/ichiba-py/**"
+      instructions: |
+        Django + DRF twin of the TS backend (see docs/DUAL_BACKEND.md).
+        API-contract changes must land in both backends — flag any drift
+        between the two surfaces. Django models are UNMANAGED: drizzle
+        owns the schema, so flag model edits that imply schema changes.
+    - path: "scripts/tier-select.ts"
+      instructions: |
+        This module selects which CI tiers run (consumed from a trusted
+        ref by .github/workflows/factory.yml). scripts/** is not a triage
+        deny path, so this is the one place a PR can move its own gates.
+        Scrutinize any edits that skip or widen tier selectors.
+    - path: "apps/ichiba/**"
+      instructions: |
+        Drizzle-ORM is the single owner of the Postgres schema for the
+        ichiba TS stack; the Python twin's models are unmanaged. Flag
+        ad-hoc SQL or client-side schema assumptions drifting from the
+        drizzle migrations.
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - ".*" # review against every base branch (develop, main, sync branches)
+
+  auto_approvals:
+    enabled: false # advisory posture: the Factory + a human decide merges
+
+chat:
+  auto_reply: true
