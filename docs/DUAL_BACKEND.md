@@ -70,6 +70,37 @@ service-(django)-only endpoints for things TS does over RSC:
   (`cart-store.ts`); the Python service has no cookie layer, so only the
   pure cart functions are ported (`ichibaapi/cart.py`).
 
+## Flag-gated backend switch (phase 1)
+
+Phase 1 switches the catalog **listing** reads only: `queryProducts` and
+`listShops` in `apps/ichiba/src/lib/catalog.ts` are dispatched on two
+independent gates, both of which must pass:
+
+1. the `ichiba-python-backend` flag (Vercel Flags, dashboard-managed,
+   evaluated per request via `@flags-sdk/vercel`);
+2. `ICHIBA_API_URL` pointing at a running ichiba-py service
+   (e.g. `http://localhost:3021`).
+
+Whichever backend runs, listing semantics are locked byte-for-byte by the
+parity/contract tests, so the flag changes **who computes** the page, not
+what it shows. Cache keys carry the backend (`ichiba-query` vs
+`ichiba-query/python`), so a flip mid-flight can never mix cached results
+of the two implementations. A failing python service (down, slow, 500,
+non-JSON) is caught in the RSC path after a 3s fetch budget and falls back
+to the drizzle path. All non-listing reads (`getProduct`/`getShop`/
+`getProducts` — the twin has no such HTTP endpoints yet) and all writes
+(cart Server Actions, `/api/checkout`, `/api/orders`) stay canonical; make
+them flag-switchable only after the twin gains those endpoints, in both
+backends, as a new contract change.
+
+Tooling: the Flags SDK (`flags`) with the Vercel adapter
+(`@flags-sdk/vercel`) — no `/api` contract changes needed. Local control:
+`vercel link` in `apps/ichiba` + `vercel env pull` (OIDC), then flip the
+`ichiba-python-backend` flag in the Vercel dashboard (or the Toolbar's
+Flags Explorer, wired via the `/.well-known/vercel/flags` discovery
+endpoint). Unconfigured (plain `bun run dev`, docker) defaults to the
+canonical path.
+
 ## Tooling
 
 Python side is **uv-governed** (like bun for JS: one lockfile `uv.lock`,

@@ -27,7 +27,7 @@ jobs:
           PR_TOKEN_SECRET: ${{ secrets.DEP_UPDATE_TOKEN }}
         run: |
           # PRs created with the workflow's GITHUB_TOKEN fire no downstream
-          # (GitHub skips them), so the Factory merge gate never runs and the
+          # events, so the Factory (reviews + merge gate) never runs and the
           # dep PR silently sits unmerged. Require a real token up front.
           if [ -z "$PR_TOKEN_SECRET" ]; then
             echo "::error::DEP_UPDATE_TOKEN secret is not set. PRs created with the workflow GITHUB_TOKEN never trigger the Factory workflow; set a PAT (contents + pull-requests) as the DEP_UPDATE_TOKEN repo secret."
