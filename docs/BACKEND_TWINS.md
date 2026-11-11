@@ -56,10 +56,27 @@ Go web framework on purpose — Gin/Echo would flatten the comparison.
   `unknown product: X`, `insufficient stock for X`, `too many requests`).
   `--reads-only` scopes it to the read contract (phase-1 backends);
   `--write` additionally exercises a real checkout.
+
+- **Differential fuzzing** (twins vs each other — the strongest drift
+  detector, because it needs no expectations list):
+
+  ```bash
+  # both twins running against the same Postgres, then:
+  python3 scripts/diff-twins.py http://localhost:3022 http://localhost:3021
+  ```
+
+  `scripts/diff-twins.py` feeds both backends the same seeded matrix
+  (~130 cases: q metacharacters, the sort vocabulary, page/perPage clamp
+  edges, unknown sorts, huge pages, plus a seeded random sample of
+  parameter combinations) and asserts identical status + JSON body for
+  every case. Deterministic per `--seed` (default 42), pure stdlib. It
+  caught a real ichiba-go bug on its first run (the q + shopId args
+  misbinding); CI runs it in `ichiba-e2e` on every push, Go vs Python.
 - **CI**: the `check` job runs every workspace (Go + Python DB tests
   self-skip without a database); the `ichiba-e2e` job runs the python
-  suite **and** the Go live contract check **with** the same Postgres
-  service the Playwright flow uses.
+  suite, the Go live contract check, **and** the Go-vs-Python
+  differential fuzz — all against the same Postgres service the
+  Playwright flow uses.
 
 ## API surface (contract)
 

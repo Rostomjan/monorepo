@@ -14,6 +14,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -223,6 +224,35 @@ func TestProductsQueryShapesMatchTS(t *testing.T) {
 	for i := 1; i < len(prices); i++ {
 		if prices[i] < prices[i-1] {
 			t.Fatalf("price-asc not sorted: %v", prices)
+		}
+	}
+}
+
+func TestProductsQueryCombinesQAndShopID(t *testing.T) {
+	// Regression (caught by scripts/diff-twins.py): combining q with the
+	// shop filter used to misbind the shopId argument onto LIMIT/OFFSET
+	// (500s) or onto the similarity arg (silently empty pages). The two
+	// filters must compose: every returned item matches the query AND the
+	// shop, and each sort variant behaves identically.
+	srv := newTestServer(testPool(t))
+	for _, sort := range []string{"featured", "price-asc", "price-desc"} {
+		status, body := getJSON(t, srv.URL,
+			fmt.Sprintf("/api/products?q=backpack&shopId=shop-1&sort=%s", sort))
+		if status != http.StatusOK {
+			t.Fatalf("sort=%s: status = %d (must be 200)", sort, status)
+		}
+		items, ok := body["items"].([]any)
+		if !ok || len(items) == 0 {
+			t.Fatalf("sort=%s: items = %v, want the shop-1 backpacks", sort, body["items"])
+		}
+		for _, item := range items {
+			p := item.(map[string]any)
+			if p["shopId"] != "shop-1" {
+				t.Fatalf("sort=%s: shop filter leaked: %v", sort, p)
+			}
+			if name, _ := p["name"].(string); !strings.Contains(name, "Backpack") {
+				t.Fatalf("sort=%s: q filter leaked: %v", sort, p)
+			}
 		}
 	}
 }

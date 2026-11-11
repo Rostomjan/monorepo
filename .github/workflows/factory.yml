@@ -433,6 +433,22 @@ jobs:
           done
           curl -fsS http://localhost:3022/api/health > /dev/null
           python3 scripts/contract.py --reads-only http://localhost:3022
+      - name: Differential fuzz — Go vs Python twins (same Postgres)
+        # The strongest drift detector: both twins serve the SAME seeded
+        # matrix of query shapes (metacharacters, sort/page/perPage edges,
+        # unknown sorts, huge pages, seeded combos) against the same
+        # database, and must agree on status + JSON body for every case.
+        # The Go server above is still running; add the Django twin and
+        # diff them (scripts/diff-twins.py, pure stdlib, seeded → stable).
+        run: |
+          DATABASE_URL=postgresql://ichiba:ichiba@localhost:5432/ichiba \
+            uv run python manage.py runserver 0.0.0.0:3021 --noreload &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:3021/api/health > /dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://localhost:3021/api/health > /dev/null
+          python3 scripts/diff-twins.py http://localhost:3022 http://localhost:3021
       - name: Check Clerk test keys
         # The ichiba dev server throws on every request without Clerk keys,
         # which surfaces as a 3-minute webServer timeout. Fail fast instead.

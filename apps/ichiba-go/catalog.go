@@ -85,8 +85,14 @@ func queryProducts(ctx context.Context, pool dbPool, opts productQuery) (Product
 	totalPages := max(1, int(math.Ceil(float64(total)/float64(per))))
 	safePage := min(max(page, 1), totalPages)
 
-	orderClause, orderArgs := orderClause(opts.sort, q, len(matchArgs))
-	itemsArgs := slices.Concat(matchArgs, orderArgs, []any{per, (safePage - 1) * per})
+	// ORDER BY params come after ALL where args (match + shop filter):
+	// the items query uses fullWhere, so the similarity placeholder index
+	// must count the shopId arg too. Building itemsArgs from anything
+	// narrower than fullArgs misbinds the shop filter onto LIMIT/OFFSET
+	// (text vs bigint) or onto the similarity arg — the exact bug the
+	// differential fuzzer caught (scripts/diff-twins.py).
+	orderClause, orderArgs := orderClause(opts.sort, q, len(fullArgs))
+	itemsArgs := slices.Concat(fullArgs, orderArgs, []any{per, (safePage - 1) * per})
 	limit := len(itemsArgs) - 1
 	offset := len(itemsArgs)
 
