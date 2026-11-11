@@ -114,6 +114,22 @@ Actions, `/api/checkout`, `/api/orders`) stay canonical; make them
 flag-switchable only after the twins gain those endpoints, in every
 backend, as a new contract change.
 
+**Dev-only escape hatch** (`apps/ichiba/src/lib/backend.ts`): flags are
+dashboard-managed, so local development cannot flip them. Set
+`ICHIBA_FORCE_BACKEND=python|go` (dev only — refused outright when
+`NODE_ENV=production`) to bypass the FLAG gate and watch the same page be
+computed by another language locally:
+
+```bash
+ICHIBA_FORCE_BACKEND=go ICHIBA_GO_API_URL=http://localhost:3022 \
+  bun run dev --filter ichiba
+```
+
+The base-url gate still applies — a forced backend whose env is missing
+warns and serves the canonical path, and killing the twin mid-render
+demonstrates the 3s RSC fallback live (grep the dev log for
+`catalog read failed; falling back`).
+
 Tooling: the Flags SDK (`flags`) with the Vercel adapter
 (`@flags-sdk/vercel`) — no `/api` contract changes needed. Local control:
 `vercel link` in `apps/ichiba` + `vercel env pull` (OIDC), then flip the

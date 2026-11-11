@@ -12,6 +12,13 @@
  * service that is not configured, and a missing adapter (local dev, plain
  * `bun run dev`, tests) never leaves the canonical path.
  *
+ * DEV-ONLY ESCAPE HATCH: flags are dashboard-managed, so local development
+ * cannot flip them. `ICHIBA_FORCE_BACKEND=python|go` bypasses the FLAG gate
+ * for local experimentation (`ICHIBA_FORCE_BACKEND=go bun run dev`, with the
+ * twin's base-url env set) — but never the base-url gate, and it is ignored
+ * outright when NODE_ENV is "production", so a leaked env var can never
+ * reroute real traffic. See forcedBackendOverride().
+ *
  * PLUG-IN RULE (docs/BACKEND_TWINS.md): the registry below is the ONLY
  * place a new backend twin needs touching in apps/ichiba. Add an entry to
  * REMOTE_BACKENDS (id + env name, in priority order), a flag declaration
@@ -53,12 +60,48 @@ export function resolveCatalogBackend(gates: RemoteBackendGate[]): CatalogBacken
 }
 
 /**
+ * The dev-only force-backend override (see the header). Pure and
+ * environment-driven: undefined means "no override". Honors only valid
+ * registry ids (case-insensitive), warns about anything else, and refuses
+ * to apply at all in production — there, flags are the only switch.
+ */
+export function forcedBackendOverride(): RemoteBackendId | undefined {
+  if (process.env.NODE_ENV === "production") return undefined;
+  const raw = process.env.ICHIBA_FORCE_BACKEND?.trim().toLowerCase();
+  if (!raw) return undefined;
+  const entry = REMOTE_BACKENDS.find((b) => b.id === raw);
+  if (!entry) {
+    console.warn(
+      `ICHIBA_FORCE_BACKEND=${raw} is not a remote backend (${REMOTE_BACKENDS.map((b) => b.id).join(", ")}) — ignored`,
+    );
+    return undefined;
+  }
+  return entry.id;
+}
+
+/**
  * Resolves the effective backend for this request. The adapter import is
  * dynamic so pure importers (unit tests, contract fixtures) never load
  * flags/next or the Vercel adapter's request-context machinery. A backend
  * whose flag fails to evaluate stays out of the race (canonical fallback).
+ *
+ * The forced override short-circuits BEFORE the flag machinery: no Vercel
+ * Flags evaluation happens on a forced request at all, which keeps local
+ * dev (no vercel env pull, no OIDC) fast and quiet. The base-url gate is
+ * still enforced: a forced backend without a configured service falls back
+ * to the canonical path with a warning, never to an error.
  */
 export async function currentCatalogBackend(): Promise<CatalogBackend> {
+  const forced = forcedBackendOverride();
+  if (forced) {
+    if (backendBaseUrl(forced) === undefined) {
+      console.warn(
+        `ICHIBA_FORCE_BACKEND=${forced} but the twin's base-url env is not set — serving the canonical backend`,
+      );
+      return "ts";
+    }
+    return forced;
+  }
   const { backendFlagEnabled } = await import("./flags-runtime");
   const gates: RemoteBackendGate[] = [];
   for (const { id, env } of REMOTE_BACKENDS) {
