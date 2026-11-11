@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignore": ["**/_generated/**", "apps/ichiba-py"],
-  "ignoreBinaries": ["eslint", "dist/index.js", "uv"],
+  "ignore": ["**/_generated/**", "apps/ichiba-py", "apps/ichiba-go"],
+  "ignoreBinaries": ["eslint", "dist/index.js", "uv", "go", "gofmt"],
   "ignoreDependencies": [
     "@rushstack/eslint-patch",
     "eslint-config-next",

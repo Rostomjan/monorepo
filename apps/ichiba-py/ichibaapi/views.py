@@ -17,7 +17,7 @@ from ichibaapi import catalog, orders, rate_limit
 from ichibaapi import serializers as s
 
 # Clerk identity: the TS routes call `auth()` and fall back to "guest".
-# An equivalent Clerk integration isn't wired here yet (see DUAL_BACKEND.md
+# An equivalent Clerk integration isn't wired here yet (see BACKEND_TWINS.md
 # divergences) — until it is, every request is the Stage-1 guest.
 GUEST = "guest"
 

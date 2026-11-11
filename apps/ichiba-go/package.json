@@ -1,0 +1,16 @@
+{
+  "name": "ichiba-go",
+  "version": "0.0.0",
+  "private": true,
+  "//": "Thin shim so Turborepo can run the same task names as every other workspace (same trick as apps/ichiba-py). The Go toolchain does the real work: `go` must be on PATH.",
+  "scripts": {
+    "dev": "go run .",
+    "build": "go build -o bin/ .",
+    "start": "bin/ichiba-go",
+    "lint": "go vet ./... && test -z \"$(gofmt -l .)\"",
+    "type-check": "go vet ./...",
+    "test": "go test ./...",
+    "clean": "rm -rf bin/",
+    "contract": "python3 ../../scripts/contract.py --reads-only http://localhost:3022"
+  }
+}

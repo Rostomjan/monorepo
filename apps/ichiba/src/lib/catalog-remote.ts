@@ -1,20 +1,21 @@
 import type { Product, ProductQuery, ProductQueryResult, Shop } from "./catalog";
-import { pythonApiBaseUrl } from "./backend";
 
 /**
- * HTTP data layer for the ichiba-py twin (docs/DUAL_BACKEND.md). Contracts:
- * GET /api/products → ProductQueryResult, GET /api/shops → {shops: Shop[]}.
- * Both the TS and python implementations of these endpoints are asserted
- * byte-for-byte equal by contract tests on both sides, so no response
- * normalizing happens here beyond shape validation.
+ * HTTP data layer for the remote catalog twins (docs/BACKEND_TWINS.md).
+ * Contracts: GET /api/products → ProductQueryResult, GET /api/shops →
+ * {shops: Shop[]}. Every backend implementing these endpoints is asserted
+ * byte-for-byte equal by contract tests on all sides, so no response
+ * normalizing happens here beyond shape validation. The base URL comes
+ * from the caller (backend.ts resolves it per backend) — this module never
+ * names a specific twin.
  *
  * TS treats any unknown sort value as the default ordering (q → similarity
- * search); the python API hard-rejects unknown sorts with HTTP 400
+ * search); the service twins hard-reject unknown sorts with HTTP 400
  * ("sort must be one of: featured, price-asc, price-desc"). Dropping them
- * before the request changes nothing observably: the python
- * query_products() applies identical default/similarity semantics for an
- * omitted sort (parity-locked), and that is exactly what the TS side does
- * for these same inputs.
+ * before the request changes nothing observably: the twins' query functions
+ * apply identical default/similarity semantics for an omitted sort
+ * (parity-locked), and that is exactly what the TS side does for these same
+ * inputs.
  */
 export function normalizeSort(sort: string | undefined): string | undefined {
   return sort === "price-asc" || sort === "price-desc" || sort === "featured" ? sort : undefined;
@@ -62,7 +63,7 @@ function isProductQueryResult(v: unknown): v is ProductQueryResult {
 
 async function requestJson<T>(url: string, fetchImpl: typeof fetch): Promise<T> {
   // Same staleness contract as the drizzle path's unstable_cache TTLs: a
-  // 3s budget keeps a hung python service from stalling the render; the
+  // 3s budget keeps a hung twin service from stalling the render; the
   // catalog dispatch falls back to the canonical path on any failure.
   const res = await fetchImpl(url, { signal: AbortSignal.timeout(3_000) });
   if (!res.ok) throw new Error(`/api call failed: ${res.status} ${res.statusText}`);
@@ -74,10 +75,10 @@ async function requestJson<T>(url: string, fetchImpl: typeof fetch): Promise<T> 
 
 export async function remoteQueryProducts(
   opts: ProductQuery,
-  baseUrl = pythonApiBaseUrl(),
+  baseUrl: string | undefined,
   fetchImpl: typeof fetch = globalThis.fetch,
 ): Promise<ProductQueryResult> {
-  if (!baseUrl) throw new Error("ICHIBA_API_URL is not set; the python backend is not reachable");
+  if (!baseUrl) throw new Error("remote backend base URL is not set; the twin is not reachable");
   const data = await requestJson<unknown>(catalogQueryUrl(baseUrl, opts), fetchImpl);
   if (!isProductQueryResult(data)) throw new Error("unexpected shape from /api/products");
   return {
@@ -90,10 +91,10 @@ export async function remoteQueryProducts(
 }
 
 export async function remoteListShops(
-  baseUrl = pythonApiBaseUrl(),
+  baseUrl: string | undefined,
   fetchImpl: typeof fetch = globalThis.fetch,
 ): Promise<Shop[]> {
-  if (!baseUrl) throw new Error("ICHIBA_API_URL is not set; the python backend is not reachable");
+  if (!baseUrl) throw new Error("remote backend base URL is not set; the twin is not reachable");
   const data = await requestJson<{ shops: unknown }>(
     `${baseUrl.replace(/\/+$/, "")}/api/shops`,
     fetchImpl,
