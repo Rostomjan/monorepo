@@ -114,9 +114,11 @@ def build_cases(seed: int) -> list[tuple[str, dict]]:
         label = ", ".join(f"{k}={v!r}" for k, v in params.items() if v is not None)
         add(label or "(all absent)", **params)
 
-    # 7. static endpoints for completeness.
+    # 7. static endpoints for completeness (both twins share one DB, so
+    #    even data-bearing GETs must agree — e.g. guest orders).
     cases.append(("GET /api/shops", {}))
     cases.append(("GET /api/health", {}))
+    cases.append(("GET /api/orders", {}))
     return cases
 
 

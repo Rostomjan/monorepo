@@ -9,10 +9,9 @@ Pure stdlib — no venv, no dependencies, works from any checkout.
 
 Read-only checks run always; POST /api/checkout is opt-in via --write
 because it consumes real stock and writes orders to the shared Postgres.
-Backends that implement the read contract only (phase 1 — apps/ichiba-go
-today) use --reads-only, which skips the write-path checks entirely:
-orders + checkout are expected to 404 there until they are ported as a
-new contract change.
+Backends implementing the read contract only (future partial twins)
+use --reads-only, which skips the write-path checks until their write
+endpoints land as a new contract change.
 """
 
 import argparse

@@ -11,6 +11,6 @@
     "type-check": "go vet ./...",
     "test": "go test ./...",
     "clean": "rm -rf bin/",
-    "contract": "python3 ../../scripts/contract.py --reads-only http://localhost:3022"
+    "contract": "python3 ../../scripts/contract.py http://localhost:3022"
   }
 }

@@ -11,7 +11,7 @@ by side, so every piece of backend functionality can be written — and
 | Port | 3003 | 3021 | 3022 |
 | DB access | drizzle ORM | Django ORM (unmanaged) | raw SQL via pgx (unmanaged) |
 | Tests | bun test + Playwright | pytest (parity + contract) | go test (parity + contract) |
-| Scope | everything | full contract | phase 1: reads (health, products, shops) |
+| Scope | everything | full contract | full contract (phase 2 writes ported) |
 
 The comparison is the point: Django hands you an ORM, router, serializers
 and a test client; Next hides reads behind RSC and `unstable_cache`; Go
@@ -86,20 +86,32 @@ endpoints for things TS does over RSC:
 | Path | TS | Python | Go | Notes |
 |---|---|---|---|---|
 | `GET /api/health` | route.ts | HealthView | handleHealth | identical JSON, 503 when unready, `Cache-Control: no-store` |
-| `POST /api/checkout` | route.ts | CheckoutView | — (phase 2) | atomic per-shop split, row locks, error strings |
-| `GET /api/orders` | route.ts | OrdersView | — (phase 2) | guest until Clerk lands |
+| `POST /api/checkout` | route.ts | CheckoutView | handleCheckout | atomic per-shop split, row locks, error strings |
+| `GET /api/orders` | route.ts | OrdersView | handleOrders | guest until Clerk lands |
 | `GET /api/products` | RSC only (`queryProducts`) | ProductsView | handleProducts | exposed as HTTP to make twins real services (q, shopId, sort, page, perPage, trigram search) |
 | `GET /api/shops` | RSC only | ShopsView | handleShops | same reason |
+
+The Go write path is the instructive one: Django hands you
+`transaction.atomic` + `select_for_update`; in Go you write `BEGIN`,
+`SELECT … FOR UPDATE`, the per-shop split, the inserts and the commit by
+hand (`apps/ichiba-go/orders.go`), under the same error strings and the
+same concurrency test (two concurrent checkouts of the last units →
+exactly one succeeds, stock never negative).
 
 ## Intentional divergences (documented, not drift)
 
 - **Clerk**: TS resolves `auth()` per request with `"guest"` fallback;
   the twins see every request as `"guest"` (no Clerk integration yet).
+  This is also why the flag dispatch stays on listing reads even though
+  every twin now serves the full contract: dispatching the TS checkout
+  to a twin would attribute real orders to `"guest"` — writes stay
+  canonical in the TS app until the twins gain Clerk (or a signed
+  user-context contract).
 - **Caching**: TS uses Next `unstable_cache` (300s entities / 60s query);
   python has a ~15-line `ttl_cache` with the same staleness contract —
   the learning point is what a framework gives you invisibly. The Go twin
-  needs none for phase 1 (its HTTP reads are re-cached at the TS dispatch
-  layer, per backend key).
+  needs none for its reads (they are re-cached at the TS dispatch layer,
+  per backend key).
 - **Cart persistence**: TS carts live in cookies via Server Actions
   (`cart-store.ts`); the twins have no cookie layer, so only the pure cart
   functions are ported (python: `ichibaapi/cart.py`).
@@ -125,11 +137,9 @@ keys carry the backend (`ichiba-query` vs `ichiba-query/python` vs
 `ichiba-query/go`), so a flip mid-flight can never mix cached results of
 two implementations. A failing twin (down, slow, 500, non-JSON) is caught
 in the RSC path after a 3s fetch budget and falls back to the drizzle
-path. All non-listing reads (`getProduct`/`getShop`/`getProducts` — the
-twins have no such HTTP endpoints yet) and all writes (cart Server
-Actions, `/api/checkout`, `/api/orders`) stay canonical; make them
-flag-switchable only after the twins gain those endpoints, in every
-backend, as a new contract change.
+path. Every twin serves the FULL contract (checkout + orders included);
+the flag dispatch stays on the listing reads because writes need Clerk
+attribution, which only the TS app resolves — see the divergence notes.
 
 **Dev-only escape hatch** (`apps/ichiba/src/lib/backend.ts`): flags are
 dashboard-managed, so local development cannot flip them. Set

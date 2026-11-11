@@ -420,10 +420,12 @@ jobs:
         env:
           DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
       - name: Go backend contract tests (same Postgres)
-        # Phase-1 read contract against the shared service: build the
-        # binary, run it against the same Postgres the e2e flow uses, and
-        # hit it with the shared stdlib contract checker. -C because the
-        # repo root is not a Go module; the workspace's go.mod is the unit.
+        # Full contract against the shared service: build the binary, run
+        # it against the same Postgres the e2e flow uses, and hit it with
+        # the shared stdlib contract checker (ichiba-go serves the FULL
+        # contract — reads + checkout/orders — since the phase-2 port).
+        # -C because the repo root is not a Go module; the workspace's
+        # go.mod is the unit.
         run: |
           go build -C apps/ichiba-go -o /tmp/ichiba-go .
           DATABASE_URL=postgresql://ichiba:ichiba@localhost:5432/ichiba PORT=3022 /tmp/ichiba-go &
@@ -432,7 +434,7 @@ jobs:
             sleep 1
           done
           curl -fsS http://localhost:3022/api/health > /dev/null
-          python3 scripts/contract.py --reads-only http://localhost:3022
+          python3 scripts/contract.py http://localhost:3022
       - name: Differential fuzz — Go vs Python twins (same Postgres)
         # The strongest drift detector: both twins serve the SAME seeded
         # matrix of query shapes (metacharacters, sort/page/perPage edges,
