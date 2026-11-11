@@ -18,7 +18,7 @@ Build-time microfrontend monorepo (Turborepo + Bun). Independent `apps/*` deploy
 - Apps never import from each other. Cross-app code goes in `packages/*` and is consumed as `@repo/*` (pinned `workspace:*`).
 - `packages/ui` — presentational React components only; app-specific logic stays in the app.
 - `packages/backend` — Convex functions + schema, **not an app**. Convex auto-deploys from here on `develop` (dev) and `main` (prod).
-- `apps/ichiba-py` — the Python (Django + DRF) twin of ichiba's TS backend. Same API contract, same Postgres, drizzle owns the schema (Django models are unmanaged). Python workspace is **uv-governed** (`uv.lock` committed, `pyproject.toml`); its `package.json` only bridges task names into turbo. Contract changes must land in both backends — see `docs/DUAL_BACKEND.md`.
+- `apps/ichiba-py` (Python/Django+DRF) and `apps/ichiba-go` (Go/net/http+pgx) — learning-lab twins of ichiba's TS backend. Same API contract, same Postgres, drizzle owns the schema (twins never migrate). Python is **uv-governed** (`uv.lock` committed, `pyproject.toml`); Go is go-modules (`go.mod`/`go.sum`); their `package.json` files only bridge task names into turbo (each also has a package-level `turbo.json` with real inputs/outputs). ichiba-go implements the phase-1 read contract only. Contract changes must land in **every** backend that serves them — see `docs/BACKEND_TWINS.md` (multi-backend rules + the add/remove-a-twin recipe).
 - New project: `bun run new <web|api|mobile|package> <name>`, then `bun install`. Templates in `templates/`, generator `scripts/scaffold.ts`.
 - `apps/docs` is the "copy me for a new site" reference (port 3002). Note: it uses a top-level `app/` dir for pages, unlike `apps/chat` which uses `src/app/`.
 
@@ -37,12 +37,12 @@ This is the eslint 8 / Next 15 / Storybook 8 era, enforced by syncpack versionGr
 
 ## Env / secrets
 
-- `.env*` files are gitignored. Convex uses `CONVEX_URL`/`CONVEX_DEPLOYMENT`/`NEXT_PUBLIC_CONVEX_URL`; chat→api uses `NEXT_PUBLIC_API_URL`; API uses `PORT`. Never commit keys.
+- `.env*` files are gitignored. Convex uses `CONVEX_URL`/`CONVEX_DEPLOYMENT`/`NEXT_PUBLIC_CONVEX_URL`; chat→api uses `NEXT_PUBLIC_API_URL`; API uses `PORT`. Ichiba backend twins: `ICHIBA_API_URL` (:3021, python) and `ICHIBA_GO_API_URL` (:3022, go) plus their Vercel flags `ichiba-python-backend` / `ichiba-go-backend`. Never commit keys.
 - `gh` CLI is installed — prefer it for GitHub tasks.
 
 ## Docker / deploy
 
-- Local: `docker compose up --build` (chat on 3000, api on 3001; api has `/healthz`).
+- Local: `docker compose up --build` (chat on 3000, api on 3001; api has `/healthz`). Ichiba twins are opt-in profiles: `--profile python` (:3021) and `--profile go` (:3022).
 - Chat/docs: one Vercel project per app, Root Directory `apps/<name>`. API: any Docker host, `PORT` env, `/healthz`.
 
 <!-- BEGIN:turborepo-agent-rules -->

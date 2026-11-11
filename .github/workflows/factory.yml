@@ -239,6 +239,12 @@ jobs:
             echo "TURBO_TEAM=$_TURBO_TEAM" >> "$GITHUB_ENV"
           fi
       - run: bun install --frozen-lockfile
+      # apps/ichiba-go: Go workspace (go modules). Without DATABASE_URL its
+      # DB-backed tests self-skip; pure parity tests always run.
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/ichiba-go/go.mod
+          cache-dependency-path: apps/ichiba-go/go.sum
       # apps/ichiba-py: Python workspace (uv-governed). Without DATABASE_URL
       # its DB-backed tests self-skip; pure parity tests always run.
       - uses: astral-sh/setup-uv@v6
@@ -258,10 +264,10 @@ jobs:
       - run: bun run knip
 
   docker:
-    name: Docker builds (api, chat)
+    name: Docker builds (api, chat, ichiba-go)
     needs: [detect, check]
-    # PRs: only when api/chat surface or shared config changed; pushes
-    # always validate the containers before deploy.
+    # PRs: only when api/chat/ichiba-go surfaces or shared config changed;
+    # pushes always validate the containers before deploy.
     if: github.event_name == 'push' || needs.detect.outputs.docker_needed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -269,6 +275,7 @@ jobs:
       - uses: actions/checkout@v7
       - run: docker build -f apps/api/Dockerfile -t api:ci .
       - run: docker build -f apps/chat/Dockerfile -t chat:ci .
+      - run: docker build -f apps/ichiba-go/Dockerfile -t ichiba-go:ci .
 
   deploy-dev:
     name: Deploy to Development
@@ -389,6 +396,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
       - run: bun install --frozen-lockfile
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/ichiba-go/go.mod
+          cache-dependency-path: apps/ichiba-go/go.sum
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -408,6 +419,19 @@ jobs:
         working-directory: apps/ichiba-py
         env:
           DATABASE_URL: postgresql://ichiba:ichiba@localhost:5432/ichiba
+      - name: Go backend contract tests (same Postgres)
+        # Phase-1 read contract against the shared service: build the
+        # binary, run it against the same Postgres the e2e flow uses, and
+        # hit it with the shared stdlib contract checker.
+        run: |
+          go build -o /tmp/ichiba-go ./apps/ichiba-go
+          DATABASE_URL=postgresql://ichiba:ichiba@localhost:5432/ichiba PORT=3022 /tmp/ichiba-go &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:3022/api/health > /dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://localhost:3022/api/health > /dev/null
+          python3 scripts/contract.py --reads-only http://localhost:3022
       - name: Check Clerk test keys
         # The ichiba dev server throws on every request without Clerk keys,
         # which surfaces as a 3-minute webServer timeout. Fail fast instead.

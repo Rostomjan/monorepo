@@ -69,8 +69,8 @@ describe("remoteQueryProducts", () => {
     await expect(remoteQueryProducts({}, "http://py:3021", fetcher)).rejects.toThrow("unexpected shape");
   });
 
-  test("without a base URL the python backend is unreachable", async () => {
-    await expect(remoteQueryProducts({}, undefined, fetchOk(queryResult))).rejects.toThrow("ICHIBA_API_URL");
+  test("without a base URL the remote backend is unreachable", async () => {
+    await expect(remoteQueryProducts({}, undefined, fetchOk(queryResult))).rejects.toThrow("base URL");
   });
 });
 

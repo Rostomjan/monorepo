@@ -151,6 +151,20 @@ test("tier table: app changes select exactly their tiers", () => {
   expect(kanji.ichiba_e2e_needed).toBe(false);
 });
 
+test("tier table: backend twins belong to the ichiba tier, ichiba-go also to docker", () => {
+  for (const p of [
+    "apps/ichiba-py/ichibaapi/catalog.py",
+    "apps/ichiba-py/uv.lock",
+    "apps/ichiba-go/catalog.go",
+    "apps/ichiba-go/go.sum",
+  ]) {
+    const t = computeTiers([f(p)]);
+    expect(t.ichiba_e2e_needed).toBe(true);
+    expect(t.docker_needed).toBe(p.startsWith("apps/ichiba-go/"));
+    expect(t.chat_e2e_needed).toBe(false);
+  }
+});
+
 test("tier table: any packages/* change enables every tier (future packages too)", () => {
   for (const p of [
     "packages/tailwind-config/base.css", // ichiba actually imports this

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "//": "Package-level task overrides (turbo >= 2.1, installed: 2.11.10). The root task inputs are TS-shaped; Go inputs are source dirs + module files. `test` and `dev`/`start`/`clean` inherit from the root and need no override.",
+  "tasks": {
+    "build": {
+      "dependsOn": [],
+      "inputs": ["**/*.go", "go.mod", "go.sum", "package.json"],
+      "outputs": ["bin/**"]
+    },
+    "lint": {
+      "dependsOn": [],
+      "inputs": ["**/*.go", "go.mod", "go.sum"]
+    },
+    "type-check": {
+      "dependsOn": [],
+      "inputs": ["**/*.go", "go.mod", "go.sum"]
+    },
+    "test": {
+      "dependsOn": [],
+      "inputs": ["**/*.go", "testdata/**", "go.mod", "go.sum"]
+    },
+    "contract": {
+      "cache": false
+    }
+  }
+}

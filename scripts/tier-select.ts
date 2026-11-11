@@ -14,7 +14,10 @@
  * - Known app code selects its tier explicitly (apps/e2e selects both e2e
  *   tiers). apps/kotoba and apps/docs are the explicit NO-heavy set: the
  *   lint/type/test/build tier covers them fully, and they stay out of the
- *   "unknown" fallback by being named here.
+ *   "unknown" fallback by being named here. The ichiba backend twins
+ *   (ichiba-py, ichiba-go) belong to the ichiba tier: they are validated by
+ *   the check tier plus ichiba-e2e's contract tests, and ichiba-go joins
+ *   the docker tier (its container is built there).
  * - .github/** is the deliberate check-only surface (machine-validated by
  *   its own review machinery, verified by the check tier).
  * - ANY other unknown path (templates/, unmapped root files) falls back to
@@ -64,9 +67,9 @@ export function computeTiers(files: { path?: string }[]): Tiers {
 
   const shared = paths.some((p) => SHARED_OR_ROOT.test(p));
   const appTiers = {
-    docker: paths.some((p) => /^(apps\/(api|chat))\//.test(p)),
+    docker: paths.some((p) => /^(apps\/(api|chat|ichiba-go))\//.test(p)),
     chat_e2e: paths.some((p) => /^(apps\/(chat|kanji|api|e2e))\//.test(p)),
-    ichiba: paths.some((p) => /^(apps\/(ichiba|e2e))\//.test(p)),
+    ichiba: paths.some((p) => /^(apps\/(ichiba|ichiba-py|ichiba-go|e2e))\//.test(p)),
   };
 
   // Known surfaces, per path: app code (apps/kotoba and apps/docs are the
@@ -75,7 +78,7 @@ export function computeTiers(files: { path?: string }[]): Tiers {
   // configs, and docs.
   const known = (p: string) =>
     SHARED_OR_ROOT.test(p) ||
-    /^(apps\/(api|chat|kanji|ichiba|kotoba|docs|e2e))\//.test(p) ||
+    /^(apps\/(api|chat|kanji|ichiba|ichiba-py|ichiba-go|kotoba|docs|e2e))\//.test(p) ||
     /^\.github\//.test(p) ||
     /^docs\//.test(p) ||
     /\.(md|mdx)$/.test(p);

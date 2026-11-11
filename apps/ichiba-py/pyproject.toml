@@ -1,7 +1,7 @@
 [project]
 name = "ichiba-py"
 version = "0.0.0"
-description = "Ichiba backend, Python edition — Django + DRF mirror of apps/ichiba's TS API surface (see docs/DUAL_BACKEND.md)"
+description = "Ichiba backend, Python edition — Django + DRF mirror of apps/ichiba's TS API surface (see docs/BACKEND_TWINS.md)"
 requires-python = ">=3.12"
 
 dependencies = [

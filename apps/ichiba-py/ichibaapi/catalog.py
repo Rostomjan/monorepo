@@ -1,6 +1,6 @@
 """Catalog — Python port of apps/ichiba/src/lib/catalog.ts, function for
 function. Listing/paging/search semantics must match the TS version
-exactly; that is the parity contract (docs/DUAL_BACKEND.md).
+exactly; that is the parity contract (docs/BACKEND_TWINS.md).
 """
 
 import functools
@@ -182,7 +182,11 @@ def query_products(
 ) -> ProductQueryResult:
     """Single source for listing semantics: filter + sort + paginate + per-shop counts."""
     query = (q or "").strip()
-    per = min(max(per_page or 12, 1), 60)
+    # `x if x is not None else default`, NOT `x or default`: TS's clamps are
+    # `opts.perPage ?? 12` / `Math.max(opts.page ?? 1, 1)` — a present 0
+    # clamps to 1, it does NOT fold into the default. (`or` hid that for
+    # per_page=0 until the Go twin's clampDefaults comment flushed it out.)
+    per = min(max(per_page if per_page is not None else 12, 1), 60)
     match = _match(query)
 
     qs: QuerySet[models.Product] = models.Product.objects.all()
@@ -194,7 +198,7 @@ def query_products(
     # Count first so the page clamps to range (same contract as TS).
     total = qs.count()
     total_pages = max(1, -(-total // per))
-    safe_page = min(max(page or 1, 1), total_pages)
+    safe_page = min(max(page if page is not None else 1, 1), total_pages)
 
     if query:
         qs = qs.annotate(similarity=TrigramSimilarity("name", query))

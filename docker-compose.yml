@@ -104,12 +104,12 @@ services:
       retries: 5
       start_period: 60s
 
-  # ---- ichiba-twin (opt-in): `docker compose --profile python up ichiba-py` ----
-  # The Python twin of ichiba's TS backend (docs/DUAL_BACKEND.md). Same
+  # ---- ichiba twin (opt-in): `docker compose --profile python up ichiba-py` ----
+  # The Python twin of ichiba's TS backend (docs/BACKEND_TWINS.md). Same
   # database, same /api/* contract, port 3021 so you can run both at once
   # and diff responses:
-  #   uv run scripts/contract.py http://localhost:3021   # from apps/ichiba-py
-  #   uv run scripts/contract.py http://localhost:3003
+  #   python3 scripts/contract.py http://localhost:3021
+  #   python3 scripts/contract.py http://localhost:3003
   ichiba-py:
     build:
       context: .
@@ -119,6 +119,25 @@ services:
       - "3021:3021"
     environment:
       PORT: 3021
+      DATABASE_URL: postgresql://ichiba:ichiba@db:5432/ichiba
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---- ichiba-go (opt-in): `docker compose --profile go up ichiba-go` ----
+  # The Go twin — phase-1 read contract only (/api/health, /api/products,
+  # /api/shops), same database, port 3022:
+  #   python3 scripts/contract.py --reads-only http://localhost:3022
+  # Run the python twin alongside to diff implementations live.
+  ichiba-go:
+    build:
+      context: .
+      dockerfile: apps/ichiba-go/Dockerfile
+    profiles: ["go"]
+    ports:
+      - "3022:3022"
+    environment:
+      PORT: 3022
       DATABASE_URL: postgresql://ichiba:ichiba@db:5432/ichiba
     depends_on:
       db:

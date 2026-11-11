@@ -3,7 +3,7 @@
 Deliberately minimal API-service settings — no admin, sessions, templates,
 or auth middleware. The TS counterpart (apps/ichiba) embeds its backend in
 Next.js; here the "framework" is the process, which is one of the
-widths you can compare (see docs/DUAL_BACKEND.md).
+widths you can compare (see docs/BACKEND_TWINS.md).
 
 Database: DATABASE_URL or POSTGRES_URL (same names the TS db client accepts).
 When unset, DATABASES stays empty — the process boots and /api/health
