@@ -37,7 +37,7 @@ This is the eslint 8 / Next 15 / Storybook 8 era, enforced by syncpack versionGr
 
 ## Env / secrets
 
-- `.env*` files are gitignored. Convex uses `CONVEX_URL`/`CONVEX_DEPLOYMENT`/`NEXT_PUBLIC_CONVEX_URL`; chat→api uses `NEXT_PUBLIC_API_URL`; API uses `PORT`. Ichiba backend twins: `ICHIBA_API_URL` (:3021, python) and `ICHIBA_GO_API_URL` (:3022, go) plus their Vercel flags `ichiba-python-backend` / `ichiba-go-backend`. Never commit keys.
+- `.env*` files are gitignored. Convex uses `CONVEX_URL`/`CONVEX_DEPLOYMENT`/`NEXT_PUBLIC_CONVEX_URL`; chat→api uses `NEXT_PUBLIC_API_URL`; API uses `PORT`. Ichiba backend twins: `ICHIBA_API_URL` (:3021, python) and `ICHIBA_GO_API_URL` (:3022, go) plus their Vercel flags `ichiba-python-backend` / `ichiba-go-backend`; local dev can bypass the flag gate with `ICHIBA_FORCE_BACKEND=python|go` (dev-only, base-url env still required). Never commit keys.
 - `gh` CLI is installed — prefer it for GitHub tasks.
 
 ## Docker / deploy

@@ -10,9 +10,10 @@ import { vercelAdapter } from "@flags-sdk/vercel";
  * Each flag routes ichiba catalog listings to a backend twin instead of
  * the built-in drizzle/RSC path: same Postgres, contract-tested
  * byte-for-byte (docs/BACKEND_TWINS.md). Scope: `queryProducts` +
- * `listShops` only — entity reads (product/shop detail, cart) and all
- * writes stay canonical until a twin gains those endpoints, in every
- * backend, as a new contract change.
+ * `listShops` only. Every twin serves the FULL contract (checkout +
+ * orders included), but the flag dispatch stays on listing reads —
+ * writes need Clerk attribution, which only the TS app resolves; the
+ * twins are guest-only (see the divergence notes in the doc).
  *
  * Evaluated through Vercel Flags (dashboard-managed, OIDC-authed). When the
  * adapter cannot evaluate (local dev without `vercel env pull`, docker),

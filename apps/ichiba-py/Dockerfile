@@ -19,5 +19,6 @@ COPY apps/ichiba-py/ichibaapi ./ichibaapi
 ENV PORT=3021
 EXPOSE 3021
 # Production server: gunicorn (Django's runserver is dev-only, same rule as
-# next dev vs next start).
-CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:3021", "config.wsgi:application"]
+# next dev vs next start). Binds to $PORT (docker-compose pins 3021; hosts
+# like Render inject their own PORT and expect the service to honor it).
+CMD ["sh", "-c", "uv run gunicorn --bind 0.0.0.0:${PORT:-3021} config.wsgi:application"]

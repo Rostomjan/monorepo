@@ -11,7 +11,7 @@ by side, so every piece of backend functionality can be written — and
 | Port | 3003 | 3021 | 3022 |
 | DB access | drizzle ORM | Django ORM (unmanaged) | raw SQL via pgx (unmanaged) |
 | Tests | bun test + Playwright | pytest (parity + contract) | go test (parity + contract) |
-| Scope | everything | full contract | phase 1: reads (health, products, shops) |
+| Scope | everything | full contract | full contract (phase 2 writes ported) |
 
 The comparison is the point: Django hands you an ORM, router, serializers
 and a test client; Next hides reads behind RSC and `unstable_cache`; Go
@@ -56,10 +56,27 @@ Go web framework on purpose — Gin/Echo would flatten the comparison.
   `unknown product: X`, `insufficient stock for X`, `too many requests`).
   `--reads-only` scopes it to the read contract (phase-1 backends);
   `--write` additionally exercises a real checkout.
+
+- **Differential fuzzing** (twins vs each other — the strongest drift
+  detector, because it needs no expectations list):
+
+  ```bash
+  # both twins running against the same Postgres, then:
+  python3 scripts/diff-twins.py http://localhost:3022 http://localhost:3021
+  ```
+
+  `scripts/diff-twins.py` feeds both backends the same seeded matrix
+  (~130 cases: q metacharacters, the sort vocabulary, page/perPage clamp
+  edges, unknown sorts, huge pages, plus a seeded random sample of
+  parameter combinations) and asserts identical status + JSON body for
+  every case. Deterministic per `--seed` (default 42), pure stdlib. It
+  caught a real ichiba-go bug on its first run (the q + shopId args
+  misbinding); CI runs it in `ichiba-e2e` on every push, Go vs Python.
 - **CI**: the `check` job runs every workspace (Go + Python DB tests
   self-skip without a database); the `ichiba-e2e` job runs the python
-  suite **and** the Go live contract check **with** the same Postgres
-  service the Playwright flow uses.
+  suite, the Go live contract check, **and** the Go-vs-Python
+  differential fuzz — all against the same Postgres service the
+  Playwright flow uses.
 
 ## API surface (contract)
 
@@ -69,20 +86,32 @@ endpoints for things TS does over RSC:
 | Path | TS | Python | Go | Notes |
 |---|---|---|---|---|
 | `GET /api/health` | route.ts | HealthView | handleHealth | identical JSON, 503 when unready, `Cache-Control: no-store` |
-| `POST /api/checkout` | route.ts | CheckoutView | — (phase 2) | atomic per-shop split, row locks, error strings |
-| `GET /api/orders` | route.ts | OrdersView | — (phase 2) | guest until Clerk lands |
+| `POST /api/checkout` | route.ts | CheckoutView | handleCheckout | atomic per-shop split, row locks, error strings |
+| `GET /api/orders` | route.ts | OrdersView | handleOrders | guest until Clerk lands |
 | `GET /api/products` | RSC only (`queryProducts`) | ProductsView | handleProducts | exposed as HTTP to make twins real services (q, shopId, sort, page, perPage, trigram search) |
 | `GET /api/shops` | RSC only | ShopsView | handleShops | same reason |
+
+The Go write path is the instructive one: Django hands you
+`transaction.atomic` + `select_for_update`; in Go you write `BEGIN`,
+`SELECT … FOR UPDATE`, the per-shop split, the inserts and the commit by
+hand (`apps/ichiba-go/orders.go`), under the same error strings and the
+same concurrency test (two concurrent checkouts of the last units →
+exactly one succeeds, stock never negative).
 
 ## Intentional divergences (documented, not drift)
 
 - **Clerk**: TS resolves `auth()` per request with `"guest"` fallback;
   the twins see every request as `"guest"` (no Clerk integration yet).
+  This is also why the flag dispatch stays on listing reads even though
+  every twin now serves the full contract: dispatching the TS checkout
+  to a twin would attribute real orders to `"guest"` — writes stay
+  canonical in the TS app until the twins gain Clerk (or a signed
+  user-context contract).
 - **Caching**: TS uses Next `unstable_cache` (300s entities / 60s query);
   python has a ~15-line `ttl_cache` with the same staleness contract —
   the learning point is what a framework gives you invisibly. The Go twin
-  needs none for phase 1 (its HTTP reads are re-cached at the TS dispatch
-  layer, per backend key).
+  needs none for its reads (they are re-cached at the TS dispatch layer,
+  per backend key).
 - **Cart persistence**: TS carts live in cookies via Server Actions
   (`cart-store.ts`); the twins have no cookie layer, so only the pure cart
   functions are ported (python: `ichibaapi/cart.py`).
@@ -108,11 +137,58 @@ keys carry the backend (`ichiba-query` vs `ichiba-query/python` vs
 `ichiba-query/go`), so a flip mid-flight can never mix cached results of
 two implementations. A failing twin (down, slow, 500, non-JSON) is caught
 in the RSC path after a 3s fetch budget and falls back to the drizzle
-path. All non-listing reads (`getProduct`/`getShop`/`getProducts` — the
-twins have no such HTTP endpoints yet) and all writes (cart Server
-Actions, `/api/checkout`, `/api/orders`) stay canonical; make them
-flag-switchable only after the twins gain those endpoints, in every
-backend, as a new contract change.
+path. Every twin serves the FULL contract (checkout + orders included);
+the flag dispatch stays on the listing reads because writes need Clerk
+attribution, which only the TS app resolves — see the divergence notes.
+
+**Dev-only escape hatch** (`apps/ichiba/src/lib/backend.ts`): flags are
+dashboard-managed, so local development cannot flip them. Set
+`ICHIBA_FORCE_BACKEND=python|go` (dev only — refused outright when
+`NODE_ENV=production`) to bypass the FLAG gate and watch the same page be
+computed by another language locally:
+
+```bash
+ICHIBA_FORCE_BACKEND=go ICHIBA_GO_API_URL=http://localhost:3022 \
+  bun run dev --filter ichiba
+```
+
+The base-url gate still applies — a forced backend whose env is missing
+warns and serves the canonical path, and killing the twin mid-render
+demonstrates the 3s RSC fallback live (grep the dev log for
+`catalog read failed; falling back`).
+
+Tooling: the Flags SDK (`flags`) with the Vercel adapter
+(`@flags-sdk/vercel`) — no `/api` contract changes needed. Local control:
+`vercel link` in `apps/ichiba` + `vercel env pull` (OIDC), then flip the
+flag in the Vercel dashboard (or the Toolbar's Flags Explorer, wired via
+the `/.well-known/vercel/flags` discovery endpoint). Unconfigured (plain
+`bun run dev`, docker) defaults to the canonical path.
+
+## Prod hosting for the twins (Render)
+
+`render.yaml` at the repo root is a Blueprint defining both twins as
+Docker web services — the same Dockerfiles docker-compose builds locally,
+built from the repo root (their `COPY apps/...` layers already expect
+that). Both honor the injected `PORT`, both read `DATABASE_URL`, and
+`/api/health` (which 503s until the DB is reachable) is the Render health
+check. Deploy order and full wiring:
+
+1. Seed the prod Postgres first (twins never migrate or seed —
+   `bun run db:migrate` + `bun run db:seed` against the prod Neon URL,
+   from `apps/ichiba`).
+2. Dashboard → **New → Blueprint** on this repo, review the two services,
+   set each `DATABASE_URL` to the same prod Neon URL the ichiba Vercel
+   project uses, deploy. (Free-plan instances sleep after idle and then
+   always lose the 3s fallback race — use `starter` for real traffic.)
+3. Note the public URLs, e.g. `https://ichiba-py.onrender.com` /
+   `https://ichiba-go.onrender.com`, and set them as `ICHIBA_API_URL` /
+   `ICHIBA_GO_API_URL` in the ichiba Vercel project env.
+4. Verify before flipping anything:
+   `python3 scripts/contract.py https://ichiba-py.onrender.com` (and the
+   Go URL) — the live contract check works against any reachable backend.
+5. Flip the flags in the Vercel dashboard (both projects linked via
+   `vercel link` + `vercel env pull` first). Registry priority still
+   applies with both on: python wins.
 
 Tooling: the Flags SDK (`flags`) with the Vercel adapter
 (`@flags-sdk/vercel`) — no `/api` contract changes needed. Local control:

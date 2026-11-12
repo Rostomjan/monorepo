@@ -1,9 +1,9 @@
 // Command ichiba-go is the Go twin of ichiba's TS backend
-// (apps/ichiba, docs/BACKEND_TWINS.md). Phase 1 covers the read contract
-// only — /api/health, /api/products, /api/shops — the same surface the
-// flag-gated catalog dispatch consumes. Writes (cart, checkout, orders)
-// stay canonical in apps/ichiba until this twin earns them, in every
-// backend, as a new contract change.
+// (apps/ichiba, docs/BACKEND_TWINS.md). Full contract: the phase-1 reads
+// (/api/health, /api/products, /api/shops) plus the write path
+// (/api/checkout, /api/orders). Writes stay flag-canonical in apps/ichiba
+// itself (Clerk attribution lives there); the twins serve the same
+// contract for parity testing.
 //
 // Deliberately framework-free (net/http + pgx, no gin/echo/chi): the point
 // of the learning lab is what each stack gives you invisibly. Django hands
