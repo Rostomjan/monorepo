@@ -15,6 +15,9 @@
 #
 # region should match your Neon project's region for latency.
 
+# region: Render's Virginia (Ashburn) — matches the Neon prod project
+# ichiba-east, AWS US East 1 (N. Virginia).
+
 services:
   - type: web
     name: ichiba-py
@@ -25,7 +28,7 @@ services:
     autoDeploy: true
     healthCheckPath: /api/health
     plan: starter
-    region: oregon
+    region: virginia
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -39,7 +42,7 @@ services:
     autoDeploy: true
     healthCheckPath: /api/health
     plan: starter
-    region: oregon
+    region: virginia
     envVars:
       - key: DATABASE_URL
         sync: false
