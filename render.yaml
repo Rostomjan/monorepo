@@ -8,10 +8,13 @@
 # service in the dashboard (sync: false) to the SAME prod Neon URL the
 # ichiba Vercel project uses: every backend reads one Postgres.
 #
-# plan: starter (paid) is deliberate — free instances sleep after idle, and
-# a sleeping twin silently loses the flag race to the 3s RSC fallback (the
-# page still renders, but always on the canonical TS path). If you accept
-# that while testing, switch plan to "free" and back.
+# plan: free (the workspace's free tier: 750 shared instance hrs/mo,
+# 512 MB / 0.1 CPU, instances sleep after ~15 min idle). A sleeping twin
+# silently loses the flag race to the 3s RSC fallback — the page still
+# renders, but always on the canonical TS path until the twin is warm
+# (~30-60s wake). Two always-on twins need ~1,460 hrs/mo, so free cannot
+# sustain both continuously; flip plan to "starter" before pointing real
+# traffic at the flags.
 #
 # region should match your Neon project's region for latency.
 
@@ -27,7 +30,7 @@ services:
     branch: main
     autoDeploy: true
     healthCheckPath: /api/health
-    plan: starter
+    plan: free
     region: virginia
     envVars:
       - key: DATABASE_URL
@@ -41,7 +44,7 @@ services:
     branch: main
     autoDeploy: true
     healthCheckPath: /api/health
-    plan: starter
+    plan: free
     region: virginia
     envVars:
       - key: DATABASE_URL
