@@ -450,7 +450,8 @@ jobs:
             sleep 1
           done
           curl -fsS http://localhost:3021/api/health > /dev/null
-          python3 scripts/diff-twins.py http://localhost:3022 http://localhost:3021
+          python3 ../../scripts/diff-twins.py http://localhost:3022 http://localhost:3021
+        working-directory: apps/ichiba-py
       - name: Check Clerk test keys
         # The ichiba dev server throws on every request without Clerk keys,
         # which surfaces as a 3-minute webServer timeout. Fail fast instead.

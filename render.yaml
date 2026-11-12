@@ -1,0 +1,48 @@
+# Render Blueprint: prod hosting for the ichiba backend twins
+# (docs/BACKEND_TWINS.md). Two Docker web services built from this repo's
+# existing Dockerfiles — the same images docker-compose builds locally.
+#
+# Both bind to $PORT at runtime (Render injects it; the Go binary reads it,
+# the python image's CMD defaults to 3021 when unset), so no port config
+# lives here. Both read DATABASE_URL / POSTGRES_URL — set it once per
+# service in the dashboard (sync: false) to the SAME prod Neon URL the
+# ichiba Vercel project uses: every backend reads one Postgres.
+#
+# plan: starter (paid) is deliberate — free instances sleep after idle, and
+# a sleeping twin silently loses the flag race to the 3s RSC fallback (the
+# page still renders, but always on the canonical TS path). If you accept
+# that while testing, switch plan to "free" and back.
+#
+# region should match your Neon project's region for latency.
+
+# region: Render's Virginia (Ashburn) — matches the Neon prod project
+# ichiba-east, AWS US East 1 (N. Virginia).
+
+services:
+  - type: web
+    name: ichiba-py
+    runtime: docker
+    dockerfilePath: apps/ichiba-py/Dockerfile
+    dockerContext: .
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    plan: starter
+    region: virginia
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+  - type: web
+    name: ichiba-go
+    runtime: docker
+    dockerfilePath: apps/ichiba-go/Dockerfile
+    dockerContext: .
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    plan: starter
+    region: virginia
+    envVars:
+      - key: DATABASE_URL
+        sync: false

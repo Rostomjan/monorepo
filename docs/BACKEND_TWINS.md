@@ -164,6 +164,39 @@ flag in the Vercel dashboard (or the Toolbar's Flags Explorer, wired via
 the `/.well-known/vercel/flags` discovery endpoint). Unconfigured (plain
 `bun run dev`, docker) defaults to the canonical path.
 
+## Prod hosting for the twins (Render)
+
+`render.yaml` at the repo root is a Blueprint defining both twins as
+Docker web services — the same Dockerfiles docker-compose builds locally,
+built from the repo root (their `COPY apps/...` layers already expect
+that). Both honor the injected `PORT`, both read `DATABASE_URL`, and
+`/api/health` (which 503s until the DB is reachable) is the Render health
+check. Deploy order and full wiring:
+
+1. Seed the prod Postgres first (twins never migrate or seed —
+   `bun run db:migrate` + `bun run db:seed` against the prod Neon URL,
+   from `apps/ichiba`).
+2. Dashboard → **New → Blueprint** on this repo, review the two services,
+   set each `DATABASE_URL` to the same prod Neon URL the ichiba Vercel
+   project uses, deploy. (Free-plan instances sleep after idle and then
+   always lose the 3s fallback race — use `starter` for real traffic.)
+3. Note the public URLs, e.g. `https://ichiba-py.onrender.com` /
+   `https://ichiba-go.onrender.com`, and set them as `ICHIBA_API_URL` /
+   `ICHIBA_GO_API_URL` in the ichiba Vercel project env.
+4. Verify before flipping anything:
+   `python3 scripts/contract.py https://ichiba-py.onrender.com` (and the
+   Go URL) — the live contract check works against any reachable backend.
+5. Flip the flags in the Vercel dashboard (both projects linked via
+   `vercel link` + `vercel env pull` first). Registry priority still
+   applies with both on: python wins.
+
+Tooling: the Flags SDK (`flags`) with the Vercel adapter
+(`@flags-sdk/vercel`) — no `/api` contract changes needed. Local control:
+`vercel link` in `apps/ichiba` + `vercel env pull` (OIDC), then flip the
+flag in the Vercel dashboard (or the Toolbar's Flags Explorer, wired via
+the `/.well-known/vercel/flags` discovery endpoint). Unconfigured (plain
+`bun run dev`, docker) defaults to the canonical path.
+
 ## Adding a new backend twin (the plug-in recipe)
 
 The architecture makes a twin additive. Checklist, in order:
