@@ -35,6 +35,13 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: DJANGO_ALLOWED_HOSTS
+        # Render's HTTP health probes send Host: <service>.onrender.com;
+        # without this Django answers 400 before the view runs and the
+        # deploy times out ("Timed Out" despite gunicorn listening).
+        # The leading dot matches any *.onrender.com (survives renames);
+        # localhost keeps Render's port-detector HEAD probes quiet.
+        value: ".onrender.com,localhost,127.0.0.1"
 
   - type: web
     name: ichiba-go
