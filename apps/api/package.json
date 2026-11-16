@@ -2,7 +2,7 @@
   "name": "api",
   "version": "0.0.0",
   "dependencies": {
-    "hono": "^4.13.17"
+    "hono": "^4.13.19"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

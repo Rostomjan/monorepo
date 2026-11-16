@@ -17,9 +17,9 @@
   "dependencies": {
     "@repo/backend": "workspace:*",
     "@repo/ui": "workspace:*",
-    "convex": "^1.49.0",
-    "fast-xml-parser": "^5.12.0",
-    "next": "16.4.5",
+    "convex": "^1.50.0",
+    "fast-xml-parser": "^5.12.1",
+    "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
